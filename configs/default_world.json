@@ -1,0 +1,23 @@
+{
+  "grid_width": 5,
+  "grid_height": 5,
+  "initial_agent_pos": [0, 0],
+  "initial_entities": [
+    {
+      "entity_id": 1,
+      "entity_type": 1,
+      "position": [2, 2],
+      "is_interactive": true,
+      "is_blocking": false,
+      "hidden_state_delta": 10.0
+    }
+  ],
+  "initial_internal_state": 100.0,
+  "step_penalty": 1.0,
+  "min_internal_state": 0.0,
+  "max_internal_state": 100.0,
+  "max_timesteps": 100,
+  "interaction_radius": 1,
+  "terminate_on_depletion": false,
+  "seed": 42
+}
