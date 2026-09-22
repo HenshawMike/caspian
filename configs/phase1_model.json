@@ -1,0 +1,15 @@
+{
+  "input_dim": 37,
+  "hidden_dims": [32, 16],
+  "output_dim": 1,
+  "hidden_activation": "relu",
+  "output_activation": "identity",
+  "learning_rate": 0.01,
+  "weight_decay": 0.0001,
+  "optimizer": "adam",
+  "batch_size": 32,
+  "epochs": 150,
+  "early_stopping_patience": 25,
+  "exploration_rate": 0.1,
+  "seed": 42
+}
