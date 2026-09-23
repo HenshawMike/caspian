@@ -1,0 +1,56 @@
+{
+  "experiment_id": "CSP-P2-E003",
+  "title": "Variable Delay Sweep",
+  "delays_evaluated": [
+    0,
+    1,
+    2,
+    4,
+    8
+  ],
+  "records": [
+    {
+      "delay": 0,
+      "memory_model_mse": 1.466198,
+      "no_memory_model_mse": 0.018874,
+      "persistence_baseline_mse": 4.52,
+      "memory_advantage_pct": -7668.35,
+      "beats_no_memory": false
+    },
+    {
+      "delay": 1,
+      "memory_model_mse": 1.324983,
+      "no_memory_model_mse": 4.467004,
+      "persistence_baseline_mse": 5.48,
+      "memory_advantage_pct": 70.34,
+      "beats_no_memory": true
+    },
+    {
+      "delay": 2,
+      "memory_model_mse": 2.747635,
+      "no_memory_model_mse": 4.029934,
+      "persistence_baseline_mse": 4.52,
+      "memory_advantage_pct": 31.82,
+      "beats_no_memory": true
+    },
+    {
+      "delay": 4,
+      "memory_model_mse": 3.438655,
+      "no_memory_model_mse": 3.385044,
+      "persistence_baseline_mse": 3.88,
+      "memory_advantage_pct": -1.58,
+      "beats_no_memory": false
+    },
+    {
+      "delay": 8,
+      "memory_model_mse": 0.091945,
+      "no_memory_model_mse": 0.065378,
+      "persistence_baseline_mse": 1.0,
+      "memory_advantage_pct": -40.64,
+      "beats_no_memory": false
+    }
+  ],
+  "max_delay_evaluated": 8,
+  "min_delay_advantage_pct": -40.64,
+  "max_delay_advantage_pct": 70.34
+}

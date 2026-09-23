@@ -19,6 +19,7 @@ from environment.observations import Observation, build_observation
 from environment.dynamics import (
     compute_next_position,
     compute_interaction_delta,
+    compute_interaction_events,
     update_internal_state,
 )
 
@@ -37,6 +38,7 @@ class WorldConfig:
             is_interactive=True,
             is_blocking=False,
             hidden_state_delta=10.0,
+            interaction_delay=0,
         )
     ])
     initial_internal_state: float = 100.0
@@ -46,6 +48,7 @@ class WorldConfig:
     max_timesteps: int = 100
     interaction_radius: int = 1
     terminate_on_depletion: bool = False
+    default_interaction_delay: int = 0
     seed: Optional[int] = 42
 
     def to_dict(self) -> Dict[str, Any]:
@@ -62,6 +65,7 @@ class WorldConfig:
             "max_timesteps": self.max_timesteps,
             "interaction_radius": self.interaction_radius,
             "terminate_on_depletion": self.terminate_on_depletion,
+            "default_interaction_delay": self.default_interaction_delay,
             "seed": self.seed,
         }
 
@@ -84,6 +88,7 @@ class WorldConfig:
             max_timesteps=int(data.get("max_timesteps", 100)),
             interaction_radius=int(data.get("interaction_radius", 1)),
             terminate_on_depletion=bool(data.get("terminate_on_depletion", False)),
+            default_interaction_delay=int(data.get("default_interaction_delay", 0)),
             seed=data.get("seed", 42),
         )
 
@@ -99,11 +104,12 @@ class EnvironmentState:
     interaction_occurred: bool
     last_action: Optional[Action]
     is_terminated: bool
+    pending_events: Tuple[Tuple[int, float], ...]
     seed: Optional[int]
 
 
 class GridWorld:
-    """Deterministic 2D Grid World Environment."""
+    """Deterministic 2D Grid World Environment supporting temporal delayed interactions."""
 
     def __init__(self, config: Optional[WorldConfig] = None):
         self.config = config if config is not None else WorldConfig()
@@ -117,12 +123,15 @@ class GridWorld:
         self._interaction_occurred: bool = False
         self._last_action: Optional[Action] = None
         self._is_terminated: bool = False
+        self._pending_events: List[Tuple[int, float]] = []
 
         # Initialize environment state
         self.reset(seed=self.config.seed)
 
     def reset(self, seed: Optional[int] = None) -> Observation:
         """Reset the world to its initial state deterministically.
+
+        Ensures 100% episode isolation (clears all pending queues and internal memory).
 
         Args:
             seed: Random seed for initialization. If None, uses config.seed.
@@ -152,6 +161,7 @@ class GridWorld:
                 is_interactive=e.is_interactive,
                 is_blocking=e.is_blocking,
                 hidden_state_delta=e.hidden_state_delta,
+                interaction_delay=e.interaction_delay if e.interaction_delay != 0 else self.config.default_interaction_delay,
             )
             for e in self.config.initial_entities
         ]
@@ -162,6 +172,7 @@ class GridWorld:
         self._interaction_occurred = False
         self._last_action = None
         self._is_terminated = False
+        self._pending_events = []
 
         return self.get_observation()
 
@@ -199,20 +210,46 @@ class GridWorld:
             entities=self._entities,
         )
 
-        # Compute interaction delta and interaction flag
-        interaction_delta, interaction_occurred = compute_interaction_delta(
+        target_timestep = self._timestep + 1
+
+        # Check for immediate or delayed interaction events
+        interaction_events = compute_interaction_events(
             agent_pos=new_pos,
             action=validated_action,
             entities=self._entities,
             interaction_radius=self.config.interaction_radius,
         )
 
+        immediate_delta = 0.0
+        interaction_occurred = len(interaction_events) > 0
+
+        for entity, hidden_delta, delay in interaction_events:
+            effective_delay = delay if delay != 0 else self.config.default_interaction_delay
+            if effective_delay == 0:
+                immediate_delta += hidden_delta
+            else:
+                # Schedule delayed consequence at target timestep
+                delivery_time = target_timestep + effective_delay
+                self._pending_events.append((delivery_time, hidden_delta))
+
+        # Check pending events maturing at this target timestep
+        delayed_delta = 0.0
+        remaining_events: List[Tuple[int, float]] = []
+        for delivery_time, delta in self._pending_events:
+            if delivery_time == target_timestep:
+                delayed_delta += delta
+            else:
+                remaining_events.append((delivery_time, delta))
+        self._pending_events = remaining_events
+
+        total_interaction_delta = immediate_delta + delayed_delta
+
         # Compute updated internal state
         prev_internal_state = self._internal_state
         new_internal_state = update_internal_state(
             current_state_val=self._internal_state,
             step_penalty=self.config.step_penalty,
-            interaction_delta=interaction_delta,
+            interaction_delta=total_interaction_delta,
             min_val=self.config.min_internal_state,
             max_val=self.config.max_internal_state,
         )
@@ -224,7 +261,7 @@ class GridWorld:
         self._interaction_occurred = interaction_occurred
         self._internal_state = new_internal_state
         self._last_action = validated_action
-        self._timestep += 1
+        self._timestep = target_timestep
 
         # Check termination conditions
         terminated = False
@@ -240,6 +277,8 @@ class GridWorld:
             "timestep": self._timestep,
             "collision": self._collision,
             "interaction": self._interaction_occurred,
+            "interaction_occurred": self._interaction_occurred,
+            "pending_events_count": len(self._pending_events),
         }
 
         return obs, state_delta, terminated, info
@@ -266,5 +305,6 @@ class GridWorld:
             interaction_occurred=self._interaction_occurred,
             last_action=self._last_action,
             is_terminated=self._is_terminated,
+            pending_events=tuple(self._pending_events),
             seed=self._seed,
         )

@@ -43,6 +43,32 @@ class MSELoss(LossFunction):
         return (2.0 / n) * (y_p - y_t)
 
 
+class EventWeightedMSELoss(LossFunction):
+    """Event-Weighted Mean Squared Error Loss:
+    L = (1/T) * sum(w_t * (y_pred - y_true)^2)
+    where w_t = w_event if y_true != 0 else 1.0.
+    The event mask is derived strictly from ground-truth target values (y_true != 0).
+    """
+
+    def __init__(self, w_event: float = 3.0):
+        self.w_event = float(w_event)
+
+    def forward(self, y_pred: np.ndarray, y_true: np.ndarray) -> float:
+        y_p = np.asarray(y_pred, dtype=np.float64)
+        y_t = np.asarray(y_true, dtype=np.float64)
+        weights = np.where(y_t != 0.0, self.w_event, 1.0)
+        return float(np.mean(weights * np.square(y_p - y_t)))
+
+    def gradient(self, y_pred: np.ndarray, y_true: np.ndarray) -> np.ndarray:
+        y_p = np.asarray(y_pred, dtype=np.float64)
+        y_t = np.asarray(y_true, dtype=np.float64)
+        n = y_p.size
+        if n == 0:
+            return np.zeros_like(y_p)
+        weights = np.where(y_t != 0.0, self.w_event, 1.0)
+        return (2.0 / n) * weights * (y_p - y_t)
+
+
 class HuberLoss(LossFunction):
     """Huber Loss (Smooth L1): robust to large outliers."""
 

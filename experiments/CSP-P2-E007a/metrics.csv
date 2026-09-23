@@ -1,0 +1,9 @@
+metric_key,metric_value
+original_memory_mse,3.470325
+original_no_memory_mse,3.726696
+original_gap_pct,6.9
+corrected_memory_mse,3.470325
+corrected_no_memory_mse,3.726696
+corrected_gap_pct,6.88
+delta_memory_mse,0.0
+delta_gap_pct,-0.02

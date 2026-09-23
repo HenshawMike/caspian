@@ -1,0 +1,114 @@
+{
+  "experiment_id": "CSP-P2-E007b",
+  "title": "Parameter-Matched MLP Control",
+  "delay": 2,
+  "seed": 42,
+  "matched_mlp_architecture": {
+    "hidden_dims": [
+      173
+    ],
+    "num_parameters": 6748,
+    "target_parameters": 6753,
+    "parameter_match_pct_error": 0.07
+  },
+  "three_way_benchmark": {
+    "memory_model_gru": {
+      "mse": 3.470325,
+      "rmse": 1.862881,
+      "mae": 0.754814,
+      "r2_score": 0.174989,
+      "num_parameters": 6753
+    },
+    "matched_mlp_173": {
+      "mse": 3.756457,
+      "rmse": 1.938158,
+      "mae": 0.807013,
+      "r2_score": 0.106966,
+      "num_parameters": 6748
+    },
+    "small_mlp_32_16": {
+      "mse": 3.726696,
+      "rmse": 1.930465,
+      "mae": 0.783014,
+      "r2_score": 0.114041,
+      "num_parameters": 1761
+    }
+  },
+  "gaps": {
+    "memory_vs_matched_mlp_pct": 7.62,
+    "memory_vs_small_mlp_pct": 6.88,
+    "matched_vs_small_mlp_pct": -0.8
+  },
+  "capacity_analysis": {
+    "original_memory_vs_small_gap_pct": 6.9,
+    "corrected_memory_vs_matched_gap_pct": 7.62,
+    "fraction_of_gap_surviving_capacity_match": 1.1039,
+    "interpretation": "Memory provides advantage beyond capacity"
+  },
+  "d0_anomaly_persists_after_param_matching": false,
+  "generalization_failure_persists_after_param_matching": false,
+  "capacity_gap_pct": 7.62,
+  "delay_sweep": [
+    {
+      "delay": 0,
+      "memory_model_mse": 2.127554,
+      "no_memory_model_mse": 2.14863,
+      "persistence_baseline_mse": 2.92,
+      "memory_advantage_pct": 0.98,
+      "beats_no_memory": true
+    },
+    {
+      "delay": 1,
+      "memory_model_mse": 4.519235,
+      "no_memory_model_mse": 4.780721,
+      "persistence_baseline_mse": 5.8,
+      "memory_advantage_pct": 5.47,
+      "beats_no_memory": true
+    },
+    {
+      "delay": 2,
+      "memory_model_mse": 3.035854,
+      "no_memory_model_mse": 3.447433,
+      "persistence_baseline_mse": 3.88,
+      "memory_advantage_pct": 11.94,
+      "beats_no_memory": true
+    },
+    {
+      "delay": 4,
+      "memory_model_mse": 2.150145,
+      "no_memory_model_mse": 1.975088,
+      "persistence_baseline_mse": 2.6,
+      "memory_advantage_pct": -8.86,
+      "beats_no_memory": false
+    },
+    {
+      "delay": 8,
+      "memory_model_mse": 1.694571,
+      "no_memory_model_mse": 1.420877,
+      "persistence_baseline_mse": 1.96,
+      "memory_advantage_pct": -19.26,
+      "beats_no_memory": false
+    }
+  ],
+  "generalization_results": {
+    "delay_3": {
+      "delay": 3,
+      "mse": 2.59978,
+      "persistence_mse": 3.56,
+      "gap_vs_persistence_pct": 26.97,
+      "generalization_successful": true
+    },
+    "delay_6": {
+      "delay": 6,
+      "mse": 2.442108,
+      "persistence_mse": 2.92,
+      "gap_vs_persistence_pct": 16.37,
+      "generalization_successful": true
+    }
+  },
+  "matched_model_training": {
+    "best_epoch": 63,
+    "epochs_run": 93,
+    "best_val_loss": 3.756457
+  }
+}

@@ -1,0 +1,6 @@
+experiment_id: CSP-P2-E007c
+title: "Representation-Metric Sanity Check"
+phase: "Phase 2 — Memory & Persistence (Diagnostic)"
+seed: 42
+semantic_firewall: "ACTIVE"
+part_b_logic: "OR (d0_persists OR gen_persists OR capacity_gap_material)"

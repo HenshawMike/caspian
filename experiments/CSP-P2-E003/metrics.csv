@@ -1,0 +1,11 @@
+metric_key,metric_value
+delay_0_memory_mse,1.466198
+delay_0_no_memory_mse,0.018874
+delay_1_memory_mse,1.324983
+delay_1_no_memory_mse,4.467004
+delay_2_memory_mse,2.747635
+delay_2_no_memory_mse,4.029934
+delay_4_memory_mse,3.438655
+delay_4_no_memory_mse,3.385044
+delay_8_memory_mse,0.091945
+delay_8_no_memory_mse,0.065378

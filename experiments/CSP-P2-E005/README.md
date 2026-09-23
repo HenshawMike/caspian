@@ -1,0 +1,94 @@
+# CSP-P2-E005 — Reproducibility Across 8 Random Seeds
+
+## Research Phase
+Phase 2: Memory & Persistence
+
+## Scientific Objective
+Investigate temporal information retention across observation gaps without human semantic categories.
+
+## Summary Results
+```json
+{
+  "experiment_id": "CSP-P2-E005",
+  "title": "Reproducibility Across 8 Random Seeds",
+  "delay": 2,
+  "seeds_evaluated": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "seed_records": [
+    {
+      "seed": 1,
+      "memory_model_mse": 2.409651,
+      "no_memory_model_mse": 2.724996,
+      "advantage_gap_pct": 11.57,
+      "memory_beats_no_memory": true
+    },
+    {
+      "seed": 2,
+      "memory_model_mse": 2.435084,
+      "no_memory_model_mse": 2.785875,
+      "advantage_gap_pct": 12.59,
+      "memory_beats_no_memory": true
+    },
+    {
+      "seed": 3,
+      "memory_model_mse": 3.582958,
+      "no_memory_model_mse": 3.672556,
+      "advantage_gap_pct": 2.44,
+      "memory_beats_no_memory": true
+    },
+    {
+      "seed": 4,
+      "memory_model_mse": 2.389128,
+      "no_memory_model_mse": 3.868396,
+      "advantage_gap_pct": 38.24,
+      "memory_beats_no_memory": true
+    },
+    {
+      "seed": 5,
+      "memory_model_mse": 5.465768,
+      "no_memory_model_mse": 5.157701,
+      "advantage_gap_pct": -5.97,
+      "memory_beats_no_memory": false
+    },
+    {
+      "seed": 6,
+      "memory_model_mse": 1.616079,
+      "no_memory_model_mse": 2.371398,
+      "advantage_gap_pct": 31.85,
+      "memory_beats_no_memory": true
+    },
+    {
+      "seed": 7,
+      "memory_model_mse": 0.908907,
+      "no_memory_model_mse": 1.586081,
+      "advantage_gap_pct": 42.69,
+      "memory_beats_no_memory": true
+    },
+    {
+      "seed": 8,
+      "memory_model_mse": 4.787818,
+      "no_memory_model_mse": 4.896622,
+      "advantage_gap_pct": 2.22,
+      "memory_beats_no_memory": true
+    }
+  ],
+  "summary": {
+    "mean_memory_mse": 2.949424,
+    "std_memory_mse": 1.454493,
+    "min_memory_mse": 0.908907,
+    "max_memory_mse": 5.465768,
+    "mean_no_memory_mse": 3.382953,
+    "std_no_memory_mse": 1.161995,
+    "mean_advantage_gap_pct": 16.95,
+    "consistent_superiority": false
+  }
+}
+```

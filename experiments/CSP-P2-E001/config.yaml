@@ -1,0 +1,10 @@
+experiment_id: CSP-P2-E001
+title: "Temporal Memory Benchmark"
+phase: "Phase 2 — Memory & Persistence"
+seed: 42
+delay: 2
+model_type: "RecurrentPredictor (GRU) vs PredictiveMLP"
+learning_rate: 0.008
+optimizer: "Adam"
+loss_function: "MSELoss"
+semantic_firewall: "ACTIVE"

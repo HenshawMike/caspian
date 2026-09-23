@@ -1,0 +1,4 @@
+metric_key,metric_value
+memory_vs_matched_mlp_pct,7.62
+memory_vs_small_mlp_pct,6.88
+matched_vs_small_mlp_pct,-0.8

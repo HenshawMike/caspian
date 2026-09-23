@@ -1,0 +1,47 @@
+# CSP-P2-E004 — Memory Generalization to Unseen Delays
+
+## Research Phase
+Phase 2: Memory & Persistence
+
+## Scientific Objective
+Investigate temporal information retention across observation gaps without human semantic categories.
+
+## Summary Results
+```json
+{
+  "experiment_id": "CSP-P2-E004",
+  "title": "Memory Generalization to Unseen Delays",
+  "train_delays": [
+    1,
+    2,
+    4
+  ],
+  "test_delays": [
+    3,
+    6
+  ],
+  "unseen_delay_results": {
+    "delay_3": {
+      "delay": 3,
+      "mse": 6.300033,
+      "rmse": 2.509987,
+      "mae": 0.951146,
+      "r2_score": -0.3787,
+      "persistence_mse": 4.84,
+      "gap_vs_persistence_pct": -30.17,
+      "generalization_successful": false
+    },
+    "delay_6": {
+      "delay": 6,
+      "mse": 3.461805,
+      "rmse": 1.860593,
+      "mae": 0.565679,
+      "r2_score": -1.1988,
+      "persistence_mse": 2.28,
+      "gap_vs_persistence_pct": -51.83,
+      "generalization_successful": false
+    }
+  },
+  "generalizes_to_all_unseen_delays": false
+}
+```

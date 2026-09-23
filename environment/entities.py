@@ -27,6 +27,7 @@ class Entity:
     is_interactive: bool = True
     is_blocking: bool = False
     hidden_state_delta: float = 10.0
+    interaction_delay: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize entity properties to dictionary (internal state)."""
@@ -37,6 +38,7 @@ class Entity:
             "is_interactive": self.is_interactive,
             "is_blocking": self.is_blocking,
             "hidden_state_delta": self.hidden_state_delta,
+            "interaction_delay": self.interaction_delay,
         }
 
     @classmethod
@@ -49,4 +51,5 @@ class Entity:
             is_interactive=bool(data.get("is_interactive", True)),
             is_blocking=bool(data.get("is_blocking", False)),
             hidden_state_delta=float(data.get("hidden_state_delta", 0.0)),
+            interaction_delay=int(data.get("interaction_delay", 0)),
         )

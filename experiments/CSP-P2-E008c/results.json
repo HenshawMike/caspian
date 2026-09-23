@@ -1,0 +1,31 @@
+{
+  "experiment_id": "CSP-P2-E008c",
+  "title": "Criterion 1 Re-Test (Deficit-Step Isolation)",
+  "delay": 2,
+  "seed": 42,
+  "total_test_steps": 500,
+  "deficit_steps_count": 21,
+  "standard_steps_count": 479,
+  "deficit_step_results": {
+    "memory_mse": 54.286757,
+    "matched_mlp_mse": 67.058653,
+    "small_mlp_mse": 73.755362,
+    "error_reduction_vs_matched_pct": 19.05,
+    "error_reduction_vs_small_pct": 26.4,
+    "target_threshold_pct": 70.0,
+    "cleared_70pct_threshold": false
+  },
+  "standard_step_results": {
+    "memory_mse": 0.790673,
+    "matched_mlp_mse": 0.740754,
+    "small_mlp_mse": 0.465126,
+    "error_reduction_vs_matched_pct": -6.74,
+    "error_reduction_vs_small_pct": -69.99
+  },
+  "comparison_vs_original": {
+    "original_deficit_error_reduction_pct": 36.11,
+    "corrected_deficit_error_reduction_pct": 19.05,
+    "original_standard_error_reduction_pct": -219.93,
+    "corrected_standard_error_reduction_pct": -6.74
+  }
+}

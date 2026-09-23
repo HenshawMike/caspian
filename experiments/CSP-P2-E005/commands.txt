@@ -1,0 +1,3 @@
+# Execution commands for CSP-P2-E005
+python3 -m unittest tests/test_phase2_experiments.py
+python3 experiments/generate_p2_report.py

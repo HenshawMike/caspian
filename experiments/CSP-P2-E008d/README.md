@@ -1,0 +1,99 @@
+# CSP-P2-E008d: Criterion 3 Re-Test (8-Seed Reproducibility)
+
+**Phase:** Phase 2 — Memory & Persistence (CSP-P2-E008 Reconciliation)
+
+```json
+{
+  "experiment_id": "CSP-P2-E008d",
+  "title": "Criterion 3 Re-Test (8-Seed Reproducibility)",
+  "delay": 2,
+  "seeds_evaluated": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "records": [
+    {
+      "seed": 1,
+      "memory_mse": 2.409651,
+      "matched_mlp_mse": 2.757543,
+      "advantage_gap_pct": 12.62,
+      "memory_beats_matched_mlp": true
+    },
+    {
+      "seed": 2,
+      "memory_mse": 2.435084,
+      "matched_mlp_mse": 2.829169,
+      "advantage_gap_pct": 13.93,
+      "memory_beats_matched_mlp": true
+    },
+    {
+      "seed": 3,
+      "memory_mse": 3.582958,
+      "matched_mlp_mse": 3.735056,
+      "advantage_gap_pct": 4.07,
+      "memory_beats_matched_mlp": true
+    },
+    {
+      "seed": 4,
+      "memory_mse": 2.389128,
+      "matched_mlp_mse": 3.943167,
+      "advantage_gap_pct": 39.41,
+      "memory_beats_matched_mlp": true
+    },
+    {
+      "seed": 5,
+      "memory_mse": 5.465768,
+      "matched_mlp_mse": 5.251821,
+      "advantage_gap_pct": -4.07,
+      "memory_beats_matched_mlp": false
+    },
+    {
+      "seed": 6,
+      "memory_mse": 1.616079,
+      "matched_mlp_mse": 2.584949,
+      "advantage_gap_pct": 37.48,
+      "memory_beats_matched_mlp": true
+    },
+    {
+      "seed": 7,
+      "memory_mse": 0.908907,
+      "matched_mlp_mse": 1.611267,
+      "advantage_gap_pct": 43.59,
+      "memory_beats_matched_mlp": true
+    },
+    {
+      "seed": 8,
+      "memory_mse": 4.787818,
+      "matched_mlp_mse": 5.180381,
+      "advantage_gap_pct": 7.58,
+      "memory_beats_matched_mlp": true
+    }
+  ],
+  "summary": {
+    "wins": 7,
+    "total_seeds": 8,
+    "win_rate": "7/8",
+    "consistent_superiority": false,
+    "mean_memory_mse": 2.949424,
+    "std_memory_mse": 1.454493,
+    "min_memory_mse": 0.908907,
+    "max_memory_mse": 5.465768,
+    "mean_matched_mlp_mse": 3.486669,
+    "std_matched_mlp_mse": 1.201492,
+    "mean_advantage_gap_pct": 19.33
+  },
+  "comparison_vs_original": {
+    "original_claimed_win_rate": "8/8",
+    "original_actual_raw_win_rate": "7/8",
+    "original_consistent_superiority": false,
+    "corrected_win_rate": "7/8",
+    "corrected_consistent_superiority": false
+  }
+}
+```
