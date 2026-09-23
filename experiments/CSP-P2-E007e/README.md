@@ -1,0 +1,61 @@
+# CSP-P2-E007e — Generalization Failure Diagnostic (Hidden-State Level)
+
+## Phase
+Phase 2 Diagnostic Follow-Up (CSP-P2-E007)
+
+## Summary Results
+```json
+{
+  "experiment_id": "CSP-P2-E007e",
+  "title": "Generalization Failure Diagnostic (Hidden-State Level)",
+  "seed": 42,
+  "per_delay_results": {
+    "delay_2": {
+      "delay": 2,
+      "is_trained": true,
+      "prediction_mse": 1.439587,
+      "persistence_mse": 2.066667,
+      "beats_persistence": true,
+      "hidden_state_norm": 4.2003
+    },
+    "delay_3": {
+      "delay": 3,
+      "is_trained": false,
+      "prediction_mse": 2.653152,
+      "persistence_mse": 3.346667,
+      "beats_persistence": true,
+      "hidden_state_norm": 4.1977
+    },
+    "delay_4": {
+      "delay": 4,
+      "is_trained": true,
+      "prediction_mse": 2.992551,
+      "persistence_mse": 3.346667,
+      "beats_persistence": true,
+      "hidden_state_norm": 4.2187
+    },
+    "delay_6": {
+      "delay": 6,
+      "is_trained": false,
+      "prediction_mse": 4.357915,
+      "persistence_mse": 4.413333,
+      "beats_persistence": true,
+      "hidden_state_norm": 4.2286
+    }
+  },
+  "hidden_state_norm_by_delay": {
+    "2": 4.2003,
+    "3": 4.1977,
+    "4": 4.2187,
+    "6": 4.2286
+  },
+  "delay_norm_rank_correlation": 0.9239,
+  "encoding_hypothesis": "scalar_delay_encoding",
+  "interpolation_vs_extrapolation": {
+    "d3_interpolation_mse": 2.653152,
+    "d6_extrapolation_mse": 4.357915,
+    "d3_beats_persistence": true,
+    "d6_beats_persistence": true
+  }
+}
+```

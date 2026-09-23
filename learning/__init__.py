@@ -8,6 +8,12 @@ from learning.dataset import (
 )
 from learning.collector import TrajectoryCollector
 from learning.trainer import PredictiveTrainer
+from learning.sequential_dataset import (
+    TrajectoryEpisode,
+    SequentialExperienceDataset,
+    collect_sequential_trajectories,
+)
+from learning.sequential_trainer import SequentialTrainer
 
 __all__ = [
     "Transition",
@@ -16,4 +22,8 @@ __all__ = [
     "one_hot_encode_action",
     "TrajectoryCollector",
     "PredictiveTrainer",
+    "TrajectoryEpisode",
+    "SequentialExperienceDataset",
+    "collect_sequential_trajectories",
+    "SequentialTrainer",
 ]

@@ -66,6 +66,37 @@ def compute_next_position(
     return candidate_pos, False
 
 
+def compute_interaction_events(
+    agent_pos: Tuple[int, int],
+    action: Action,
+    entities: List[Entity],
+    interaction_radius: int = 1,
+) -> List[Tuple[Entity, float, int]]:
+    """Compute triggered interaction events including hidden state deltas and delays.
+
+    Args:
+        agent_pos: Agent (x, y) coordinates.
+        action: Executed action.
+        entities: List of entities in the environment.
+        interaction_radius: Maximum Manhattan distance to interact with an entity.
+
+    Returns:
+        List[Tuple[Entity, float, int]]: List of (entity, hidden_state_delta, interaction_delay).
+    """
+    if action != Action.INTERACT:
+        return []
+
+    events = []
+    for entity in entities:
+        if not entity.is_interactive:
+            continue
+        manhattan_dist = abs(entity.position[0] - agent_pos[0]) + abs(entity.position[1] - agent_pos[1])
+        if manhattan_dist <= interaction_radius:
+            events.append((entity, entity.hidden_state_delta, entity.interaction_delay))
+
+    return events
+
+
 def compute_interaction_delta(
     agent_pos: Tuple[int, int],
     action: Action,
@@ -83,20 +114,12 @@ def compute_interaction_delta(
     Returns:
         Tuple[float, bool]: (total_state_delta, interaction_occurred)
     """
-    if action != Action.INTERACT:
+    events = compute_interaction_events(agent_pos, action, entities, interaction_radius)
+    if not events:
         return 0.0, False
 
-    total_delta = 0.0
-    interacted = False
-
-    for entity in entities:
-        if not entity.is_interactive:
-            continue
-        manhattan_dist = abs(entity.position[0] - agent_pos[0]) + abs(entity.position[1] - agent_pos[1])
-        if manhattan_dist <= interaction_radius:
-            total_delta += entity.hidden_state_delta
-            interacted = True
-
+    total_delta = sum(delta for _, delta, delay in events if delay == 0)
+    interacted = len(events) > 0
     return total_delta, interacted
 
 

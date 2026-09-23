@@ -8,8 +8,9 @@ from typing import Dict, Any, List, Optional, Tuple
 import numpy as np
 
 from models.mlp import PredictiveMLP
+from models.recurrent import RecurrentPredictor
 from evaluation.metrics import compute_all_metrics, compute_baseline_gap, compute_cosine_similarity
-from evaluation.baselines import PersistencePredictor, RandomPredictor, ReactivePredictor
+from evaluation.baselines import PersistencePredictor, RandomPredictor, ReactivePredictor, FeedForwardBaseline
 from learning.dataset import ExperienceDataset
 from learning.collector import TrajectoryCollector
 from environment.world import GridWorld, WorldConfig
@@ -193,4 +194,75 @@ class ModelEvaluator:
             "interaction_intraclass_cohesion": round(inter_intraclass_sim, 4),
             "movement_intraclass_cohesion": round(move_intraclass_sim, 4),
             "distinct_representations_formed": cosine_sim_between_classes < 0.95,
+        }
+
+    def benchmark_sequence_models(
+        self,
+        memory_model: RecurrentPredictor,
+        no_memory_model: PredictiveMLP,
+        X_test_seq: np.ndarray,
+        Y_test_seq: np.ndarray,
+        Y_train_seq: Optional[np.ndarray] = None,
+        seed: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Benchmark Memory model (Model B) against No-Memory baseline (Model A) and trivial baselines.
+
+        Args:
+            memory_model: Trained RecurrentPredictor (Model B).
+            no_memory_model: Trained PredictiveMLP (Model A).
+            X_test_seq: 3D test sequence features of shape (num_episodes, seq_len, in_dim).
+            Y_test_seq: 3D test sequence targets of shape (num_episodes, seq_len, 1).
+            Y_train_seq: Optional training sequence targets for Reactive baseline.
+            seed: Random seed for stochastic baselines.
+
+        Returns:
+            Dict[str, Any]: Comprehensive comparison metrics across models and baselines.
+        """
+        eval_seed = seed if seed is not None else self.seed
+
+        # 1. Model B — Memory Model (RecurrentPredictor)
+        y_memory_pred = memory_model.forward(X_test_seq)
+        memory_metrics = compute_all_metrics(y_memory_pred, Y_test_seq)
+
+        # 2. Model A — No-Memory Baseline (PredictiveMLP)
+        ff_baseline = FeedForwardBaseline(no_memory_model)
+        y_no_memory_pred = ff_baseline.predict(X_test_seq)
+        no_memory_metrics = compute_all_metrics(y_no_memory_pred, Y_test_seq)
+
+        # 3. Persistence Baseline
+        persistence = PersistencePredictor(default_value=0.0)
+        y_persist_pred = persistence.predict(X_test_seq)
+        persist_metrics = compute_all_metrics(y_persist_pred, Y_test_seq)
+
+        # 4. Random Baseline
+        random_pred = RandomPredictor(low=-1.0, high=10.0, seed=eval_seed)
+        y_rand_pred = random_pred.predict(X_test_seq)
+        rand_metrics = compute_all_metrics(y_rand_pred, Y_test_seq)
+
+        # 5. Reactive (Empirical Mean) Baseline
+        mean_val = float(np.mean(Y_train_seq)) if Y_train_seq is not None else float(np.mean(Y_test_seq))
+        reactive = ReactivePredictor(mean_value=mean_val)
+        y_react_pred = reactive.predict(X_test_seq)
+        react_metrics = compute_all_metrics(y_react_pred, Y_test_seq)
+
+        # 6. Comparative Gaps
+        gap_vs_no_memory = compute_baseline_gap(memory_metrics["mse"], no_memory_metrics["mse"])
+        gap_vs_persistence = compute_baseline_gap(memory_metrics["mse"], persist_metrics["mse"])
+        gap_vs_random = compute_baseline_gap(memory_metrics["mse"], rand_metrics["mse"])
+        gap_vs_reactive = compute_baseline_gap(memory_metrics["mse"], react_metrics["mse"])
+
+        return {
+            "memory_model": memory_metrics,
+            "no_memory_model": no_memory_metrics,
+            "persistence_baseline": persist_metrics,
+            "random_baseline": rand_metrics,
+            "reactive_baseline": react_metrics,
+            "memory_vs_no_memory_gap_pct": round(gap_vs_no_memory, 2),
+            "memory_vs_persistence_gap_pct": round(gap_vs_persistence, 2),
+            "memory_vs_random_gap_pct": round(gap_vs_random, 2),
+            "memory_vs_reactive_gap_pct": round(gap_vs_reactive, 2),
+            "beats_no_memory": memory_metrics["mse"] < no_memory_metrics["mse"],
+            "beats_persistence": memory_metrics["mse"] < persist_metrics["mse"],
+            "beats_random": memory_metrics["mse"] < rand_metrics["mse"],
+            "beats_reactive": memory_metrics["mse"] < react_metrics["mse"],
         }

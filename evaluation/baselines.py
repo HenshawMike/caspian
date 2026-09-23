@@ -36,10 +36,15 @@ class PersistencePredictor(BasePredictor):
         self.default_value = float(default_value)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        is_1d = (X.ndim == 1)
-        n_samples = 1 if is_1d else X.shape[0]
-        preds = np.full((n_samples, self.output_dim), self.default_value, dtype=np.float64)
-        return preds.squeeze(0) if is_1d else preds
+        if X.ndim == 1:
+            return np.full((self.output_dim,), self.default_value, dtype=np.float64)
+        elif X.ndim == 2:
+            return np.full((X.shape[0], self.output_dim), self.default_value, dtype=np.float64)
+        elif X.ndim == 3:
+            B, T, _ = X.shape
+            return np.full((B, T, self.output_dim), self.default_value, dtype=np.float64)
+        else:
+            raise ValueError(f"Unsupported input dimension: {X.ndim}")
 
 
 class RandomPredictor(BasePredictor):
@@ -59,10 +64,15 @@ class RandomPredictor(BasePredictor):
         self.rng = np.random.default_rng(seed)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        is_1d = (X.ndim == 1)
-        n_samples = 1 if is_1d else X.shape[0]
-        preds = self.rng.uniform(self.low, self.high, (n_samples, self.output_dim))
-        return preds.squeeze(0) if is_1d else preds
+        if X.ndim == 1:
+            return self.rng.uniform(self.low, self.high, (self.output_dim,))
+        elif X.ndim == 2:
+            return self.rng.uniform(self.low, self.high, (X.shape[0], self.output_dim))
+        elif X.ndim == 3:
+            B, T, _ = X.shape
+            return self.rng.uniform(self.low, self.high, (B, T, self.output_dim))
+        else:
+            raise ValueError(f"Unsupported input dimension: {X.ndim}")
 
 
 class ReactivePredictor(BasePredictor):
@@ -77,7 +87,36 @@ class ReactivePredictor(BasePredictor):
         self.mean_value = float(np.mean(Y_train))
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        is_1d = (X.ndim == 1)
-        n_samples = 1 if is_1d else X.shape[0]
-        preds = np.full((n_samples, self.output_dim), self.mean_value, dtype=np.float64)
-        return preds.squeeze(0) if is_1d else preds
+        if X.ndim == 1:
+            return np.full((self.output_dim,), self.mean_value, dtype=np.float64)
+        elif X.ndim == 2:
+            return np.full((X.shape[0], self.output_dim), self.mean_value, dtype=np.float64)
+        elif X.ndim == 3:
+            B, T, _ = X.shape
+            return np.full((B, T, self.output_dim), self.mean_value, dtype=np.float64)
+        else:
+            raise ValueError(f"Unsupported input dimension: {X.ndim}")
+
+
+class FeedForwardBaseline(BasePredictor):
+    """Model A — No-Memory Baseline.
+
+    A feed-forward model (PredictiveMLP) using only the current observation and current action:
+    y_hat_t = f_theta(O_t, A_t).
+    Has zero persistent internal state or explicit memory across time steps.
+    """
+
+    def __init__(self, model: Any):
+        self.model = model
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        """Predict outcomes for 2D flat or 3D sequence tensors independently per timestep."""
+        if X.ndim == 1 or X.ndim == 2:
+            return self.model.forward(X)
+        elif X.ndim == 3:
+            B, T, D = X.shape
+            X_flat = X.reshape(B * T, D)
+            y_flat = self.model.forward(X_flat)
+            return y_flat.reshape(B, T, -1)
+        else:
+            raise ValueError(f"Unsupported input dimension: {X.ndim}")

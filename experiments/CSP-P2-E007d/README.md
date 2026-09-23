@@ -1,0 +1,28 @@
+# CSP-P2-E007d — d=0 Isolation (Hidden-State Level)
+
+## Phase
+Phase 2 Diagnostic Follow-Up (CSP-P2-E007)
+
+## Summary Results
+```json
+{
+  "experiment_id": "CSP-P2-E007d",
+  "title": "d=0 Isolation (Hidden-State Level)",
+  "seed": 42,
+  "hidden_state_analysis": {
+    "d0_mean_hidden_norm": 4.2357,
+    "d2_mean_hidden_norm": 4.2471,
+    "d0_hidden_variance": 0.0795,
+    "d2_hidden_variance": 0.0833,
+    "d0_prediction_mse": 4.002152,
+    "d2_prediction_mse": 2.19793
+  },
+  "training_distribution": {
+    "total_training_steps": 750,
+    "delayed_consequence_steps": 16,
+    "delayed_consequence_fraction": 0.0213,
+    "note": "d=0 episodes produce immediate consequence steps (no 'waiting' period). Under-representation of d=0 in training could explain the anomaly."
+  },
+  "interpretation": "At d=0, memory hidden state norm=4.236 vs d=2 norm=4.247. Prediction MSE d=0=4.0022 vs d=2=2.1979. d=0 anomaly likely reflects 'wait-for-signal' bias in GRU."
+}
+```

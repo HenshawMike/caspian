@@ -1,0 +1,88 @@
+{
+  "experiment_id": "CSP-P2-E008e",
+  "title": "Final 7-Criteria Reconciliation & Phase 3 Determination",
+  "total_criteria": 7,
+  "criteria_passed": 5,
+  "criteria_table": [
+    {
+      "criterion_id": 1,
+      "title": "Deficit-Step Error Reduction (>70%)",
+      "requirement": "Memory model achieves > 70% error reduction on information-deficit transition steps (Delta E > 0).",
+      "original_result": "36.11% error reduction (FAIL)",
+      "status_after_e007": "Not re-tested in E007",
+      "status_after_e008": "19.05% error reduction vs capacity-matched MLP",
+      "final_status": "FAIL",
+      "notes": "Under capacity-matched control and early stopping, error reduction is 19.05%. Did not reach 70% bar."
+    },
+    {
+      "criterion_id": 2,
+      "title": "Strict Held-Out Superiority",
+      "requirement": "Memory model outperforms no-memory baselines on strictly held-out trajectories.",
+      "original_result": "6.88% gap vs small MLP (PASS)",
+      "status_after_e007": "7.60% gap vs capacity-matched MLP (PASS)",
+      "status_after_e008": "7.60% gap confirmed under early stopping (PASS)",
+      "final_status": "PASS",
+      "notes": "Memory advantage survives capacity matching and early stopping."
+    },
+    {
+      "criterion_id": 3,
+      "title": "8-Seed Reproducibility",
+      "requirement": "Results are reproducible across 8 independent random seeds with consistent superiority.",
+      "original_result": "Claimed 8/8, raw data showed 7/8 (FAIL)",
+      "status_after_e007": "Not re-tested across 8 seeds in E007",
+      "status_after_e008": "Win rate 7/8 against capacity-matched baseline",
+      "final_status": "PARTIALLY MET",
+      "notes": "Corrected win rate is 7/8. Consistent superiority=False."
+    },
+    {
+      "criterion_id": 4,
+      "title": "Temporal Retention Horizon (d in [0, 8])",
+      "requirement": "Memory model evaluates advantage across delays d in [0, 1, 2, 4, 8].",
+      "original_result": "Evaluated; advantage grew with delay d >= 1 (PASS)",
+      "status_after_e007": "Zero-shot transfer evaluated; d=0 anomaly isolated",
+      "status_after_e008": "Canonical per-delay sweep evaluated against capacity-matched baseline (PASS)",
+      "final_status": "PASS",
+      "notes": "Memory advantage maintained across all delays d in {1, 2, 4, 8}."
+    },
+    {
+      "criterion_id": 5,
+      "title": "Unseen Delay Generalization (d in {3, 6})",
+      "requirement": "Memory model generalizes to out-of-distribution unseen delays d=3 (interpolation) and d=6 (extrapolation).",
+      "original_result": "Failed at both d=3 and d=6 (FAIL)",
+      "status_after_e007": "Zero-shot transfer passed with early stopping (PASS/UNRECONCILED)",
+      "status_after_e008": "Canonical pooled training with early stopping passed at d=3 and d=6 (PASS)",
+      "final_status": "PASS",
+      "notes": "Canonical pooled training with early stopping yields d=3 beats persistence: True, d=6 beats persistence: True."
+    },
+    {
+      "criterion_id": 6,
+      "title": "Episode Boundary Memory Isolation",
+      "requirement": "Strict episode boundary memory isolation (zero cross-episode state contamination).",
+      "original_result": "0.0 cross-episode leak (PASS)",
+      "status_after_e007": "Verified (PASS)",
+      "status_after_e008": "Verified (PASS)",
+      "final_status": "PASS",
+      "notes": "State buffers and hidden activations clear 100% on reset."
+    },
+    {
+      "criterion_id": 7,
+      "title": "Semantic Firewall Zero-Leakage Compliance",
+      "requirement": "Zero forbidden semantic tokens in observations, containers, or serialization.",
+      "original_result": "0 violations across 1,000 steps (PASS)",
+      "status_after_e007": "Verified (PASS)",
+      "status_after_e008": "Verified (PASS)",
+      "final_status": "PASS",
+      "notes": "100% semantic purity maintained."
+    }
+  ],
+  "scientific_conclusion": "PARTIALLY SUPPORTED",
+  "phase3_status": {
+    "is_justified": false,
+    "decision": "PHASE 3 CONDITIONALLY BLOCKED",
+    "blocking_items": [
+      "Deficit-Step Error Reduction (>70%)",
+      "8-Seed Reproducibility"
+    ],
+    "remediation_guidance": "Criteria failing or partially met: Deficit-Step Error Reduction (>70%), 8-Seed Reproducibility."
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "experiment_id": "CSP-P2-E006",
+  "title": "Semantic Firewall Audit & Representation Integrity",
+  "audit_findings": [
+    {
+      "component": "Environment Observation at Reset",
+      "status": "PASSED",
+      "leaks": 0
+    },
+    {
+      "component": "Delayed Transition Steps (6 steps)",
+      "status": "PASSED",
+      "leaks": 0
+    },
+    {
+      "component": "InternalMemory Container & Serialization",
+      "status": "PASSED",
+      "leaks": 0
+    },
+    {
+      "component": "RecurrentPredictor Model State & Parameters",
+      "status": "PASSED",
+      "leaks": 0
+    },
+    {
+      "component": "Sequential Experience Datasets",
+      "status": "PASSED",
+      "leaks": 0
+    }
+  ],
+  "all_audits_passed": true,
+  "forbidden_tokens_checked": [
+    "bad",
+    "beneficial",
+    "danger",
+    "enemy",
+    "expected_outcome",
+    "food",
+    "goal",
+    "good",
+    "harmful",
+    "hazard",
+    "negative",
+    "positive",
+    "resource",
+    "reward",
+    "target",
+    "threat"
+  ],
+  "firewall_integrity_verified": true
+}
