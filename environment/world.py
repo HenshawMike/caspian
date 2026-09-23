@@ -277,6 +277,7 @@ class GridWorld:
             "timestep": self._timestep,
             "collision": self._collision,
             "interaction": self._interaction_occurred,
+            "interaction_occurred": self._interaction_occurred,
             "pending_events_count": len(self._pending_events),
         }
 

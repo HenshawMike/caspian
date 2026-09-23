@@ -1327,6 +1327,39 @@ def generate_p2_e007_master_docx_report(
 # CSP-P2-E008 Report Generators (Reproducibility & 7-Criteria Reconciliation)
 # ---------------------------------------------------------------------------
 
+def _set_document_margins(doc: docx.Document) -> None:
+    for s in doc.sections:
+        s.top_margin = Inches(0.8)
+        s.bottom_margin = Inches(0.8)
+        s.left_margin = Inches(0.8)
+        s.right_margin = Inches(0.8)
+
+
+def _create_styled_table(doc: docx.Document, headers: List[str], rows: List[Any]) -> None:
+    table = doc.add_table(rows=len(rows) + 1, cols=len(headers))
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    hdr_row = table.rows[0]
+    for col_idx, h in enumerate(headers):
+        cell = hdr_row.cells[col_idx]
+        _set_cell_background(cell, "1B365D")
+        _set_cell_margins(cell, 80, 80, 100, 100)
+        p = cell.paragraphs[0]
+        r = p.add_run(str(h))
+        r.font.bold = True
+        r.font.size = Pt(9.5)
+        r.font.color.rgb = RGBColor(255, 255, 255)
+    for row_idx, r_data in enumerate(rows):
+        row = table.rows[row_idx + 1]
+        bg = "F9FAFB" if row_idx % 2 == 0 else "FFFFFF"
+        for col_idx, val in enumerate(r_data):
+            cell = row.cells[col_idx]
+            _set_cell_background(cell, bg)
+            _set_cell_margins(cell, 60, 60, 80, 80)
+            p = cell.paragraphs[0]
+            r = p.add_run(str(val))
+            r.font.size = Pt(9.0)
+
+
 def generate_p2_e008_individual_docx_report(
     experiment_id: str,
     results: Dict[str, Any],
@@ -1609,6 +1642,265 @@ def generate_p2_e008_master_docx_report(
         f"Phase 3 Status: {e008e.get('phase3_status', {}).get('decision')}\n\n"
         f"Remediation / Justification Guidance: {e008e.get('phase3_status', {}).get('remediation_guidance')}"
     )
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    doc.save(output_path)
+    return os.path.abspath(output_path)
+
+
+# ---------------------------------------------------------------------------
+# CSP-P2-E009 Report Generators (2x2 Factorial Confound Isolation & Event Weighting)
+# ---------------------------------------------------------------------------
+
+def generate_p2_e009_individual_docx_report(
+    experiment_id: str,
+    results: Dict[str, Any],
+    output_path: str,
+) -> str:
+    """Generate an individual Word (.docx) report for a CSP-P2-E009 sub-experiment."""
+    doc = docx.Document()
+    _set_document_margins(doc)
+
+    title = results.get("title", f"CSP-P2-{experiment_id}")
+    p = doc.add_paragraph()
+    run = p.add_run(f"Project Caspian — {experiment_id}: {title}")
+    run.font.size = Pt(18)
+    run.font.bold = True
+    run.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
+
+    p_meta = doc.add_paragraph()
+    p_meta.add_run(f"Experiment ID: {experiment_id} | Phase: Phase 2 — Memory & Persistence (CSP-P2-E009)\n")
+    p_meta.add_run("Focus: 2x2 Factorial Confound Isolation, Event-Weighted Loss & Frozen Criteria Assessment")
+
+    def add_h(text):
+        h = doc.add_paragraph()
+        r = h.add_run(text)
+        r.font.size = Pt(13)
+        r.font.bold = True
+        r.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
+        return h
+
+    # Section 1: Executive Summary
+    add_h("1. Executive Summary")
+    p = doc.add_paragraph()
+    if experiment_id == "CSP-P2-E009a":
+        p.add_run(
+            "This experiment evaluates a predefined 2x2 factorial intervention across all 8 seeds to isolate the "
+            "effects of Event-Weighted Loss (w_event=3.0) and Balanced Trajectory Collection (min 2 interactions/ep) "
+            "against the capacity-matched MLP baseline (6,748 params vs GRU 6,753 params)."
+        )
+    elif experiment_id == "CSP-P2-E009b":
+        p.add_run(
+            "This experiment evaluates predefined loss-weight sensitivity conditions (w_event in {3.0, 4.0, 5.0}) "
+            "under balanced collection across all 8 seeds to assess deficit error reduction and standard-step stability."
+        )
+    elif experiment_id == "CSP-P2-E009c":
+        p.add_run(
+            "This experiment evaluates temporal retention horizon scaling (d in [0..8]) and canonical out-of-distribution "
+            "generalization (d in {3, 6}) under the primary E009 condition."
+        )
+    elif experiment_id == "CSP-P2-E009d":
+        p.add_run(
+            "This experiment verifies strict episode boundary memory isolation (0 cross-episode leaks) and semantic firewall "
+            "compliance (0 forbidden token violations)."
+        )
+    elif experiment_id == "CSP-P2-E009e":
+        p.add_run(
+            "This document presents the definitive frozen Phase 2 Acceptance Criteria assessment and paired statistical "
+            "analysis across all 8 matched seeds."
+        )
+
+    # Section 2: Numerical Results & Tables
+    add_h("2. Empirical Results & Findings")
+    if experiment_id == "CSP-P2-E009a":
+        sum_cond = results.get("summary_by_condition", {})
+        effects = results.get("factorial_effects_on_deficit_reduction_pp", {})
+
+        headers = ["2x2 Experimental Condition", "Collection Protocol", "Loss Weight (w_event)", "Deficit Error Reduction %", "Overall Advantage Gap %", "Win Rate", "Seed 4 Won?"]
+        rows = [
+            ("Condition A (Control)", "Original E008", "1.0 (Standard MSE)", f"{sum_cond.get('Condition_A_Control', {}).get('mean_deficit_error_reduction_pct')}%", f"{sum_cond.get('Condition_A_Control', {}).get('mean_overall_gap_pct')}%", sum_cond.get('Condition_A_Control', {}).get('win_rate', ''), str(sum_cond.get('Condition_A_Control', {}).get('seed_4_metrics', {}).get('gru_beats_mlp'))),
+            ("Condition B (Balanced-Only)", "Balanced (>=2/ep)", "1.0 (Standard MSE)", f"{sum_cond.get('Condition_B_BalancedOnly', {}).get('mean_deficit_error_reduction_pct')}%", f"{sum_cond.get('Condition_B_BalancedOnly', {}).get('mean_overall_gap_pct')}%", sum_cond.get('Condition_B_BalancedOnly', {}).get('win_rate', ''), str(sum_cond.get('Condition_B_BalancedOnly', {}).get('seed_4_metrics', {}).get('gru_beats_mlp'))),
+            ("Condition C (Weighted-Only)", "Original E008", "3.0 (Event-Weighted)", f"{sum_cond.get('Condition_C_WeightedOnly', {}).get('mean_deficit_error_reduction_pct')}%", f"{sum_cond.get('Condition_C_WeightedOnly', {}).get('mean_overall_gap_pct')}%", sum_cond.get('Condition_C_WeightedOnly', {}).get('win_rate', ''), str(sum_cond.get('Condition_C_WeightedOnly', {}).get('seed_4_metrics', {}).get('gru_beats_mlp'))),
+            ("Condition D (Full E009)", "Balanced (>=2/ep)", "3.0 (Event-Weighted)", f"{sum_cond.get('Condition_D_FullE009', {}).get('mean_deficit_error_reduction_pct')}%", f"{sum_cond.get('Condition_D_FullE009', {}).get('mean_overall_gap_pct')}%", sum_cond.get('Condition_D_FullE009', {}).get('win_rate', ''), str(sum_cond.get('Condition_D_FullE009', {}).get('seed_4_metrics', {}).get('gru_beats_mlp'))),
+        ]
+        _create_styled_table(doc, headers, rows)
+
+        p = doc.add_paragraph()
+        p.add_run(f"\nFactorial Effect Decomposition on Deficit Error Reduction:\n")
+        p.add_run(f"  - Collection Effect (B - A): {effects.get('collection_effect_B_minus_A'):+.2f} percentage points\n")
+        p.add_run(f"  - Loss Weight Effect (C - A): {effects.get('loss_effect_C_minus_A'):+.2f} percentage points\n")
+        p.add_run(f"  - Combined Effect (D - A): {effects.get('combined_effect_D_minus_A'):+.2f} percentage points\n")
+        p.add_run(f"  - Interaction Effect: {effects.get('interaction_effect'):+.2f} percentage points\n")
+
+    elif experiment_id == "CSP-P2-E009b":
+        sw = results.get("sweep_summary", {})
+        headers = ["Event Loss Weight (w_event)", "Mean Deficit Error Reduction %", "Mean Overall Advantage Gap %", "Standard Step GRU MSE", "Win Rate"]
+        rows = [
+            (f"w_event = {v.get('w_event')}", f"{v.get('mean_deficit_error_reduction_pct')}%", f"{v.get('mean_overall_gap_pct')}%", f"{v.get('mean_standard_step_mse_gru'):.6f}", v.get('win_rate'))
+            for k, v in sw.items()
+        ]
+        _create_styled_table(doc, headers, rows)
+
+    elif experiment_id == "CSP-P2-E009c":
+        ds = results.get("delay_sweep", [])
+        ood = results.get("ood_generalization", {})
+        headers = ["Temporal Delay (d)", "Memory GRU MSE", "Matched MLP MSE", "Advantage Gap %", "GRU Beats MLP"]
+        rows = [
+            (str(r["delay"]), f"{r['memory_gru_mse']:.6f}", f"{r['matched_mlp_mse']:.6f}", f"{r['advantage_gap_pct']:.2f}%", str(r["gru_beats_mlp"]))
+            for r in ds
+        ]
+        _create_styled_table(doc, headers, rows)
+
+        p = doc.add_paragraph()
+        p.add_run("\nOut-of-Distribution Delay Generalization:\n")
+        headers_ood = ["Condition", "Type", "Memory MSE", "Persistence Baseline MSE", "Advantage vs Persist %", "Beats Persistence"]
+        rows_ood = [
+            (f"Delay d={v['delay']}", v['type'], f"{v['memory_mse']:.6f}", f"{v['persistence_mse']:.6f}", f"{v['gap_vs_persistence_pct']:.2f}%", str(v['beats_persistence']))
+            for k, v in ood.items()
+        ]
+        _create_styled_table(doc, headers_ood, rows_ood)
+
+    elif experiment_id == "CSP-P2-E009d":
+        p = doc.add_paragraph()
+        p.add_run(f"Boundary Isolation Perfect: {results.get('boundary_isolation', {}).get('isolation_perfect')}\n")
+        p.add_run(f"Semantic Firewall Passed: {results.get('semantic_firewall', {}).get('firewall_passed')} (0 violations across {results.get('semantic_firewall', {}).get('steps_audited')} steps)")
+
+    elif experiment_id == "CSP-P2-E009e":
+        table = results.get("criteria_table", [])
+        p_stats = results.get("paired_statistics_8_seeds", {})
+
+        p = doc.add_paragraph()
+        p.add_run(f"Paired Statistical Test across 8 Matched Seeds (Matched MLP vs GRU):\n")
+        p.add_run(f"  - Mean MSE Difference (MLP - GRU): {p_stats.get('mean_difference_mlp_minus_gru'):.6f} (positive = GRU outperforms)\n")
+        p.add_run(f"  - Paired t-statistic: {p_stats.get('t_statistic')}, p-value: {p_stats.get('p_value'):.4e}\n")
+        p.add_run(f"  - 95% Confidence Interval: {p_stats.get('confidence_interval_95_pct')}\n\n")
+
+        headers = ["#", "Frozen Criterion Title", "E008 Baseline", "E009 Result", "Final Status"]
+        rows = [
+            (str(c["criterion_id"]), c["title"], c["e008_baseline_result"], c["e009_result"], c["final_status"])
+            for c in table
+        ]
+        _create_styled_table(doc, headers, rows)
+
+        p2 = doc.add_paragraph()
+        p2.add_run(f"\nFinal Scientific Conclusion: {results.get('scientific_conclusion')}")
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    doc.save(output_path)
+    return os.path.abspath(output_path)
+
+
+def generate_p2_e009_master_docx_report(
+    all_e009_results: Dict[str, Any],
+    output_path: str,
+) -> str:
+    """Generate the comprehensive master Word (.docx) report for CSP-P2-E009."""
+    doc = docx.Document()
+    _set_document_margins(doc)
+
+    p = doc.add_paragraph()
+    run = p.add_run("Project Caspian — CSP-P2-E009 Master Scientific Report")
+    run.font.size = Pt(20)
+    run.font.bold = True
+    run.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
+
+    p_sub = doc.add_paragraph()
+    p_sub.add_run("2x2 Factorial Confound Isolation, Event-Weighted Loss & Frozen Criteria Assessment\n")
+    p_sub.add_run("Phase: Phase 2 — Memory & Persistence | Standard Scientific Record")
+
+    def add_heading(text):
+        h = doc.add_paragraph()
+        r = h.add_run(text)
+        r.font.size = Pt(14)
+        r.font.bold = True
+        r.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
+        return h
+
+    # Section 1: Executive Summary & Objective
+    add_heading("1. Executive Summary & Research Hypothesis")
+    p = doc.add_paragraph()
+    p.add_run(
+        "CSP-P2-E009 tested the engineering hypothesis that weak deficit-step performance (19.05% in E008c) and the "
+        "Seed 4 inversion were caused by loss dilution (zero-change steps overwhelming sparse consequences) and "
+        "sparse exploratory interaction exposure. Using a 2x2 factorial experimental design, E009 isolated the causal "
+        "contributions of event-weighted loss (w_event=3.0) and balanced interaction collection (min 2 interactions/ep) "
+        "while evaluating against the strictly frozen Phase 2 Acceptance Criteria."
+    )
+
+    # Section 2: 2x2 Factorial Results
+    add_heading("2. CSP-P2-E009a: 2x2 Factorial Intervention Analysis")
+    e009a = all_e009_results.get("CSP-P2-E009a", {})
+    sum_cond = e009a.get("summary_by_condition", {})
+    effects = e009a.get("factorial_effects_on_deficit_reduction_pp", {})
+
+    headers = ["2x2 Experimental Condition", "Collection Protocol", "Loss Weight (w_event)", "Deficit Error Reduction %", "Overall Advantage Gap %", "Win Rate", "Seed 4 Won?"]
+    rows = [
+        ("Condition A (Control)", "Original E008", "1.0 (Standard MSE)", f"{sum_cond.get('Condition_A_Control', {}).get('mean_deficit_error_reduction_pct')}%", f"{sum_cond.get('Condition_A_Control', {}).get('mean_overall_gap_pct')}%", sum_cond.get('Condition_A_Control', {}).get('win_rate', ''), str(sum_cond.get('Condition_A_Control', {}).get('seed_4_metrics', {}).get('gru_beats_mlp'))),
+        ("Condition B (Balanced-Only)", "Balanced (>=2/ep)", "1.0 (Standard MSE)", f"{sum_cond.get('Condition_B_BalancedOnly', {}).get('mean_deficit_error_reduction_pct')}%", f"{sum_cond.get('Condition_B_BalancedOnly', {}).get('mean_overall_gap_pct')}%", sum_cond.get('Condition_B_BalancedOnly', {}).get('win_rate', ''), str(sum_cond.get('Condition_B_BalancedOnly', {}).get('seed_4_metrics', {}).get('gru_beats_mlp'))),
+        ("Condition C (Weighted-Only)", "Original E008", "3.0 (Event-Weighted)", f"{sum_cond.get('Condition_C_WeightedOnly', {}).get('mean_deficit_error_reduction_pct')}%", f"{sum_cond.get('Condition_C_WeightedOnly', {}).get('mean_overall_gap_pct')}%", sum_cond.get('Condition_C_WeightedOnly', {}).get('win_rate', ''), str(sum_cond.get('Condition_C_WeightedOnly', {}).get('seed_4_metrics', {}).get('gru_beats_mlp'))),
+        ("Condition D (Full E009)", "Balanced (>=2/ep)", "3.0 (Event-Weighted)", f"{sum_cond.get('Condition_D_FullE009', {}).get('mean_deficit_error_reduction_pct')}%", f"{sum_cond.get('Condition_D_FullE009', {}).get('mean_overall_gap_pct')}%", sum_cond.get('Condition_D_FullE009', {}).get('win_rate', ''), str(sum_cond.get('Condition_D_FullE009', {}).get('seed_4_metrics', {}).get('gru_beats_mlp'))),
+    ]
+    _create_styled_table(doc, headers, rows)
+
+    p = doc.add_paragraph()
+    p.add_run(f"\nFactorial Effect Decomposition on Deficit Error Reduction:\n")
+    p.add_run(f"  - Collection Effect (B - A): {effects.get('collection_effect_B_minus_A'):+.2f} percentage points\n")
+    p.add_run(f"  - Loss Weight Effect (C - A): {effects.get('loss_effect_C_minus_A'):+.2f} percentage points\n")
+    p.add_run(f"  - Combined Effect (D - A): {effects.get('combined_effect_D_minus_A'):+.2f} percentage points\n")
+    p.add_run(f"  - Interaction Effect: {effects.get('interaction_effect'):+.2f} percentage points\n")
+
+    # Section 3: Predefined Sensitivity Analysis
+    add_heading("3. CSP-P2-E009b: Predefined Loss Weight Sensitivity Analysis")
+    e009b = all_e009_results.get("CSP-P2-E009b", {})
+    sw = e009b.get("sweep_summary", {})
+    headers_sw = ["Event Loss Weight (w_event)", "Mean Deficit Error Reduction %", "Mean Overall Advantage Gap %", "Standard Step GRU MSE", "Win Rate"]
+    rows_sw = [
+        (f"w_event = {v.get('w_event')}", f"{v.get('mean_deficit_error_reduction_pct')}%", f"{v.get('mean_overall_gap_pct')}%", f"{v.get('mean_standard_step_mse_gru'):.6f}", v.get('win_rate'))
+        for k, v in sw.items()
+    ]
+    _create_styled_table(doc, headers_sw, rows_sw)
+
+    # Section 4: Delay Scaling & Generalization
+    add_heading("4. CSP-P2-E009c: Delay Scaling & Generalization")
+    e009c = all_e009_results.get("CSP-P2-E009c", {})
+    ds = e009c.get("delay_sweep", [])
+    ood = e009c.get("ood_generalization", {})
+    headers_ds = ["Temporal Delay (d)", "Memory GRU MSE", "Matched MLP MSE", "Advantage Gap %", "GRU Beats MLP"]
+    rows_ds = [
+        (str(r["delay"]), f"{r['memory_gru_mse']:.6f}", f"{r['matched_mlp_mse']:.6f}", f"{r['advantage_gap_pct']:.2f}%", str(r["gru_beats_mlp"]))
+        for r in ds
+    ]
+    _create_styled_table(doc, headers_ds, rows_ds)
+
+    p = doc.add_paragraph()
+    p.add_run("\nOut-of-Distribution Generalization:\n")
+    headers_ood = ["Condition", "Type", "Memory MSE", "Persistence Baseline MSE", "Advantage vs Persist %", "Beats Persistence"]
+    rows_ood = [
+        (f"Delay d={v['delay']}", v['type'], f"{v['memory_mse']:.6f}", f"{v['persistence_mse']:.6f}", f"{v['gap_vs_persistence_pct']:.2f}%", str(v['beats_persistence']))
+        for k, v in ood.items()
+    ]
+    _create_styled_table(doc, headers_ood, rows_ood)
+
+    # Section 5: Frozen Phase 2 Acceptance Criteria Assessment
+    add_heading("5. Final Frozen Phase 2 Acceptance Criteria Assessment")
+    e009e = all_e009_results.get("CSP-P2-E009e", {})
+    table = e009e.get("criteria_table", [])
+    p_stats = e009e.get("paired_statistics_8_seeds", {})
+
+    p = doc.add_paragraph()
+    p.add_run(f"Paired Statistical Test across 8 Matched Seeds (Capacity-Matched MLP vs GRU):\n")
+    p.add_run(f"  - Mean MSE Difference (MLP - GRU): {p_stats.get('mean_difference_mlp_minus_gru'):.6f} (t = {p_stats.get('t_statistic')}, p = {p_stats.get('p_value'):.4e})\n")
+    p.add_run(f"  - 95% Confidence Interval: {p_stats.get('confidence_interval_95_pct')}\n\n")
+
+    headers_crit = ["#", "Frozen Criterion Title", "E008 Baseline", "E009 Result", "Final Status"]
+    rows_crit = [
+        (str(c["criterion_id"]), c["title"], c["e008_baseline_result"], c["e009_result"], c["final_status"])
+        for c in table
+    ]
+    _create_styled_table(doc, headers_crit, rows_crit)
+
+    p2 = doc.add_paragraph()
+    p2.add_run(f"\nFinal Scientific Conclusion: {e009e.get('scientific_conclusion')}")
 
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     doc.save(output_path)

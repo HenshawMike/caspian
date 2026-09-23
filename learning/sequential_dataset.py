@@ -192,3 +192,147 @@ def collect_sequential_trajectories(
         dataset.add_episode(episode)
 
     return dataset
+
+
+def collect_balanced_sequential_trajectories(
+    world_config: WorldConfig,
+    num_episodes: int = 20,
+    steps_per_episode: int = 30,
+    interaction_prob: float = 0.25,
+    min_interactions_per_episode: int = 2,
+    max_resample_attempts: int = 20,
+    seed: int = 42,
+) -> Tuple[SequentialExperienceDataset, Dict[str, Any]]:
+    """Collect exploratory sequential trajectories enforcing a minimum valid interaction count.
+
+    Uses bounded deterministic resampling if an episode does not reach min_interactions_per_episode.
+    Tracks and returns comprehensive collection statistics for distribution auditing.
+
+    Args:
+        world_config: World configuration including delay parameters.
+        num_episodes: Number of independent episodes to collect.
+        steps_per_episode: Number of transitions per episode.
+        interaction_prob: Probability of sampling Action.INTERACT during random exploration.
+        min_interactions_per_episode: Minimum valid interactions required per episode (default 2).
+        max_resample_attempts: Maximum retry attempts per episode before accepting best effort (default 20).
+        seed: Base seed for reproducible data generation.
+
+    Returns:
+        Tuple[SequentialExperienceDataset, Dict[str, Any]]:
+            - Populated sequential dataset.
+            - Audit dictionary with per-episode and aggregate distribution statistics.
+    """
+    dataset = SequentialExperienceDataset()
+    movement_actions = [Action.UP, Action.DOWN, Action.LEFT, Action.RIGHT, Action.NOOP]
+    episode_audit_records = []
+    total_consequence_steps = 0
+    total_interaction_events = 0
+    episodes_interactions = []
+
+    for ep in range(num_episodes):
+        base_ep_seed = seed + ep * 1000 + 7
+        best_episode = None
+        best_interaction_count = -1
+        best_attempt_record = None
+        attempt_history = []
+        accepted = False
+
+        for attempt in range(max_resample_attempts):
+            # Use a prime-stride to maximize seed diversity and avoid clustering
+            attempt_seed = base_ep_seed if attempt == 0 else (base_ep_seed + attempt * 104729 + 37)
+            attempt_rng = random.Random(attempt_seed)
+
+            world = GridWorld(config=world_config)
+            obs = world.reset(seed=attempt_seed)
+
+            episode = TrajectoryEpisode(
+                episode_id=ep,
+                delay=world_config.default_interaction_delay,
+                metadata={"seed": attempt_seed, "attempt": attempt},
+            )
+
+            ep_interactions = 0
+            ep_consequences = 0
+
+            for step_idx in range(steps_per_episode):
+                if attempt_rng.random() < interaction_prob:
+                    act = Action.INTERACT
+                else:
+                    act = attempt_rng.choice(movement_actions)
+
+                next_obs, delta, done, info = world.step(act)
+
+                if info.get("interaction_occurred", False):
+                    ep_interactions += 1
+                if delta > 0.0:
+                    ep_consequences += 1
+
+                transition = Transition(
+                    obs=obs,
+                    action=act,
+                    state_delta=delta,
+                    next_obs=next_obs,
+                    done=done,
+                    info=info,
+                )
+                episode.transitions.append(transition)
+                obs = next_obs
+
+                if done:
+                    break
+
+            attempt_record = {
+                "episode_id": ep,
+                "attempt_number": attempt + 1,
+                "offset_seed": attempt_seed,
+                "interaction_count": ep_interactions,
+                "consequence_count": ep_consequences,
+                "met_requirement": ep_interactions >= min_interactions_per_episode,
+            }
+            attempt_history.append(attempt_record)
+
+            if ep_interactions > best_interaction_count:
+                best_interaction_count = ep_interactions
+                best_episode = episode
+                best_attempt_record = attempt_record
+
+            if ep_interactions >= min_interactions_per_episode:
+                accepted = True
+                break
+
+
+        final_episode = best_episode
+        episode_audit_records.append({
+            "episode_id": ep,
+            "base_seed": base_ep_seed,
+            "final_seed": final_episode.metadata.get("seed"),
+            "attempts_used": len(attempt_history),
+            "accepted_target_met": accepted,
+            "interaction_count": best_interaction_count,
+            "consequence_count": best_attempt_record["consequence_count"],
+            "attempt_history": attempt_history,
+        })
+
+        episodes_interactions.append(best_interaction_count)
+        total_interaction_events += best_interaction_count
+        total_consequence_steps += best_attempt_record["consequence_count"]
+        dataset.add_episode(final_episode)
+
+    total_timesteps = dataset.total_transitions
+    audit_summary = {
+        "seed": seed,
+        "total_episodes": num_episodes,
+        "total_timesteps": total_timesteps,
+        "total_interaction_events": total_interaction_events,
+        "interaction_rate": round(total_interaction_events / total_timesteps, 4) if total_timesteps > 0 else 0.0,
+        "mean_interactions_per_episode": round(float(np.mean(episodes_interactions)), 2),
+        "median_interactions_per_episode": round(float(np.median(episodes_interactions)), 2),
+        "min_interactions_per_episode": int(np.min(episodes_interactions)) if episodes_interactions else 0,
+        "max_interactions_per_episode": int(np.max(episodes_interactions)) if episodes_interactions else 0,
+        "total_consequence_events": total_consequence_steps,
+        "consequence_rate": round(total_consequence_steps / total_timesteps, 4) if total_timesteps > 0 else 0.0,
+        "all_episodes_met_requirement": all(r["accepted_target_met"] for r in episode_audit_records),
+        "episode_records": episode_audit_records,
+    }
+
+    return dataset, audit_summary
