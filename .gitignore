@@ -1,4 +1,4 @@
 tests/
 logs/
 checkpoints/
-.venv/
+.venv/__pycache__/
