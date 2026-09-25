@@ -1,0 +1,209 @@
+{
+  "experiment_id": "CSP-P0-E001",
+  "phase": "Phase 0 \u2014 Research & Safety Foundation",
+  "created_at": "2026-09-22T00:10:54.006693+00:00",
+  "description": "Formal validation of deterministic 2D artificial environment, semantic firewall, and baseline agents.",
+  "config": {
+    "grid_width": 5,
+    "grid_height": 5,
+    "initial_agent_pos": [
+      0,
+      0
+    ],
+    "initial_entities": [
+      {
+        "entity_id": 1,
+        "entity_type": 1,
+        "position": [
+          2,
+          2
+        ],
+        "is_interactive": true,
+        "is_blocking": false,
+        "hidden_state_delta": 10.0
+      }
+    ],
+    "initial_internal_state": 100.0,
+    "step_penalty": 1.0,
+    "min_internal_state": 0.0,
+    "max_internal_state": 100.0,
+    "max_timesteps": 100,
+    "interaction_radius": 1,
+    "terminate_on_depletion": false,
+    "seed": 42
+  },
+  "commands_executed": [
+    "python3 -m unittest discover -s tests -v",
+    "python3 experiments/deterministic_baseline.py",
+    "python3 experiments/baseline_comparison.py"
+  ],
+  "test_results": {
+    "total_tests": 29,
+    "passed": 29,
+    "failed": 0,
+    "success_rate": 100.0,
+    "details": [
+      "Tests run: 29, Errors: 0, Failures: 0"
+    ]
+  },
+  "trajectories": {},
+  "metrics": {
+    "determinism_experiment": {
+      "seed": 42,
+      "num_resets": 5,
+      "is_deterministic": true,
+      "sha256_hash": "ce150a820737511f8fcaa727c87701e423caa9e70b5e7be6155e85a057957b0b",
+      "action_steps": 15,
+      "trajectory_file": "logs/trajectory_seed_42.json"
+    },
+    "baseline_comparison": {
+      "seeds_evaluated": [
+        42,
+        101,
+        2026,
+        777,
+        999
+      ],
+      "steps_per_run": 50,
+      "random_baseline": {
+        "agent_type": "random",
+        "runs": [
+          {
+            "seed": 42,
+            "steps_executed": 50,
+            "final_energy": 80.0,
+            "average_energy": 90.29,
+            "cumulative_delta": -20.0,
+            "interactions": 3,
+            "collisions": 5
+          },
+          {
+            "seed": 101,
+            "steps_executed": 50,
+            "final_energy": 50.0,
+            "average_energy": 75.0,
+            "cumulative_delta": -50.0,
+            "interactions": 0,
+            "collisions": 7
+          },
+          {
+            "seed": 2026,
+            "steps_executed": 50,
+            "final_energy": 70.0,
+            "average_energy": 84.41,
+            "cumulative_delta": -30.0,
+            "interactions": 2,
+            "collisions": 4
+          },
+          {
+            "seed": 777,
+            "steps_executed": 50,
+            "final_energy": 70.0,
+            "average_energy": 84.41,
+            "cumulative_delta": -30.0,
+            "interactions": 2,
+            "collisions": 10
+          },
+          {
+            "seed": 999,
+            "steps_executed": 50,
+            "final_energy": 50.0,
+            "average_energy": 75.0,
+            "cumulative_delta": -50.0,
+            "interactions": 0,
+            "collisions": 4
+          }
+        ],
+        "summary": {
+          "avg_final_energy": 64.0,
+          "avg_interactions": 1.4,
+          "avg_collisions": 6.0,
+          "avg_cumulative_delta": -36.0
+        }
+      },
+      "oracle_baseline": {
+        "agent_type": "oracle",
+        "runs": [
+          {
+            "seed": 42,
+            "steps_executed": 50,
+            "final_energy": 100.0,
+            "average_energy": 99.88,
+            "cumulative_delta": 0.0,
+            "interactions": 47,
+            "collisions": 0
+          },
+          {
+            "seed": 101,
+            "steps_executed": 50,
+            "final_energy": 100.0,
+            "average_energy": 99.88,
+            "cumulative_delta": 0.0,
+            "interactions": 47,
+            "collisions": 0
+          },
+          {
+            "seed": 2026,
+            "steps_executed": 50,
+            "final_energy": 100.0,
+            "average_energy": 99.88,
+            "cumulative_delta": 0.0,
+            "interactions": 47,
+            "collisions": 0
+          },
+          {
+            "seed": 777,
+            "steps_executed": 50,
+            "final_energy": 100.0,
+            "average_energy": 99.88,
+            "cumulative_delta": 0.0,
+            "interactions": 47,
+            "collisions": 0
+          },
+          {
+            "seed": 999,
+            "steps_executed": 50,
+            "final_energy": 100.0,
+            "average_energy": 99.88,
+            "cumulative_delta": 0.0,
+            "interactions": 47,
+            "collisions": 0
+          }
+        ],
+        "summary": {
+          "avg_final_energy": 100.0,
+          "avg_interactions": 47.0,
+          "avg_collisions": 0.0,
+          "avg_cumulative_delta": 0.0
+        }
+      }
+    }
+  },
+  "semantic_audit": {
+    "passed": true,
+    "tokens_scanned": [
+      "harmful",
+      "enemy",
+      "target",
+      "beneficial",
+      "negative",
+      "bad",
+      "danger",
+      "reward",
+      "hazard",
+      "expected_outcome",
+      "resource",
+      "threat",
+      "positive",
+      "food",
+      "goal",
+      "good"
+    ],
+    "leakages_found": 0,
+    "details": "Zero forbidden tokens found across observation space, agents, and logs."
+  },
+  "notes": [
+    "Bitwise deterministic trajectory hash verified across 5 resets: ce150a820737511f8fcaa727c87701e423caa9e70b5e7be6155e85a057957b0b",
+    "Oracle agent achieved 100.0 average final energy vs Random agent 64.0 average final energy."
+  ]
+}

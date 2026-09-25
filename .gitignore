@@ -1,4 +1,4 @@
-tests/
-logs/
-checkpoints/
+# tests/
+# logs/
+# checkpoints/
 .venv/
