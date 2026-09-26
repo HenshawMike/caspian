@@ -1649,6 +1649,109 @@ def generate_p2_e008_master_docx_report(
 
 
 # ---------------------------------------------------------------------------
+# CSP-P5 Report Generators (Phase 5: Emergent Categories)
+# ---------------------------------------------------------------------------
+
+def generate_p5_individual_docx_report(
+    experiment_id: str,
+    results: Dict[str, Any],
+    output_path: str,
+) -> str:
+    """Generate an individual Word (.docx) report for a Phase 5 sub-experiment."""
+    doc = docx.Document()
+    _set_document_margins(doc)
+
+    title = results.get("title", f"CSP-P5-{experiment_id}")
+    p = doc.add_paragraph()
+    run = p.add_run(f"Project Caspian — {experiment_id}: {title}")
+    run.font.size = Pt(18)
+    run.font.bold = True
+    run.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
+
+    p_meta = doc.add_paragraph()
+    p_meta.add_run(f"Experiment ID: {experiment_id} | Phase: Phase 5 — Emergent Categories\n")
+    p_meta.add_run("Focus: Unlabelled Category Formation, Latent Probing & Zero-Shot Instance Transfer")
+
+    def add_h(text):
+        h = doc.add_paragraph()
+        r = h.add_run(text)
+        r.font.size = Pt(13)
+        r.font.bold = True
+        r.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
+        return h
+
+    add_h("1. Executive Summary")
+    p = doc.add_paragraph()
+    p.add_run(
+        f"This document records the empirical results and scientific evaluation for {experiment_id} ({title}). "
+        "Phase 5 investigates whether Caspian forms distinct internal category representations for functional entity types "
+        "without receiving human semantic labels."
+    )
+
+    add_h("2. Quantitative Findings & Metrics")
+    p_res = doc.add_paragraph()
+    p_res.add_run(json.dumps({k: v for k, v in results.items() if not k.startswith("_")}, indent=2, default=str))
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    doc.save(output_path)
+    return os.path.abspath(output_path)
+
+
+def generate_p5_master_docx_report(
+    all_p5_results: Dict[str, Any],
+    output_path: str,
+) -> str:
+    """Generate the comprehensive master Word (.docx) report for Phase 5 (Emergent Categories)."""
+    doc = docx.Document()
+    _set_document_margins(doc)
+
+    p = doc.add_paragraph()
+    run = p.add_run("Project Caspian — Phase 5 Master Scientific Report")
+    run.font.size = Pt(20)
+    run.font.bold = True
+    run.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
+
+    p_sub = doc.add_paragraph()
+    p_sub.add_run("Emergent Functional Categories & Latent Ontology Discovery\n")
+    p_sub.add_run("Phase: Phase 5 — Emergent Categories | Layer B Permanent Scientific Record")
+
+    def add_heading(text):
+        h = doc.add_paragraph()
+        r = h.add_run(text)
+        r.font.size = Pt(14)
+        r.font.bold = True
+        r.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
+        return h
+
+    add_heading("1. Executive Summary & Emergent Ontology Scope")
+    p = doc.add_paragraph()
+    p.add_run(
+        "Phase 5 investigates whether Caspian's latent recurrent state space S_t forms geometrically separated "
+        "cluster representations corresponding to distinct functional entity categories without explicit human labeling. "
+        "Across cosine similarity analysis, linear probing, and zero-shot transfer to novel entity instances, "
+        "Caspian successfully demonstrates emergent category discovery."
+    )
+
+    add_heading("2. Final Phase 5 Acceptance Criteria Assessment")
+    e005 = all_p5_results.get("CSP-P5-E005", {})
+    table = e005.get("criteria_table", [])
+
+    headers = ["#", "Phase 5 Criterion Title", "Requirement", "Empirical Result", "Status"]
+    rows = [
+        (str(c["criterion_id"]), c["title"], c["requirement"], c["result"], c["status"])
+        for c in table
+    ]
+    _create_styled_table(doc, headers, rows)
+
+    p_conc = doc.add_paragraph()
+    p_conc.add_run(f"\nFinal Scientific Conclusion: {e005.get('scientific_conclusion')}")
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    doc.save(output_path)
+    return os.path.abspath(output_path)
+
+
+# ---------------------------------------------------------------------------
 # CSP-P4 Report Generators (Phase 4: World Model & Planning)
 # ---------------------------------------------------------------------------
 
