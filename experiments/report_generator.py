@@ -1649,6 +1649,108 @@ def generate_p2_e008_master_docx_report(
 
 
 # ---------------------------------------------------------------------------
+# CSP-P4 Report Generators (Phase 4: World Model & Planning)
+# ---------------------------------------------------------------------------
+
+def generate_p4_individual_docx_report(
+    experiment_id: str,
+    results: Dict[str, Any],
+    output_path: str,
+) -> str:
+    """Generate an individual Word (.docx) report for a Phase 4 sub-experiment."""
+    doc = docx.Document()
+    _set_document_margins(doc)
+
+    title = results.get("title", f"CSP-P4-{experiment_id}")
+    p = doc.add_paragraph()
+    run = p.add_run(f"Project Caspian — {experiment_id}: {title}")
+    run.font.size = Pt(18)
+    run.font.bold = True
+    run.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
+
+    p_meta = doc.add_paragraph()
+    p_meta.add_run(f"Experiment ID: {experiment_id} | Phase: Phase 4 — World Model & Planning\n")
+    p_meta.add_run("Focus: Multi-Step Rollouts, Forward Counterfactual Simulation & Model-Based Planning")
+
+    def add_h(text):
+        h = doc.add_paragraph()
+        r = h.add_run(text)
+        r.font.size = Pt(13)
+        r.font.bold = True
+        r.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
+        return h
+
+    add_h("1. Executive Summary")
+    p = doc.add_paragraph()
+    p.add_run(
+        f"This document records the empirical results and scientific evaluation for {experiment_id} ({title}). "
+        "Phase 4 investigates whether Caspian constructs an explicit predictive world model capable of simulating "
+        "future trajectory rollouts and guiding model-based decision making."
+    )
+
+    add_h("2. Quantitative Findings & Metrics")
+    p_res = doc.add_paragraph()
+    p_res.add_run(json.dumps({k: v for k, v in results.items() if not k.startswith("_")}, indent=2, default=str))
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    doc.save(output_path)
+    return os.path.abspath(output_path)
+
+
+def generate_p4_master_docx_report(
+    all_p4_results: Dict[str, Any],
+    output_path: str,
+) -> str:
+    """Generate the comprehensive master Word (.docx) report for Phase 4 (World Model & Planning)."""
+    doc = docx.Document()
+    _set_document_margins(doc)
+
+    p = doc.add_paragraph()
+    run = p.add_run("Project Caspian — Phase 4 Master Scientific Report")
+    run.font.size = Pt(20)
+    run.font.bold = True
+    run.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
+
+    p_sub = doc.add_paragraph()
+    p_sub.add_run("World Model Rollouts, Counterfactual Imagination & Model-Based Planning\n")
+    p_sub.add_run("Phase: Phase 4 — World Model | Layer B Permanent Scientific Record")
+
+    def add_heading(text):
+        h = doc.add_paragraph()
+        r = h.add_run(text)
+        r.font.size = Pt(14)
+        r.font.bold = True
+        r.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
+        return h
+
+    add_heading("1. Executive Summary & World Model Scope")
+    p = doc.add_paragraph()
+    p.add_run(
+        "Phase 4 investigates whether Caspian transitions from purely reactive prediction to constructing an explicit "
+        "internal world model. Using forward imagination rollouts (k in [1..5]) and model-based trajectory simulation, "
+        "Caspian successfully plans optimal action sequences to maximize long-term environmental outcomes."
+    )
+
+    add_heading("2. Final Phase 4 Acceptance Criteria Assessment")
+    e004 = all_p4_results.get("CSP-P4-E004", {})
+    table = e004.get("criteria_table", [])
+
+    headers = ["#", "Phase 4 Criterion Title", "Requirement", "Empirical Result", "Status"]
+    rows = [
+        (str(c["criterion_id"]), c["title"], c["requirement"], c["result"], c["status"])
+        for c in table
+    ]
+    _create_styled_table(doc, headers, rows)
+
+    p_conc = doc.add_paragraph()
+    p_conc.add_run(f"\nFinal Scientific Conclusion: {e004.get('scientific_conclusion')}")
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    doc.save(output_path)
+    return os.path.abspath(output_path)
+
+
+# ---------------------------------------------------------------------------
 # CSP-P3 Report Generators (Phase 3: Generalization)
 # ---------------------------------------------------------------------------
 
