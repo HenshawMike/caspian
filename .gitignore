@@ -1,4 +1,4 @@
-tests/
-logs/
-checkpoints/
-.venv/__pycache__/
+# tests/
+# logs/
+# checkpoints/
+.venv/
