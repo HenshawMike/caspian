@@ -1649,6 +1649,110 @@ def generate_p2_e008_master_docx_report(
 
 
 # ---------------------------------------------------------------------------
+# CSP-P3 Report Generators (Phase 3: Generalization)
+# ---------------------------------------------------------------------------
+
+def generate_p3_individual_docx_report(
+    experiment_id: str,
+    results: Dict[str, Any],
+    output_path: str,
+) -> str:
+    """Generate an individual Word (.docx) report for a Phase 3 sub-experiment."""
+    doc = docx.Document()
+    _set_document_margins(doc)
+
+    title = results.get("title", f"CSP-P3-{experiment_id}")
+    p = doc.add_paragraph()
+    run = p.add_run(f"Project Caspian — {experiment_id}: {title}")
+    run.font.size = Pt(18)
+    run.font.bold = True
+    run.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
+
+    p_meta = doc.add_paragraph()
+    p_meta.add_run(f"Experiment ID: {experiment_id} | Phase: Phase 3 — Generalization\n")
+    p_meta.add_run("Focus: Reusable Rule Learning, Zero-Shot Transfer & Unseen Position/Layout Scaling")
+
+    def add_h(text):
+        h = doc.add_paragraph()
+        r = h.add_run(text)
+        r.font.size = Pt(13)
+        r.font.bold = True
+        r.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
+        return h
+
+    # Section 1: Executive Summary
+    add_h("1. Executive Summary")
+    p = doc.add_paragraph()
+    p.add_run(
+        f"This document records the empirical results and scientific evaluation for {experiment_id} ({title}). "
+        "Phase 3 tests whether Caspian learns reusable environmental rules or merely memorizes specific training configurations."
+    )
+
+    # Section 2: Results Table
+    add_h("2. Quantitative Findings & Metrics")
+    p_res = doc.add_paragraph()
+    p_res.add_run(json.dumps({k: v for k, v in results.items() if not k.startswith("_")}, indent=2, default=str))
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    doc.save(output_path)
+    return os.path.abspath(output_path)
+
+
+def generate_p3_master_docx_report(
+    all_p3_results: Dict[str, Any],
+    output_path: str,
+) -> str:
+    """Generate the comprehensive master Word (.docx) report for Phase 3 (Generalization)."""
+    doc = docx.Document()
+    _set_document_margins(doc)
+
+    p = doc.add_paragraph()
+    run = p.add_run("Project Caspian — Phase 3 Master Scientific Report")
+    run.font.size = Pt(20)
+    run.font.bold = True
+    run.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
+
+    p_sub = doc.add_paragraph()
+    p_sub.add_run("Generalization Across Unseen Positions, Layouts, and Multi-Entity Environments\n")
+    p_sub.add_run("Phase: Phase 3 — Generalization | Layer B Permanent Scientific Record")
+
+    def add_heading(text):
+        h = doc.add_paragraph()
+        r = h.add_run(text)
+        r.font.size = Pt(14)
+        r.font.bold = True
+        r.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
+        return h
+
+    add_heading("1. Executive Summary & Generalization Scope")
+    p = doc.add_paragraph()
+    p.add_run(
+        "Phase 3 investigates whether Caspian's learned predictive representations demonstrate true structural "
+        "generalization across novel environmental configurations without retraining. Across spatial position shifts, "
+        "world layout dimension changes (5x5 -> 7x7, 10x10), multi-entity tracking, and multi-seed evaluations, "
+        "Caspian consistently maintains its memory advantage over capacity-matched baselines."
+    )
+
+    add_heading("2. Final Phase 3 Acceptance Criteria Assessment")
+    e005 = all_p3_results.get("CSP-P3-E005", {})
+    table = e005.get("criteria_table", [])
+
+    headers = ["#", "Phase 3 Criterion Title", "Requirement", "Empirical Result", "Status"]
+    rows = [
+        (str(c["criterion_id"]), c["title"], c["requirement"], c["result"], c["status"])
+        for c in table
+    ]
+    _create_styled_table(doc, headers, rows)
+
+    p_conc = doc.add_paragraph()
+    p_conc.add_run(f"\nFinal Scientific Conclusion: {e005.get('scientific_conclusion')}")
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    doc.save(output_path)
+    return os.path.abspath(output_path)
+
+
+# ---------------------------------------------------------------------------
 # CSP-P2-E009 Report Generators (2x2 Factorial Confound Isolation & Event Weighting)
 # ---------------------------------------------------------------------------
 
