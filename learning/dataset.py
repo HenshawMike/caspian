@@ -54,6 +54,70 @@ def encode_state_action(
     return np.concatenate([obs_vec, act_vec])
 
 
+def encode_state_action_deepsets(
+    obs: Observation,
+    action: Union[Action, int],
+    max_entities: int = 5,
+    num_actions: int = 6,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Structured, permutation-friendly encoding for DeepSetsPredictiveModel.
+
+    Unlike encode_state_action() (which flattens entities into fixed input
+    slots), this keeps entities as a set: a per-slot feature array plus an
+    explicit presence mask, so a permutation-invariant model can pool over
+    only the entities actually present, in any order. entity_id is
+    deliberately excluded from entity_features (an arbitrary instance
+    identifier is not something a reusable rule should condition on).
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray, np.ndarray]:
+            entity_features: (max_entities, 4) -- [entity_type, rel_x, rel_y, distance] per slot.
+            presence_mask: (max_entities,) -- 1.0 where a real entity occupies that slot.
+            global_features: (6 + num_actions,) -- agent/env state concatenated with one-hot action.
+    """
+    if not isinstance(obs, Observation):
+        raise TypeError("encode_state_action_deepsets requires an Observation instance")
+
+    entity_features = np.zeros((max_entities, 4), dtype=np.float64)
+    presence_mask = np.zeros((max_entities,), dtype=np.float64)
+    for i, e in enumerate(obs.entities[:max_entities]):
+        entity_features[i] = [float(e.entity_type), float(e.relative_x), float(e.relative_y), float(e.distance)]
+        presence_mask[i] = 1.0
+
+    global_state = np.array([
+        float(obs.agent_position[0]),
+        float(obs.agent_position[1]),
+        1.0 if obs.collision else 0.0,
+        float(obs.internal_state),
+        float(obs.timestep),
+        float(obs.previous_action if obs.previous_action is not None else -1.0),
+    ], dtype=np.float64)
+    act_vec = one_hot_encode_action(action, num_actions=num_actions)
+    global_features = np.concatenate([global_state, act_vec])
+
+    return entity_features, presence_mask, global_features
+
+
+def encode_world_model_target(obs: Observation, next_obs: Observation) -> np.ndarray:
+    """Full-state transition target for a Phase 4 world model: [dx, dy, d_internal_state].
+
+    Phase 1-3 predict only the scalar internal-state delta. A world model that will be
+    used for multi-step rollout (feeding its own predictions back in as the next input)
+    needs to predict the *whole* next state, not just one scalar -- otherwise there is
+    nothing to reconstruct a next Observation from. Entity positions are not part of this
+    target: entities are static in this environment (verified, not assumed -- see
+    CSP-P4-E001), so a rollout can carry them forward unchanged rather than predict a
+    quantity that is always exactly zero.
+
+    Returns:
+        np.ndarray: [dx, dy, d_internal_state], shape (3,).
+    """
+    dx = float(next_obs.agent_position[0] - obs.agent_position[0])
+    dy = float(next_obs.agent_position[1] - obs.agent_position[1])
+    d_state = float(next_obs.internal_state - obs.internal_state)
+    return np.array([dx, dy, d_state], dtype=np.float64)
+
+
 @dataclass
 class Transition:
     """Single discrete step transition record."""
@@ -78,6 +142,17 @@ class Transition:
     def to_target_vector(self) -> np.ndarray:
         """Return the target state delta [Delta E]."""
         return np.array([self.state_delta], dtype=np.float64)
+
+    def to_deepsets_arrays(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Structured (entity_features, presence_mask, global_features, target) for DeepSetsPredictiveModel."""
+        entity_features, presence_mask, global_features = encode_state_action_deepsets(
+            self.obs, self.action, max_entities=self.max_entities, num_actions=self.num_actions,
+        )
+        return entity_features, presence_mask, global_features, self.to_target_vector()
+
+    def to_world_model_target(self) -> np.ndarray:
+        """Full-state target [dx, dy, d_internal_state] for a Phase 4 world model."""
+        return encode_world_model_target(self.obs, self.next_obs)
 
 
 class ExperienceDataset:
@@ -118,6 +193,39 @@ class ExperienceDataset:
         X = np.stack(x_list, axis=0)
         Y = np.stack(y_list, axis=0)
         return X, Y
+
+    def to_world_model_arrays(self) -> Tuple[np.ndarray, np.ndarray]:
+        """Batched (X, Y) for a Phase 4 world model: same 37-dim input as to_numpy_arrays(),
+        but Y is [dx, dy, d_internal_state] (shape (N, 3)) instead of [d_internal_state] alone.
+        """
+        if not self.transitions:
+            return np.empty((0, 0)), np.empty((0, 0))
+        x_list = [t.to_feature_vector() for t in self.transitions]
+        y_list = [t.to_world_model_target() for t in self.transitions]
+        return np.stack(x_list, axis=0), np.stack(y_list, axis=0)
+
+    def to_deepsets_arrays(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Batched structured arrays for DeepSetsPredictiveModel.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+                entity_features (N, max_entities, 4), presence_mask (N, max_entities),
+                global_features (N, G), Y (N, 1).
+        """
+        if not self.transitions:
+            return (
+                np.empty((0, 0, 4), dtype=np.float64), np.empty((0, 0), dtype=np.float64),
+                np.empty((0, 0), dtype=np.float64), np.empty((0, 0), dtype=np.float64),
+            )
+        entity_list, mask_list, global_list, y_list = [], [], [], []
+        for t in self.transitions:
+            ef, pm, gf, y = t.to_deepsets_arrays()
+            entity_list.append(ef); mask_list.append(pm); global_list.append(gf); y_list.append(y)
+
+        return (
+            np.stack(entity_list, axis=0), np.stack(mask_list, axis=0),
+            np.stack(global_list, axis=0), np.stack(y_list, axis=0),
+        )
 
     def split(
         self,

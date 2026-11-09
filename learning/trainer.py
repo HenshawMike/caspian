@@ -76,6 +76,17 @@ class PredictiveTrainer:
         if num_samples == 0:
             raise ValueError("Training dataset is empty.")
 
+        # Fit input normalization from training data only (never val/test, to avoid
+        # leakage), before any training happens. Root-cause fix for a project-wide
+        # dead-ReLU pathology: internal_state (range 0-100) previously dominated the
+        # pre-activation sum alongside position/distance/flag features (range ~0-5),
+        # driving most hidden units permanently negative early in training. See
+        # models/normalization.py. Every existing caller of model.forward() elsewhere
+        # (baselines, rollout, planning, evaluators) benefits automatically, since
+        # forward() applies this transform internally once it's fit.
+        if hasattr(self.model, "fit_normalizer"):
+            self.model.fit_normalizer(X_train)
+
         train_losses: List[float] = []
         val_losses: List[float] = []
         best_val_loss = float("inf")

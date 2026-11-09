@@ -19,7 +19,6 @@ from environment.observations import Observation, build_observation
 from environment.dynamics import (
     compute_next_position,
     compute_interaction_delta,
-    compute_interaction_events,
     update_internal_state,
 )
 
@@ -38,7 +37,6 @@ class WorldConfig:
             is_interactive=True,
             is_blocking=False,
             hidden_state_delta=10.0,
-            interaction_delay=0,
         )
     ])
     initial_internal_state: float = 100.0
@@ -48,8 +46,12 @@ class WorldConfig:
     max_timesteps: int = 100
     interaction_radius: int = 1
     terminate_on_depletion: bool = False
-    default_interaction_delay: int = 0
     seed: Optional[int] = 42
+    randomize_entity_positions: bool = False
+    allowed_entity_positions: Optional[List[Tuple[int, int]]] = None
+    entity_type_pool: Optional[List[Dict[str, Any]]] = None
+    interact_cost: float = 0.0  # extra internal-state cost of every INTERACT action (action-consequence variation; 0.0 = original behavior)
+    outcome_noise_std: float = 0.0  # Gaussian noise added to interaction outcomes only (0.0 = deterministic, original behavior)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert config to dictionary."""
@@ -65,8 +67,14 @@ class WorldConfig:
             "max_timesteps": self.max_timesteps,
             "interaction_radius": self.interaction_radius,
             "terminate_on_depletion": self.terminate_on_depletion,
-            "default_interaction_delay": self.default_interaction_delay,
             "seed": self.seed,
+            "randomize_entity_positions": self.randomize_entity_positions,
+            "allowed_entity_positions": (
+                [list(p) for p in self.allowed_entity_positions] if self.allowed_entity_positions else None
+            ),
+            "entity_type_pool": self.entity_type_pool,
+            "outcome_noise_std": self.outcome_noise_std,
+            "interact_cost": self.interact_cost,
         }
 
     @classmethod
@@ -76,6 +84,7 @@ class WorldConfig:
             Entity.from_dict(e) for e in data.get("initial_entities", [])
         ]
         agent_pos = tuple(data["initial_agent_pos"]) if data.get("initial_agent_pos") else None
+        allowed_positions = data.get("allowed_entity_positions")
         return cls(
             grid_width=int(data.get("grid_width", 5)),
             grid_height=int(data.get("grid_height", 5)),
@@ -88,8 +97,14 @@ class WorldConfig:
             max_timesteps=int(data.get("max_timesteps", 100)),
             interaction_radius=int(data.get("interaction_radius", 1)),
             terminate_on_depletion=bool(data.get("terminate_on_depletion", False)),
-            default_interaction_delay=int(data.get("default_interaction_delay", 0)),
             seed=data.get("seed", 42),
+            randomize_entity_positions=bool(data.get("randomize_entity_positions", False)),
+            allowed_entity_positions=(
+                [tuple(p) for p in allowed_positions] if allowed_positions else None
+            ),
+            entity_type_pool=data.get("entity_type_pool"),
+            outcome_noise_std=float(data.get("outcome_noise_std", 0.0)),
+            interact_cost=float(data.get("interact_cost", 0.0)),
         )
 
 
@@ -104,12 +119,11 @@ class EnvironmentState:
     interaction_occurred: bool
     last_action: Optional[Action]
     is_terminated: bool
-    pending_events: Tuple[Tuple[int, float], ...]
     seed: Optional[int]
 
 
 class GridWorld:
-    """Deterministic 2D Grid World Environment supporting temporal delayed interactions."""
+    """Deterministic 2D Grid World Environment."""
 
     def __init__(self, config: Optional[WorldConfig] = None):
         self.config = config if config is not None else WorldConfig()
@@ -123,15 +137,12 @@ class GridWorld:
         self._interaction_occurred: bool = False
         self._last_action: Optional[Action] = None
         self._is_terminated: bool = False
-        self._pending_events: List[Tuple[int, float]] = []
 
         # Initialize environment state
         self.reset(seed=self.config.seed)
 
     def reset(self, seed: Optional[int] = None) -> Observation:
         """Reset the world to its initial state deterministically.
-
-        Ensures 100% episode isolation (clears all pending queues and internal memory).
 
         Args:
             seed: Random seed for initialization. If None, uses config.seed.
@@ -161,10 +172,71 @@ class GridWorld:
                 is_interactive=e.is_interactive,
                 is_blocking=e.is_blocking,
                 hidden_state_delta=e.hidden_state_delta,
-                interaction_delay=e.interaction_delay if e.interaction_delay != 0 else self.config.default_interaction_delay,
+                flicker_period=e.flicker_period,
+                flicker_visible_steps=e.flicker_visible_steps,
+                properties=e.properties,
             )
             for e in self.config.initial_entities
         ]
+
+        if self.config.randomize_entity_positions:
+            # Re-place each entity at a fresh random cell each episode (distinct from the
+            # agent's start cell), so a model cannot learn a fixed global position -> outcome
+            # lookup across episodes and must instead track the entity from within-episode
+            # observations (Phase 2 partial-observability requirement).
+            #
+            # When allowed_entity_positions is set (Phase 3 — Generalization), sampling is
+            # restricted to that subset of cells, letting train/test configs use disjoint
+            # position sets to test whether a learned relationship transfers to unseen cells.
+            occupied = {self._agent_pos}
+            new_entities = []
+            candidate_cells = self.config.allowed_entity_positions
+            for e in self._entities:
+                while True:
+                    if candidate_cells:
+                        pos = candidate_cells[self._rng.randint(0, len(candidate_cells) - 1)]
+                    else:
+                        pos = (
+                            self._rng.randint(0, self.config.grid_width - 1),
+                            self._rng.randint(0, self.config.grid_height - 1),
+                        )
+                    if pos not in occupied:
+                        occupied.add(pos)
+                        break
+                new_entities.append(
+                    Entity(
+                        entity_id=e.entity_id, entity_type=e.entity_type, position=pos,
+                        is_interactive=e.is_interactive, is_blocking=e.is_blocking,
+                        hidden_state_delta=e.hidden_state_delta,
+                        flicker_period=e.flicker_period, flicker_visible_steps=e.flicker_visible_steps,
+                        properties=e.properties,
+                    )
+                )
+            self._entities = new_entities
+
+        if self.config.entity_type_pool:
+            # Resample each entity's FUNCTIONAL identity (type code + hidden_state_delta +
+            # interactive/blocking flags) each episode from a pool of templates (Phase 5 --
+            # Emergent Categories). This is independent of position randomization above: it
+            # varies which *kind* of entity appears, not where. entity_id and position are
+            # left untouched here so this composes cleanly with randomize_entity_positions.
+            pool = self.config.entity_type_pool
+            self._entities = [
+                Entity(
+                    entity_id=e.entity_id,
+                    entity_type=int(template["entity_type"]),
+                    position=e.position,
+                    is_interactive=bool(template.get("is_interactive", True)),
+                    is_blocking=bool(template.get("is_blocking", False)),
+                    hidden_state_delta=float(template["hidden_state_delta"]),
+                    flicker_period=e.flicker_period,
+                    flicker_visible_steps=e.flicker_visible_steps,
+                    properties=tuple(float(p) for p in template.get("properties", ())),
+                )
+                for e, template in (
+                    (e, pool[self._rng.randint(0, len(pool) - 1)]) for e in self._entities
+                )
+            ]
 
         self._internal_state = float(self.config.initial_internal_state)
         self._timestep = 0
@@ -172,7 +244,6 @@ class GridWorld:
         self._interaction_occurred = False
         self._last_action = None
         self._is_terminated = False
-        self._pending_events = []
 
         return self.get_observation()
 
@@ -210,46 +281,25 @@ class GridWorld:
             entities=self._entities,
         )
 
-        target_timestep = self._timestep + 1
-
-        # Check for immediate or delayed interaction events
-        interaction_events = compute_interaction_events(
+        # Compute interaction delta and interaction flag
+        interaction_delta, interaction_occurred = compute_interaction_delta(
             agent_pos=new_pos,
             action=validated_action,
             entities=self._entities,
             interaction_radius=self.config.interaction_radius,
         )
 
-        immediate_delta = 0.0
-        interaction_occurred = len(interaction_events) > 0
-
-        for entity, hidden_delta, delay in interaction_events:
-            effective_delay = delay if delay != 0 else self.config.default_interaction_delay
-            if effective_delay == 0:
-                immediate_delta += hidden_delta
-            else:
-                # Schedule delayed consequence at target timestep
-                delivery_time = target_timestep + effective_delay
-                self._pending_events.append((delivery_time, hidden_delta))
-
-        # Check pending events maturing at this target timestep
-        delayed_delta = 0.0
-        remaining_events: List[Tuple[int, float]] = []
-        for delivery_time, delta in self._pending_events:
-            if delivery_time == target_timestep:
-                delayed_delta += delta
-            else:
-                remaining_events.append((delivery_time, delta))
-        self._pending_events = remaining_events
-
-        total_interaction_delta = immediate_delta + delayed_delta
+        if validated_action == Action.INTERACT and self.config.interact_cost != 0.0:
+            interaction_delta -= self.config.interact_cost
+        if interaction_occurred and self.config.outcome_noise_std > 0.0:
+            interaction_delta += self._rng.gauss(0.0, self.config.outcome_noise_std)
 
         # Compute updated internal state
         prev_internal_state = self._internal_state
         new_internal_state = update_internal_state(
             current_state_val=self._internal_state,
             step_penalty=self.config.step_penalty,
-            interaction_delta=total_interaction_delta,
+            interaction_delta=interaction_delta,
             min_val=self.config.min_internal_state,
             max_val=self.config.max_internal_state,
         )
@@ -261,7 +311,7 @@ class GridWorld:
         self._interaction_occurred = interaction_occurred
         self._internal_state = new_internal_state
         self._last_action = validated_action
-        self._timestep = target_timestep
+        self._timestep += 1
 
         # Check termination conditions
         terminated = False
@@ -277,17 +327,26 @@ class GridWorld:
             "timestep": self._timestep,
             "collision": self._collision,
             "interaction": self._interaction_occurred,
-            "interaction_occurred": self._interaction_occurred,
-            "pending_events_count": len(self._pending_events),
+            "observable_entity_ids": [
+                e.entity_id for e in self._entities if e.is_observable(self._timestep)
+            ],
         }
 
         return obs, state_delta, terminated, info
 
     def get_observation(self) -> Observation:
-        """Construct the neutral observation object for current state."""
+        """Construct the neutral observation object for current state.
+
+        Only entities that are currently observable (``Entity.is_observable``)
+        are included in the returned Observation's entity list; this is the sole
+        mechanism by which Phase 2 partial-observability tasks are constructed.
+        Ground-truth dynamics (collision, interaction) always use the full
+        entity list regardless of observability — see step().
+        """
+        visible_entities = [e for e in self._entities if e.is_observable(self._timestep)]
         return build_observation(
             agent_pos=self._agent_pos,
-            entities=self._entities,
+            entities=visible_entities,
             collision=self._collision,
             internal_state=self._internal_state,
             timestep=self._timestep,
@@ -305,6 +364,5 @@ class GridWorld:
             interaction_occurred=self._interaction_occurred,
             last_action=self._last_action,
             is_terminated=self._is_terminated,
-            pending_events=tuple(self._pending_events),
             seed=self._seed,
         )

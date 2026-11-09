@@ -1,0 +1,1598 @@
+{
+  "phase": "Phase 8 -- Novel Worlds",
+  "experiments": {
+    "CSP-P8-E001": {
+      "experiment_id": "CSP-P8-E001",
+      "title": "Zero-Shot and Few-Shot Transfer Across Novel Worlds",
+      "seeds": [
+        42,
+        101,
+        7,
+        2026,
+        555
+      ],
+      "source_steps": 3000,
+      "budgets": [
+        50,
+        150,
+        500,
+        1500
+      ],
+      "source_in_dist_r2_mean": 0.9971,
+      "per_seed": [
+        {
+          "seed": 42,
+          "source_in_dist_r2": 0.9905,
+          "worlds": {
+            "identical": {
+              "zero_shot_r2": 0.9877,
+              "budgets": {
+                "50": {
+                  "scratch": -0.0893,
+                  "finetune": 0.5799,
+                  "control_shuffled_pretrain": -0.2438
+                },
+                "150": {
+                  "scratch": -0.2494,
+                  "finetune": 0.5935,
+                  "control_shuffled_pretrain": -0.2592
+                },
+                "500": {
+                  "scratch": 0.583,
+                  "finetune": 0.927,
+                  "control_shuffled_pretrain": -0.0965
+                },
+                "1500": {
+                  "scratch": 0.9648,
+                  "finetune": 0.9961,
+                  "control_shuffled_pretrain": 0.1456
+                }
+              }
+            },
+            "geometry": {
+              "zero_shot_r2": 0.9292,
+              "budgets": {
+                "50": {
+                  "scratch": -0.1462,
+                  "finetune": 0.4832,
+                  "control_shuffled_pretrain": -1.1229
+                },
+                "150": {
+                  "scratch": -2.8303,
+                  "finetune": 0.9664,
+                  "control_shuffled_pretrain": -1.4036
+                },
+                "500": {
+                  "scratch": 0.0275,
+                  "finetune": 0.9557,
+                  "control_shuffled_pretrain": -0.4071
+                },
+                "1500": {
+                  "scratch": -0.0722,
+                  "finetune": 0.839,
+                  "control_shuffled_pretrain": -0.2818
+                }
+              }
+            },
+            "appearance": {
+              "zero_shot_r2": -7.5439,
+              "budgets": {
+                "50": {
+                  "scratch": -0.0893,
+                  "finetune": -0.9382,
+                  "control_shuffled_pretrain": -1.2671
+                },
+                "150": {
+                  "scratch": -0.2494,
+                  "finetune": -0.3236,
+                  "control_shuffled_pretrain": -0.6943
+                },
+                "500": {
+                  "scratch": 0.583,
+                  "finetune": 0.0919,
+                  "control_shuffled_pretrain": -0.3062
+                },
+                "1500": {
+                  "scratch": 0.9648,
+                  "finetune": 0.5693,
+                  "control_shuffled_pretrain": -0.0106
+                }
+              }
+            },
+            "dynamics": {
+              "zero_shot_r2": 0.0686,
+              "budgets": {
+                "50": {
+                  "scratch": -1.7607,
+                  "finetune": 0.0144,
+                  "control_shuffled_pretrain": -0.5393
+                },
+                "150": {
+                  "scratch": 0.1705,
+                  "finetune": 0.5412,
+                  "control_shuffled_pretrain": -0.429
+                },
+                "500": {
+                  "scratch": 0.736,
+                  "finetune": 0.7238,
+                  "control_shuffled_pretrain": -0.1998
+                },
+                "1500": {
+                  "scratch": 0.9438,
+                  "finetune": 0.9558,
+                  "control_shuffled_pretrain": 0.4583
+                }
+              }
+            },
+            "rules": {
+              "zero_shot_r2": 0.7216,
+              "budgets": {
+                "50": {
+                  "scratch": 0.0163,
+                  "finetune": 0.4324,
+                  "control_shuffled_pretrain": -0.2061
+                },
+                "150": {
+                  "scratch": -0.3175,
+                  "finetune": 0.7212,
+                  "control_shuffled_pretrain": -0.1923
+                },
+                "500": {
+                  "scratch": 0.6498,
+                  "finetune": 0.9312,
+                  "control_shuffled_pretrain": 0.1192
+                },
+                "1500": {
+                  "scratch": 0.8389,
+                  "finetune": 0.9928,
+                  "control_shuffled_pretrain": 0.2478
+                }
+              }
+            },
+            "resources": {
+              "zero_shot_r2": 0.8505,
+              "budgets": {
+                "50": {
+                  "scratch": -0.1199,
+                  "finetune": 0.5206,
+                  "control_shuffled_pretrain": -0.0594
+                },
+                "150": {
+                  "scratch": 0.0938,
+                  "finetune": 0.7276,
+                  "control_shuffled_pretrain": -0.1731
+                },
+                "500": {
+                  "scratch": 0.5323,
+                  "finetune": 0.7707,
+                  "control_shuffled_pretrain": 0.1699
+                },
+                "1500": {
+                  "scratch": 0.7378,
+                  "finetune": 0.8476,
+                  "control_shuffled_pretrain": 0.4021
+                }
+              }
+            },
+            "actions": {
+              "zero_shot_r2": 0.736,
+              "budgets": {
+                "50": {
+                  "scratch": -0.1417,
+                  "finetune": 0.3429,
+                  "control_shuffled_pretrain": -0.2843
+                },
+                "150": {
+                  "scratch": 0.0238,
+                  "finetune": 0.4929,
+                  "control_shuffled_pretrain": -0.2713
+                },
+                "500": {
+                  "scratch": 0.637,
+                  "finetune": 0.9599,
+                  "control_shuffled_pretrain": -0.0287
+                },
+                "1500": {
+                  "scratch": 0.9573,
+                  "finetune": 0.9973,
+                  "control_shuffled_pretrain": 0.0301
+                }
+              }
+            }
+          }
+        },
+        {
+          "seed": 101,
+          "source_in_dist_r2": 0.9992,
+          "worlds": {
+            "identical": {
+              "zero_shot_r2": 0.9998,
+              "budgets": {
+                "50": {
+                  "scratch": -1.0991,
+                  "finetune": 0.8469,
+                  "control_shuffled_pretrain": -0.1911
+                },
+                "150": {
+                  "scratch": -0.5348,
+                  "finetune": 0.9922,
+                  "control_shuffled_pretrain": -0.1046
+                },
+                "500": {
+                  "scratch": 0.6779,
+                  "finetune": 0.9982,
+                  "control_shuffled_pretrain": -0.1451
+                },
+                "1500": {
+                  "scratch": 0.9663,
+                  "finetune": 0.9995,
+                  "control_shuffled_pretrain": 0.0901
+                }
+              }
+            },
+            "geometry": {
+              "zero_shot_r2": 0.9972,
+              "budgets": {
+                "50": {
+                  "scratch": -0.5908,
+                  "finetune": 0.3411,
+                  "control_shuffled_pretrain": -0.2627
+                },
+                "150": {
+                  "scratch": -0.7549,
+                  "finetune": 0.5144,
+                  "control_shuffled_pretrain": -0.3041
+                },
+                "500": {
+                  "scratch": -0.3321,
+                  "finetune": 0.7101,
+                  "control_shuffled_pretrain": -0.3921
+                },
+                "1500": {
+                  "scratch": 0.4591,
+                  "finetune": 0.9953,
+                  "control_shuffled_pretrain": -0.2664
+                }
+              }
+            },
+            "appearance": {
+              "zero_shot_r2": -117.5213,
+              "budgets": {
+                "50": {
+                  "scratch": -1.0991,
+                  "finetune": -1.5161,
+                  "control_shuffled_pretrain": -0.3899
+                },
+                "150": {
+                  "scratch": -0.5348,
+                  "finetune": -0.0871,
+                  "control_shuffled_pretrain": -0.0759
+                },
+                "500": {
+                  "scratch": 0.6779,
+                  "finetune": 0.0806,
+                  "control_shuffled_pretrain": -0.0977
+                },
+                "1500": {
+                  "scratch": 0.9663,
+                  "finetune": 0.547,
+                  "control_shuffled_pretrain": -0.0031
+                }
+              }
+            },
+            "dynamics": {
+              "zero_shot_r2": 0.2277,
+              "budgets": {
+                "50": {
+                  "scratch": -2.5249,
+                  "finetune": 0.6193,
+                  "control_shuffled_pretrain": -0.4798
+                },
+                "150": {
+                  "scratch": 0.3207,
+                  "finetune": 0.5791,
+                  "control_shuffled_pretrain": -0.0947
+                },
+                "500": {
+                  "scratch": 0.677,
+                  "finetune": 0.6646,
+                  "control_shuffled_pretrain": -0.0298
+                },
+                "1500": {
+                  "scratch": 0.9819,
+                  "finetune": 0.9062,
+                  "control_shuffled_pretrain": 0.5796
+                }
+              }
+            },
+            "rules": {
+              "zero_shot_r2": 0.6968,
+              "budgets": {
+                "50": {
+                  "scratch": -1.0747,
+                  "finetune": 0.9288,
+                  "control_shuffled_pretrain": -0.2298
+                },
+                "150": {
+                  "scratch": -0.2538,
+                  "finetune": 0.9417,
+                  "control_shuffled_pretrain": -0.0905
+                },
+                "500": {
+                  "scratch": 0.5642,
+                  "finetune": 0.9791,
+                  "control_shuffled_pretrain": -0.1775
+                },
+                "1500": {
+                  "scratch": 0.7254,
+                  "finetune": 0.9966,
+                  "control_shuffled_pretrain": 0.2912
+                }
+              }
+            },
+            "resources": {
+              "zero_shot_r2": 0.8712,
+              "budgets": {
+                "50": {
+                  "scratch": -0.8536,
+                  "finetune": 0.8709,
+                  "control_shuffled_pretrain": -0.0195
+                },
+                "150": {
+                  "scratch": -0.1385,
+                  "finetune": 0.817,
+                  "control_shuffled_pretrain": -0.1996
+                },
+                "500": {
+                  "scratch": 0.5105,
+                  "finetune": 0.6717,
+                  "control_shuffled_pretrain": 0.0482
+                },
+                "1500": {
+                  "scratch": 0.6695,
+                  "finetune": 0.7366,
+                  "control_shuffled_pretrain": 0.2863
+                }
+              }
+            },
+            "actions": {
+              "zero_shot_r2": 0.7781,
+              "budgets": {
+                "50": {
+                  "scratch": -0.7026,
+                  "finetune": 0.8819,
+                  "control_shuffled_pretrain": -0.174
+                },
+                "150": {
+                  "scratch": -0.2675,
+                  "finetune": 0.8756,
+                  "control_shuffled_pretrain": -0.2791
+                },
+                "500": {
+                  "scratch": 0.7292,
+                  "finetune": 0.9969,
+                  "control_shuffled_pretrain": -0.0618
+                },
+                "1500": {
+                  "scratch": 0.9805,
+                  "finetune": 0.9993,
+                  "control_shuffled_pretrain": 0.2229
+                }
+              }
+            }
+          }
+        },
+        {
+          "seed": 7,
+          "source_in_dist_r2": 0.998,
+          "worlds": {
+            "identical": {
+              "zero_shot_r2": 0.9988,
+              "budgets": {
+                "50": {
+                  "scratch": -0.0463,
+                  "finetune": 0.4439,
+                  "control_shuffled_pretrain": -0.0857
+                },
+                "150": {
+                  "scratch": -1.3415,
+                  "finetune": 0.5439,
+                  "control_shuffled_pretrain": -0.1751
+                },
+                "500": {
+                  "scratch": 0.0154,
+                  "finetune": 0.9795,
+                  "control_shuffled_pretrain": -0.2229
+                },
+                "1500": {
+                  "scratch": 0.7983,
+                  "finetune": 0.9963,
+                  "control_shuffled_pretrain": 0.1888
+                }
+              }
+            },
+            "geometry": {
+              "zero_shot_r2": 0.9953,
+              "budgets": {
+                "50": {
+                  "scratch": -0.1364,
+                  "finetune": 0.443,
+                  "control_shuffled_pretrain": -0.943
+                },
+                "150": {
+                  "scratch": -0.0398,
+                  "finetune": 0.1522,
+                  "control_shuffled_pretrain": -2.2514
+                },
+                "500": {
+                  "scratch": 0.1985,
+                  "finetune": 0.941,
+                  "control_shuffled_pretrain": -1.7674
+                },
+                "1500": {
+                  "scratch": 0.5074,
+                  "finetune": 0.9576,
+                  "control_shuffled_pretrain": -2.5332
+                }
+              }
+            },
+            "appearance": {
+              "zero_shot_r2": -4.4366,
+              "budgets": {
+                "50": {
+                  "scratch": -0.0463,
+                  "finetune": -0.7707,
+                  "control_shuffled_pretrain": -0.0017
+                },
+                "150": {
+                  "scratch": -1.3415,
+                  "finetune": -0.1948,
+                  "control_shuffled_pretrain": -0.0
+                },
+                "500": {
+                  "scratch": 0.0154,
+                  "finetune": -0.048,
+                  "control_shuffled_pretrain": -0.0856
+                },
+                "1500": {
+                  "scratch": 0.7983,
+                  "finetune": -0.001,
+                  "control_shuffled_pretrain": 0.1784
+                }
+              }
+            },
+            "dynamics": {
+              "zero_shot_r2": 0.1494,
+              "budgets": {
+                "50": {
+                  "scratch": -0.0365,
+                  "finetune": 0.314,
+                  "control_shuffled_pretrain": -0.0386
+                },
+                "150": {
+                  "scratch": -0.2207,
+                  "finetune": 0.573,
+                  "control_shuffled_pretrain": -0.0921
+                },
+                "500": {
+                  "scratch": 0.677,
+                  "finetune": 0.7203,
+                  "control_shuffled_pretrain": 0.2371
+                },
+                "1500": {
+                  "scratch": 0.9747,
+                  "finetune": 0.9914,
+                  "control_shuffled_pretrain": 0.6984
+                }
+              }
+            },
+            "rules": {
+              "zero_shot_r2": 0.6625,
+              "budgets": {
+                "50": {
+                  "scratch": 0.0312,
+                  "finetune": 0.2915,
+                  "control_shuffled_pretrain": -0.071
+                },
+                "150": {
+                  "scratch": -0.2748,
+                  "finetune": 0.2805,
+                  "control_shuffled_pretrain": -0.1841
+                },
+                "500": {
+                  "scratch": 0.2195,
+                  "finetune": 0.9604,
+                  "control_shuffled_pretrain": -0.1479
+                },
+                "1500": {
+                  "scratch": 0.6938,
+                  "finetune": 0.9879,
+                  "control_shuffled_pretrain": 0.3302
+                }
+              }
+            },
+            "resources": {
+              "zero_shot_r2": 0.8831,
+              "budgets": {
+                "50": {
+                  "scratch": -1.2033,
+                  "finetune": 0.8523,
+                  "control_shuffled_pretrain": -0.1329
+                },
+                "150": {
+                  "scratch": -0.4051,
+                  "finetune": 0.7507,
+                  "control_shuffled_pretrain": -0.1797
+                },
+                "500": {
+                  "scratch": 0.4325,
+                  "finetune": 0.8885,
+                  "control_shuffled_pretrain": 0.1899
+                },
+                "1500": {
+                  "scratch": 0.7132,
+                  "finetune": 0.8142,
+                  "control_shuffled_pretrain": 0.4155
+                }
+              }
+            },
+            "actions": {
+              "zero_shot_r2": 0.7331,
+              "budgets": {
+                "50": {
+                  "scratch": 0.0523,
+                  "finetune": 0.4173,
+                  "control_shuffled_pretrain": -0.0824
+                },
+                "150": {
+                  "scratch": -1.1724,
+                  "finetune": 0.5174,
+                  "control_shuffled_pretrain": -0.2707
+                },
+                "500": {
+                  "scratch": 0.2528,
+                  "finetune": 0.9933,
+                  "control_shuffled_pretrain": -0.0356
+                },
+                "1500": {
+                  "scratch": 0.8228,
+                  "finetune": 0.9967,
+                  "control_shuffled_pretrain": 0.3831
+                }
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026,
+          "source_in_dist_r2": 0.9999,
+          "worlds": {
+            "identical": {
+              "zero_shot_r2": 0.9987,
+              "budgets": {
+                "50": {
+                  "scratch": -0.8041,
+                  "finetune": 0.6177,
+                  "control_shuffled_pretrain": -0.0926
+                },
+                "150": {
+                  "scratch": -0.1923,
+                  "finetune": 0.2334,
+                  "control_shuffled_pretrain": -0.4576
+                },
+                "500": {
+                  "scratch": 0.4506,
+                  "finetune": 0.9994,
+                  "control_shuffled_pretrain": 0.2007
+                },
+                "1500": {
+                  "scratch": 0.9759,
+                  "finetune": 0.9998,
+                  "control_shuffled_pretrain": 0.3126
+                }
+              }
+            },
+            "geometry": {
+              "zero_shot_r2": 0.9896,
+              "budgets": {
+                "50": {
+                  "scratch": -0.104,
+                  "finetune": 0.3502,
+                  "control_shuffled_pretrain": -0.0741
+                },
+                "150": {
+                  "scratch": -3.3999,
+                  "finetune": 0.9897,
+                  "control_shuffled_pretrain": -0.1359
+                },
+                "500": {
+                  "scratch": -0.357,
+                  "finetune": 0.9797,
+                  "control_shuffled_pretrain": -0.3749
+                },
+                "1500": {
+                  "scratch": 0.4748,
+                  "finetune": 0.9978,
+                  "control_shuffled_pretrain": 0.0125
+                }
+              }
+            },
+            "appearance": {
+              "zero_shot_r2": -88.7332,
+              "budgets": {
+                "50": {
+                  "scratch": -0.8041,
+                  "finetune": -0.8635,
+                  "control_shuffled_pretrain": -0.1435
+                },
+                "150": {
+                  "scratch": -0.1923,
+                  "finetune": -1.3057,
+                  "control_shuffled_pretrain": -0.1082
+                },
+                "500": {
+                  "scratch": 0.4506,
+                  "finetune": 0.434,
+                  "control_shuffled_pretrain": -0.0227
+                },
+                "1500": {
+                  "scratch": 0.9759,
+                  "finetune": 0.6469,
+                  "control_shuffled_pretrain": 0.2445
+                }
+              }
+            },
+            "dynamics": {
+              "zero_shot_r2": 0.1875,
+              "budgets": {
+                "50": {
+                  "scratch": -1.1195,
+                  "finetune": 0.4602,
+                  "control_shuffled_pretrain": -0.4742
+                },
+                "150": {
+                  "scratch": -0.5514,
+                  "finetune": 0.4411,
+                  "control_shuffled_pretrain": -0.146
+                },
+                "500": {
+                  "scratch": 0.7777,
+                  "finetune": 0.7969,
+                  "control_shuffled_pretrain": 0.3627
+                },
+                "1500": {
+                  "scratch": 0.9407,
+                  "finetune": 0.965,
+                  "control_shuffled_pretrain": 0.773
+                }
+              }
+            },
+            "rules": {
+              "zero_shot_r2": 0.7428,
+              "budgets": {
+                "50": {
+                  "scratch": -0.2794,
+                  "finetune": 0.5638,
+                  "control_shuffled_pretrain": -0.1132
+                },
+                "150": {
+                  "scratch": 0.14,
+                  "finetune": 0.7071,
+                  "control_shuffled_pretrain": -0.319
+                },
+                "500": {
+                  "scratch": 0.4685,
+                  "finetune": 0.9913,
+                  "control_shuffled_pretrain": -0.0029
+                },
+                "1500": {
+                  "scratch": 0.872,
+                  "finetune": 0.9998,
+                  "control_shuffled_pretrain": 0.2665
+                }
+              }
+            },
+            "resources": {
+              "zero_shot_r2": 0.8842,
+              "budgets": {
+                "50": {
+                  "scratch": -3.0633,
+                  "finetune": -1.6659,
+                  "control_shuffled_pretrain": -0.0522
+                },
+                "150": {
+                  "scratch": 0.0516,
+                  "finetune": 0.88,
+                  "control_shuffled_pretrain": -0.161
+                },
+                "500": {
+                  "scratch": 0.2704,
+                  "finetune": 0.7617,
+                  "control_shuffled_pretrain": -0.027
+                },
+                "1500": {
+                  "scratch": 0.7047,
+                  "finetune": 0.7859,
+                  "control_shuffled_pretrain": 0.4651
+                }
+              }
+            },
+            "actions": {
+              "zero_shot_r2": 0.8139,
+              "budgets": {
+                "50": {
+                  "scratch": -1.0229,
+                  "finetune": 0.6584,
+                  "control_shuffled_pretrain": -0.1485
+                },
+                "150": {
+                  "scratch": 0.0474,
+                  "finetune": 0.4355,
+                  "control_shuffled_pretrain": -0.2438
+                },
+                "500": {
+                  "scratch": 0.3908,
+                  "finetune": 0.999,
+                  "control_shuffled_pretrain": 0.1342
+                },
+                "1500": {
+                  "scratch": 0.9273,
+                  "finetune": 0.9999,
+                  "control_shuffled_pretrain": 0.641
+                }
+              }
+            }
+          }
+        },
+        {
+          "seed": 555,
+          "source_in_dist_r2": 0.9977,
+          "worlds": {
+            "identical": {
+              "zero_shot_r2": 0.9979,
+              "budgets": {
+                "50": {
+                  "scratch": -0.1553,
+                  "finetune": 0.8528,
+                  "control_shuffled_pretrain": -0.161
+                },
+                "150": {
+                  "scratch": 0.0944,
+                  "finetune": 0.5404,
+                  "control_shuffled_pretrain": -0.0585
+                },
+                "500": {
+                  "scratch": 0.5701,
+                  "finetune": 0.9937,
+                  "control_shuffled_pretrain": 0.0233
+                },
+                "1500": {
+                  "scratch": 0.9331,
+                  "finetune": 0.9974,
+                  "control_shuffled_pretrain": 0.5106
+                }
+              }
+            },
+            "geometry": {
+              "zero_shot_r2": 0.9983,
+              "budgets": {
+                "50": {
+                  "scratch": -0.0849,
+                  "finetune": 0.2314,
+                  "control_shuffled_pretrain": -0.9703
+                },
+                "150": {
+                  "scratch": -0.1091,
+                  "finetune": -0.0262,
+                  "control_shuffled_pretrain": -1.0417
+                },
+                "500": {
+                  "scratch": 0.2385,
+                  "finetune": 0.9896,
+                  "control_shuffled_pretrain": -0.0776
+                },
+                "1500": {
+                  "scratch": 0.2297,
+                  "finetune": 0.9729,
+                  "control_shuffled_pretrain": 0.0806
+                }
+              }
+            },
+            "appearance": {
+              "zero_shot_r2": -56.0402,
+              "budgets": {
+                "50": {
+                  "scratch": -0.1553,
+                  "finetune": -1.6034,
+                  "control_shuffled_pretrain": -0.3092
+                },
+                "150": {
+                  "scratch": 0.0944,
+                  "finetune": -0.228,
+                  "control_shuffled_pretrain": -0.1004
+                },
+                "500": {
+                  "scratch": 0.5701,
+                  "finetune": 0.2597,
+                  "control_shuffled_pretrain": -0.0204
+                },
+                "1500": {
+                  "scratch": 0.9331,
+                  "finetune": 0.6816,
+                  "control_shuffled_pretrain": 0.503
+                }
+              }
+            },
+            "dynamics": {
+              "zero_shot_r2": 0.2186,
+              "budgets": {
+                "50": {
+                  "scratch": -2.5138,
+                  "finetune": 0.4483,
+                  "control_shuffled_pretrain": -0.0908
+                },
+                "150": {
+                  "scratch": 0.3037,
+                  "finetune": 0.6636,
+                  "control_shuffled_pretrain": -0.0475
+                },
+                "500": {
+                  "scratch": 0.875,
+                  "finetune": 0.7966,
+                  "control_shuffled_pretrain": 0.4673
+                },
+                "1500": {
+                  "scratch": 0.8786,
+                  "finetune": 0.9721,
+                  "control_shuffled_pretrain": 0.7112
+                }
+              }
+            },
+            "rules": {
+              "zero_shot_r2": 0.6765,
+              "budgets": {
+                "50": {
+                  "scratch": 0.0094,
+                  "finetune": 0.5735,
+                  "control_shuffled_pretrain": -0.131
+                },
+                "150": {
+                  "scratch": 0.0022,
+                  "finetune": 0.3125,
+                  "control_shuffled_pretrain": -0.1229
+                },
+                "500": {
+                  "scratch": 0.3566,
+                  "finetune": 0.9863,
+                  "control_shuffled_pretrain": 0.1228
+                },
+                "1500": {
+                  "scratch": 0.6945,
+                  "finetune": 0.9973,
+                  "control_shuffled_pretrain": 0.4419
+                }
+              }
+            },
+            "resources": {
+              "zero_shot_r2": 0.8646,
+              "budgets": {
+                "50": {
+                  "scratch": -1.2496,
+                  "finetune": 0.733,
+                  "control_shuffled_pretrain": -0.3739
+                },
+                "150": {
+                  "scratch": -0.0819,
+                  "finetune": 0.7389,
+                  "control_shuffled_pretrain": 0.0342
+                },
+                "500": {
+                  "scratch": 0.5461,
+                  "finetune": 0.8172,
+                  "control_shuffled_pretrain": 0.2679
+                },
+                "1500": {
+                  "scratch": 0.6696,
+                  "finetune": 0.7118,
+                  "control_shuffled_pretrain": 0.5638
+                }
+              }
+            },
+            "actions": {
+              "zero_shot_r2": 0.7755,
+              "budgets": {
+                "50": {
+                  "scratch": -0.0394,
+                  "finetune": 0.296,
+                  "control_shuffled_pretrain": 0.0374
+                },
+                "150": {
+                  "scratch": 0.1443,
+                  "finetune": 0.8695,
+                  "control_shuffled_pretrain": -0.0067
+                },
+                "500": {
+                  "scratch": 0.5962,
+                  "finetune": 0.998,
+                  "control_shuffled_pretrain": 0.0759
+                },
+                "1500": {
+                  "scratch": 0.8936,
+                  "finetune": 0.9988,
+                  "control_shuffled_pretrain": 0.5251
+                }
+              }
+            }
+          }
+        }
+      ],
+      "summary": {
+        "identical": {
+          "zero_shot_r2_mean": 0.9966,
+          "zero_shot_drop": 0.0005,
+          "budgets": {
+            "50": {
+              "scratch": -0.4388,
+              "finetune": 0.6682,
+              "control": -0.1548,
+              "gain_vs_scratch": 1.1071,
+              "gain_vs_control": 0.8231,
+              "criterion_met": true
+            },
+            "150": {
+              "scratch": -0.4447,
+              "finetune": 0.5807,
+              "control": -0.211,
+              "gain_vs_scratch": 1.0254,
+              "gain_vs_control": 0.7917,
+              "criterion_met": true
+            },
+            "500": {
+              "scratch": 0.4594,
+              "finetune": 0.9796,
+              "control": -0.0481,
+              "gain_vs_scratch": 0.5202,
+              "gain_vs_control": 1.0277,
+              "criterion_met": true
+            },
+            "1500": {
+              "scratch": 0.9277,
+              "finetune": 0.9978,
+              "control": 0.2495,
+              "gain_vs_scratch": 0.0701,
+              "gain_vs_control": 0.7483,
+              "criterion_met": false
+            }
+          },
+          "transfer_supported": true,
+          "budgets_meeting_criterion": 3
+        },
+        "geometry": {
+          "zero_shot_r2_mean": 0.9819,
+          "zero_shot_drop": 0.0151,
+          "budgets": {
+            "50": {
+              "scratch": -0.2125,
+              "finetune": 0.3698,
+              "control": -0.6746,
+              "gain_vs_scratch": 0.5822,
+              "gain_vs_control": 1.0444,
+              "criterion_met": true
+            },
+            "150": {
+              "scratch": -1.4268,
+              "finetune": 0.5193,
+              "control": -1.0273,
+              "gain_vs_scratch": 1.9461,
+              "gain_vs_control": 1.5466,
+              "criterion_met": true
+            },
+            "500": {
+              "scratch": -0.0449,
+              "finetune": 0.9152,
+              "control": -0.6038,
+              "gain_vs_scratch": 0.9601,
+              "gain_vs_control": 1.519,
+              "criterion_met": true
+            },
+            "1500": {
+              "scratch": 0.3198,
+              "finetune": 0.9525,
+              "control": -0.5977,
+              "gain_vs_scratch": 0.6328,
+              "gain_vs_control": 1.5502,
+              "criterion_met": true
+            }
+          },
+          "transfer_supported": true,
+          "budgets_meeting_criterion": 4
+        },
+        "appearance": {
+          "zero_shot_r2_mean": -54.855,
+          "zero_shot_drop": 55.8521,
+          "budgets": {
+            "50": {
+              "scratch": -0.4388,
+              "finetune": -1.1384,
+              "control": -0.4223,
+              "gain_vs_scratch": -0.6996,
+              "gain_vs_control": -0.7161,
+              "criterion_met": false
+            },
+            "150": {
+              "scratch": -0.4447,
+              "finetune": -0.4278,
+              "control": -0.1958,
+              "gain_vs_scratch": 0.0169,
+              "gain_vs_control": -0.2321,
+              "criterion_met": false
+            },
+            "500": {
+              "scratch": 0.4594,
+              "finetune": 0.1636,
+              "control": -0.1065,
+              "gain_vs_scratch": -0.2958,
+              "gain_vs_control": 0.2702,
+              "criterion_met": false
+            },
+            "1500": {
+              "scratch": 0.9277,
+              "finetune": 0.4888,
+              "control": 0.1824,
+              "gain_vs_scratch": -0.4389,
+              "gain_vs_control": 0.3063,
+              "criterion_met": false
+            }
+          },
+          "transfer_supported": false,
+          "budgets_meeting_criterion": 0
+        },
+        "dynamics": {
+          "zero_shot_r2_mean": 0.1704,
+          "zero_shot_drop": 0.8267,
+          "budgets": {
+            "50": {
+              "scratch": -1.5911,
+              "finetune": 0.3712,
+              "control": -0.3245,
+              "gain_vs_scratch": 1.9623,
+              "gain_vs_control": 0.6958,
+              "criterion_met": true
+            },
+            "150": {
+              "scratch": 0.0046,
+              "finetune": 0.5596,
+              "control": -0.1619,
+              "gain_vs_scratch": 0.555,
+              "gain_vs_control": 0.7215,
+              "criterion_met": true
+            },
+            "500": {
+              "scratch": 0.7485,
+              "finetune": 0.7404,
+              "control": 0.1675,
+              "gain_vs_scratch": -0.0081,
+              "gain_vs_control": 0.5729,
+              "criterion_met": false
+            },
+            "1500": {
+              "scratch": 0.9439,
+              "finetune": 0.9581,
+              "control": 0.6441,
+              "gain_vs_scratch": 0.0142,
+              "gain_vs_control": 0.314,
+              "criterion_met": false
+            }
+          },
+          "transfer_supported": true,
+          "budgets_meeting_criterion": 2
+        },
+        "rules": {
+          "zero_shot_r2_mean": 0.7,
+          "zero_shot_drop": 0.297,
+          "budgets": {
+            "50": {
+              "scratch": -0.2594,
+              "finetune": 0.558,
+              "control": -0.1502,
+              "gain_vs_scratch": 0.8174,
+              "gain_vs_control": 0.7082,
+              "criterion_met": true
+            },
+            "150": {
+              "scratch": -0.1408,
+              "finetune": 0.5926,
+              "control": -0.1818,
+              "gain_vs_scratch": 0.7334,
+              "gain_vs_control": 0.7744,
+              "criterion_met": true
+            },
+            "500": {
+              "scratch": 0.4517,
+              "finetune": 0.9697,
+              "control": -0.0173,
+              "gain_vs_scratch": 0.5179,
+              "gain_vs_control": 0.9869,
+              "criterion_met": true
+            },
+            "1500": {
+              "scratch": 0.7649,
+              "finetune": 0.9949,
+              "control": 0.3155,
+              "gain_vs_scratch": 0.23,
+              "gain_vs_control": 0.6794,
+              "criterion_met": true
+            }
+          },
+          "transfer_supported": true,
+          "budgets_meeting_criterion": 4
+        },
+        "resources": {
+          "zero_shot_r2_mean": 0.8707,
+          "zero_shot_drop": 0.1263,
+          "budgets": {
+            "50": {
+              "scratch": -1.2979,
+              "finetune": 0.2622,
+              "control": -0.1276,
+              "gain_vs_scratch": 1.5601,
+              "gain_vs_control": 0.3898,
+              "criterion_met": true
+            },
+            "150": {
+              "scratch": -0.096,
+              "finetune": 0.7828,
+              "control": -0.1358,
+              "gain_vs_scratch": 0.8789,
+              "gain_vs_control": 0.9187,
+              "criterion_met": true
+            },
+            "500": {
+              "scratch": 0.4584,
+              "finetune": 0.782,
+              "control": 0.1298,
+              "gain_vs_scratch": 0.3236,
+              "gain_vs_control": 0.6522,
+              "criterion_met": true
+            },
+            "1500": {
+              "scratch": 0.699,
+              "finetune": 0.7792,
+              "control": 0.4266,
+              "gain_vs_scratch": 0.0803,
+              "gain_vs_control": 0.3527,
+              "criterion_met": false
+            }
+          },
+          "transfer_supported": true,
+          "budgets_meeting_criterion": 3
+        },
+        "actions": {
+          "zero_shot_r2_mean": 0.7673,
+          "zero_shot_drop": 0.2297,
+          "budgets": {
+            "50": {
+              "scratch": -0.3709,
+              "finetune": 0.5193,
+              "control": -0.1304,
+              "gain_vs_scratch": 0.8902,
+              "gain_vs_control": 0.6497,
+              "criterion_met": true
+            },
+            "150": {
+              "scratch": -0.2449,
+              "finetune": 0.6382,
+              "control": -0.2143,
+              "gain_vs_scratch": 0.8831,
+              "gain_vs_control": 0.8525,
+              "criterion_met": true
+            },
+            "500": {
+              "scratch": 0.5212,
+              "finetune": 0.9894,
+              "control": 0.0168,
+              "gain_vs_scratch": 0.4682,
+              "gain_vs_control": 0.9726,
+              "criterion_met": true
+            },
+            "1500": {
+              "scratch": 0.9163,
+              "finetune": 0.9984,
+              "control": 0.3604,
+              "gain_vs_scratch": 0.0821,
+              "gain_vs_control": 0.638,
+              "criterion_met": false
+            }
+          },
+          "transfer_supported": true,
+          "budgets_meeting_criterion": 3
+        }
+      },
+      "preregistered_checks": {
+        "H1_source_in_dist_ge_0.9": true,
+        "H1_identical_within_0.1": true,
+        "H2_novelty_worlds_with_drop_ge_0.3": 2,
+        "H2_met": false,
+        "H3_worlds_supported": [
+          "geometry",
+          "dynamics",
+          "rules",
+          "resources",
+          "actions"
+        ],
+        "H3_count": 5
+      }
+    },
+    "CSP-P8-E002": {
+      "experiment_id": "CSP-P8-E002",
+      "title": "Appearance Transfer With a Continuous Property Channel",
+      "seeds": [
+        42,
+        101,
+        7,
+        2026,
+        555
+      ],
+      "budgets": [
+        50,
+        150,
+        500,
+        1500
+      ],
+      "source_in_dist_r2_mean": 0.9916,
+      "per_seed": [
+        {
+          "seed": 42,
+          "source_in_dist_r2": 0.9987,
+          "worlds": {
+            "appearance_prop_same": {
+              "zero_shot_r2": 0.9983,
+              "budgets": {
+                "50": {
+                  "scratch": -0.0893,
+                  "finetune": 0.3302,
+                  "control_shuffled_pretrain": -0.1343
+                },
+                "150": {
+                  "scratch": -0.3881,
+                  "finetune": 0.8996,
+                  "control_shuffled_pretrain": -0.1614
+                },
+                "500": {
+                  "scratch": 0.4711,
+                  "finetune": 0.9784,
+                  "control_shuffled_pretrain": 0.0054
+                },
+                "1500": {
+                  "scratch": 0.9688,
+                  "finetune": 0.998,
+                  "control_shuffled_pretrain": 0.0205
+                }
+              }
+            },
+            "appearance_prop_new": {
+              "zero_shot_r2": 0.9583,
+              "budgets": {
+                "50": {
+                  "scratch": -0.0893,
+                  "finetune": 0.2728,
+                  "control_shuffled_pretrain": -0.1265
+                },
+                "150": {
+                  "scratch": -0.3881,
+                  "finetune": 0.7566,
+                  "control_shuffled_pretrain": -0.2172
+                },
+                "500": {
+                  "scratch": 0.4711,
+                  "finetune": 0.9787,
+                  "control_shuffled_pretrain": -0.0379
+                },
+                "1500": {
+                  "scratch": 0.9688,
+                  "finetune": 0.9993,
+                  "control_shuffled_pretrain": -0.0301
+                }
+              }
+            }
+          }
+        },
+        {
+          "seed": 101,
+          "source_in_dist_r2": 0.999,
+          "worlds": {
+            "appearance_prop_same": {
+              "zero_shot_r2": 0.9991,
+              "budgets": {
+                "50": {
+                  "scratch": -1.0991,
+                  "finetune": 0.6234,
+                  "control_shuffled_pretrain": -0.2502
+                },
+                "150": {
+                  "scratch": -0.3153,
+                  "finetune": 0.9926,
+                  "control_shuffled_pretrain": -0.1402
+                },
+                "500": {
+                  "scratch": 0.5756,
+                  "finetune": 0.9932,
+                  "control_shuffled_pretrain": -0.0129
+                },
+                "1500": {
+                  "scratch": 0.951,
+                  "finetune": 0.9974,
+                  "control_shuffled_pretrain": 0.2405
+                }
+              }
+            },
+            "appearance_prop_new": {
+              "zero_shot_r2": 0.962,
+              "budgets": {
+                "50": {
+                  "scratch": -1.0991,
+                  "finetune": 0.8499,
+                  "control_shuffled_pretrain": -0.3081
+                },
+                "150": {
+                  "scratch": -0.3153,
+                  "finetune": 0.9911,
+                  "control_shuffled_pretrain": -0.0887
+                },
+                "500": {
+                  "scratch": 0.5756,
+                  "finetune": 0.9871,
+                  "control_shuffled_pretrain": -0.0748
+                },
+                "1500": {
+                  "scratch": 0.951,
+                  "finetune": 0.9983,
+                  "control_shuffled_pretrain": 0.226
+                }
+              }
+            }
+          }
+        },
+        {
+          "seed": 7,
+          "source_in_dist_r2": 0.9811,
+          "worlds": {
+            "appearance_prop_same": {
+              "zero_shot_r2": 0.9926,
+              "budgets": {
+                "50": {
+                  "scratch": 0.0031,
+                  "finetune": 0.3619,
+                  "control_shuffled_pretrain": -0.1604
+                },
+                "150": {
+                  "scratch": -1.3415,
+                  "finetune": 0.4974,
+                  "control_shuffled_pretrain": -0.101
+                },
+                "500": {
+                  "scratch": 0.1262,
+                  "finetune": 0.9533,
+                  "control_shuffled_pretrain": -0.147
+                },
+                "1500": {
+                  "scratch": 0.7901,
+                  "finetune": 0.9783,
+                  "control_shuffled_pretrain": 0.5978
+                }
+              }
+            },
+            "appearance_prop_new": {
+              "zero_shot_r2": 0.9411,
+              "budgets": {
+                "50": {
+                  "scratch": 0.0031,
+                  "finetune": 0.3712,
+                  "control_shuffled_pretrain": -0.1335
+                },
+                "150": {
+                  "scratch": -1.3415,
+                  "finetune": 0.3104,
+                  "control_shuffled_pretrain": -0.1107
+                },
+                "500": {
+                  "scratch": 0.1262,
+                  "finetune": 0.9484,
+                  "control_shuffled_pretrain": -0.291
+                },
+                "1500": {
+                  "scratch": 0.7901,
+                  "finetune": 0.9779,
+                  "control_shuffled_pretrain": 0.5413
+                }
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026,
+          "source_in_dist_r2": 0.9801,
+          "worlds": {
+            "appearance_prop_same": {
+              "zero_shot_r2": 0.9783,
+              "budgets": {
+                "50": {
+                  "scratch": -0.6064,
+                  "finetune": 0.6281,
+                  "control_shuffled_pretrain": -0.0687
+                },
+                "150": {
+                  "scratch": -0.4308,
+                  "finetune": 0.9362,
+                  "control_shuffled_pretrain": -0.0018
+                },
+                "500": {
+                  "scratch": 0.6671,
+                  "finetune": 0.9892,
+                  "control_shuffled_pretrain": 0.2628
+                },
+                "1500": {
+                  "scratch": 0.9751,
+                  "finetune": 0.9873,
+                  "control_shuffled_pretrain": 0.6301
+                }
+              }
+            },
+            "appearance_prop_new": {
+              "zero_shot_r2": 0.9357,
+              "budgets": {
+                "50": {
+                  "scratch": -0.6064,
+                  "finetune": 0.8037,
+                  "control_shuffled_pretrain": -0.0803
+                },
+                "150": {
+                  "scratch": -0.4308,
+                  "finetune": 0.82,
+                  "control_shuffled_pretrain": -0.0082
+                },
+                "500": {
+                  "scratch": 0.6671,
+                  "finetune": 0.9854,
+                  "control_shuffled_pretrain": 0.2186
+                },
+                "1500": {
+                  "scratch": 0.9751,
+                  "finetune": 0.9909,
+                  "control_shuffled_pretrain": 0.6237
+                }
+              }
+            }
+          }
+        },
+        {
+          "seed": 555,
+          "source_in_dist_r2": 0.9992,
+          "worlds": {
+            "appearance_prop_same": {
+              "zero_shot_r2": 0.9992,
+              "budgets": {
+                "50": {
+                  "scratch": -0.1553,
+                  "finetune": 0.3568,
+                  "control_shuffled_pretrain": -0.068
+                },
+                "150": {
+                  "scratch": 0.106,
+                  "finetune": 0.8008,
+                  "control_shuffled_pretrain": -0.3958
+                },
+                "500": {
+                  "scratch": 0.5728,
+                  "finetune": 0.9924,
+                  "control_shuffled_pretrain": 0.0341
+                },
+                "1500": {
+                  "scratch": 0.9113,
+                  "finetune": 0.9999,
+                  "control_shuffled_pretrain": 0.4069
+                }
+              }
+            },
+            "appearance_prop_new": {
+              "zero_shot_r2": 0.9796,
+              "budgets": {
+                "50": {
+                  "scratch": -0.1553,
+                  "finetune": 0.3182,
+                  "control_shuffled_pretrain": -0.0724
+                },
+                "150": {
+                  "scratch": 0.106,
+                  "finetune": 0.7389,
+                  "control_shuffled_pretrain": -0.2744
+                },
+                "500": {
+                  "scratch": 0.5728,
+                  "finetune": 0.9949,
+                  "control_shuffled_pretrain": 0.0013
+                },
+                "1500": {
+                  "scratch": 0.9113,
+                  "finetune": 0.9994,
+                  "control_shuffled_pretrain": 0.3643
+                }
+              }
+            }
+          }
+        }
+      ],
+      "summary": {
+        "appearance_prop_same": {
+          "zero_shot_r2_mean": 0.9935,
+          "zero_shot_r2_min": 0.9783,
+          "seeds_zero_shot_ge_0.8": 5,
+          "budgets": {
+            "50": {
+              "scratch": -0.3894,
+              "finetune": 0.4601,
+              "control": -0.1363,
+              "criterion_met": true
+            },
+            "150": {
+              "scratch": -0.4739,
+              "finetune": 0.8253,
+              "control": -0.16,
+              "criterion_met": true
+            },
+            "500": {
+              "scratch": 0.4826,
+              "finetune": 0.9813,
+              "control": 0.0285,
+              "criterion_met": true
+            },
+            "1500": {
+              "scratch": 0.9193,
+              "finetune": 0.9922,
+              "control": 0.3792,
+              "criterion_met": false
+            }
+          },
+          "transfer_supported": true
+        },
+        "appearance_prop_new": {
+          "zero_shot_r2_mean": 0.9553,
+          "zero_shot_r2_min": 0.9357,
+          "seeds_zero_shot_ge_0.8": 5,
+          "budgets": {
+            "50": {
+              "scratch": -0.3894,
+              "finetune": 0.5232,
+              "control": -0.1442,
+              "criterion_met": true
+            },
+            "150": {
+              "scratch": -0.4739,
+              "finetune": 0.7234,
+              "control": -0.1398,
+              "criterion_met": true
+            },
+            "500": {
+              "scratch": 0.4826,
+              "finetune": 0.9789,
+              "control": -0.0368,
+              "criterion_met": true
+            },
+            "1500": {
+              "scratch": 0.9193,
+              "finetune": 0.9932,
+              "control": 0.345,
+              "criterion_met": false
+            }
+          },
+          "transfer_supported": true
+        }
+      },
+      "preregistered_checks": {
+        "H4_met": true,
+        "H5_same_met": true,
+        "H5_new_met_reported": true
+      }
+    }
+  }
+}

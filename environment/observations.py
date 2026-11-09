@@ -45,12 +45,17 @@ class EntityObservation:
         relative_x: Relative x-coordinate from agent (entity_x - agent_x).
         relative_y: Relative y-coordinate from agent (entity_y - agent_y).
         distance: Euclidean or Manhattan distance from agent.
+        properties: Optional tuple of neutral continuous physical-attribute readings
+            (Phase 5 property-based encoding). Not included in to_vector()'s fixed 5-float
+            per-slot layout, since every other phase's models depend on that exact shape --
+            consumers that need properties read this field directly. Empty by default.
     """
     entity_id: int
     entity_type: int
     relative_x: int
     relative_y: int
     distance: float
+    properties: Tuple[float, ...] = ()
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert entity observation to dictionary."""
@@ -60,6 +65,7 @@ class EntityObservation:
             "relative_x": self.relative_x,
             "relative_y": self.relative_y,
             "distance": round(self.distance, 4),
+            "properties": list(self.properties),
         }
 
     def to_vector(self) -> List[float]:
@@ -188,10 +194,16 @@ def build_observation(
                 relative_x=rel_x,
                 relative_y=rel_y,
                 distance=dist,
+                properties=getattr(ent, "properties", ()),
             )
         )
-    # Sort entities by entity_id for deterministic ordering
-    entity_obs_list.sort(key=lambda e: e.entity_id)
+    # Sort entities by distance to the agent (nearest first), with entity_id as a
+    # deterministic tie-breaker. This is what makes the fixed-slot encoding meaningful
+    # when more than one entity is present: the entity most likely to be relevant to
+    # the agent's current action (e.g. INTERACT) always lands in slot 0, matching the
+    # role a model learns during single-entity training — rather than being assigned a
+    # slot by an arbitrary, physically-irrelevant instance ID.
+    entity_obs_list.sort(key=lambda e: (e.distance, e.entity_id))
 
     obs = Observation(
         agent_position=agent_pos,

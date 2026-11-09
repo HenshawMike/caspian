@@ -6,7 +6,6 @@ Supports Phase 0 (Foundation) and Phase 1 (Predictive Interaction) reports.
 """
 
 import os
-import json
 from typing import Dict, Any, List, Optional
 import docx
 from docx.shared import Inches, Pt, RGBColor
@@ -92,6 +91,887 @@ def generate_docx_report(data: Dict[str, Any], output_path: str) -> str:
 
     doc.add_paragraph().paragraph_format.space_after = Pt(10)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    doc.save(output_path)
+    return os.path.abspath(output_path)
+
+
+def generate_p2_docx_report(all_results: Dict[str, Any], output_path: str) -> str:
+    """Generate the permanent scientific DOCX report for Phase 2 (Memory & Persistence)."""
+    doc = docx.Document()
+    for s in doc.sections:
+        s.top_margin = Inches(0.8); s.bottom_margin = Inches(0.8)
+        s.left_margin = Inches(0.8); s.right_margin = Inches(0.8)
+
+    PRIMARY = RGBColor(24, 43, 73)
+    SECONDARY = RGBColor(70, 80, 95)
+    GOOD = RGBColor(16, 124, 65)
+    WARN = RGBColor(158, 106, 3)
+
+    def h1(text):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(14); p.paragraph_format.space_after = Pt(6)
+        r = p.add_run(text); r.font.size = Pt(15); r.font.bold = True; r.font.color.rgb = PRIMARY
+
+    def h2(text):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(8); p.paragraph_format.space_after = Pt(4)
+        r = p.add_run(text); r.font.size = Pt(12); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    def body(text, bold=False, color=None, size=10):
+        p = doc.add_paragraph(); r = p.add_run(text)
+        r.font.size = Pt(size); r.font.bold = bold
+        if color: r.font.color.rgb = color
+        return p
+
+    def kv_table(rows: List[tuple]):
+        t = doc.add_table(rows=len(rows), cols=2); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for i, (k, v) in enumerate(rows):
+            c1, c2 = t.rows[i].cells
+            c1.width, c2.width = Inches(2.6), Inches(4.2)
+            r1 = c1.paragraphs[0].add_run(str(k)); r1.font.bold = True; r1.font.size = Pt(9.5)
+            r2 = c2.paragraphs[0].add_run(str(v)); r2.font.size = Pt(9.5)
+            _set_cell_background(c1, "F0F4F8"); _set_cell_background(c2, "FAFAFA")
+            _set_cell_margins(c1); _set_cell_margins(c2)
+        doc.add_paragraph().paragraph_format.space_after = Pt(4)
+
+    def data_table(headers: List[str], rows: List[List[str]]):
+        t = doc.add_table(rows=1 + len(rows), cols=len(headers)); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for j, htext in enumerate(headers):
+            c = t.rows[0].cells[j]
+            r = c.paragraphs[0].add_run(htext); r.font.bold = True; r.font.size = Pt(9.5)
+            _set_cell_background(c, "182B49"); r.font.color.rgb = RGBColor(255, 255, 255)
+            _set_cell_margins(c)
+        for i, row in enumerate(rows):
+            for j, val in enumerate(row):
+                c = t.rows[i + 1].cells[j]
+                r = c.paragraphs[0].add_run(str(val)); r.font.size = Pt(9.5)
+                _set_cell_background(c, "FAFAFA" if i % 2 == 0 else "F0F4F8")
+                _set_cell_margins(c)
+        doc.add_paragraph().paragraph_format.space_after = Pt(6)
+
+    # --- Title page ---
+    tp = doc.add_paragraph(); tp.paragraph_format.space_after = Pt(4)
+    r = tp.add_run("PROJECT CASPIAN"); r.font.size = Pt(24); r.font.bold = True; r.font.color.rgb = PRIMARY
+    sp = doc.add_paragraph(); sp.paragraph_format.space_after = Pt(14)
+    r = sp.add_run("Phase 2 Scientific Experiment Report — Memory & Persistence"); r.font.size = Pt(14); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    kv_table([
+        ("Phase", "Phase 2 — Memory & Persistence"),
+        ("Experiments", "CSP-P2-E001, CSP-P2-E002, CSP-P2-E003, CSP-P2-E004"),
+        ("Environment Extension", "Periodic entity observability ('flicker'); randomized entity position per episode"),
+        ("Model Under Test", "Elman RNN (1 layer, hidden_dim=24) + linear read-out, trained via full BPTT"),
+        ("Control Model", "Phase 1 stateless MLP (32,16 ReLU), identical training data, no recurrence"),
+        ("Semantic Firewall", "AUDITED & ACTIVE — zero leakage of flicker rule or visibility flag into Observation"),
+    ])
+
+    # --- Methodology note: the task-design correction ---
+    h1("0. Methodological Note: A Corrected Task Design")
+    body(
+        "The first draft of the Phase 2 environment used a fixed, unmoving entity position across all "
+        "episodes. Under that design, a stateless model could learn a global 'position -> outcome' lookup "
+        "table from training data alone, without needing to remember anything within an episode — this "
+        "produced a misleading result in which the memory model appeared to perform worse than the stateless "
+        "one. The task was corrected to re-place the entity at a random grid cell every episode "
+        "(WorldConfig.randomize_entity_positions), which removes the shortcut and requires genuine "
+        "within-episode memory to predict interaction outcomes while the entity is unobservable. All results "
+        "below are from the corrected task.",
+        size=9.5,
+    )
+
+    # --- E001 ---
+    h1("1. CSP-P2-E001 — Does Memory Improve Prediction Under Partial Observability?")
+    e1 = all_results["CSP-P2-E001"]
+    body(f"Seed {e1['seed']} · {e1['train_episodes']} train / {e1['val_episodes']} val / {e1['test_episodes']} test episodes, 64 steps each.", size=9.5)
+    data_table(
+        ["Model", "Overall MSE", "Overall R²", "Visible-step MSE", "Hidden-step MSE"],
+        [
+            ["Recurrent (RNN)", e1["recurrent_model"]["overall_metrics"]["mse"], e1["recurrent_model"]["overall_metrics"]["r2_score"],
+             e1["recurrent_model"]["retention_breakdown"]["visible_step_mse"], e1["recurrent_model"]["retention_breakdown"]["hidden_step_mse"]],
+            ["Stateless (MLP, no memory)", e1["stateless_model"]["overall_metrics"]["mse"], e1["stateless_model"]["overall_metrics"]["r2_score"],
+             "—", e1["stateless_model"]["hidden_step_mse"]],
+            ["Persistence baseline", e1["baselines"]["persistence"]["mse"], e1["baselines"]["persistence"]["r2_score"], "—", "—"],
+            ["Reactive (mean) baseline", e1["baselines"]["reactive"]["mse"], e1["baselines"]["reactive"]["r2_score"], "—", "—"],
+            ["Random baseline", e1["baselines"]["random"]["mse"], e1["baselines"]["random"]["r2_score"], "—", "—"],
+        ],
+    )
+    gap = e1.get("hidden_step_gap_recurrent_vs_stateless_pct")
+    body(
+        f"On steps where the tracked entity is currently unobservable — the only steps where memory can help — "
+        f"the recurrent model's MSE is {gap}% {'lower' if (gap or 0) > 0 else 'higher'} than the stateless model's. "
+        f"Both models substantially outperform all three trivial baselines. This is evidence of a small, real "
+        f"advantage from memory, not a large one: neither model explains most of the outcome variance "
+        f"(R² ≈ {e1['recurrent_model']['overall_metrics']['r2_score']:.2f}).",
+        size=9.5,
+    )
+
+    # --- E002 ---
+    h1("2. CSP-P2-E002 — For How Long Is Information Retained?")
+    e2 = all_results["CSP-P2-E002"]
+    rows = []
+    for k in sorted(set(list(e2["recurrent_breakdown"].keys()) + list(e2["stateless_breakdown"].keys())), key=lambda x: int(x.rstrip("+"))):
+        r_mse = e2["recurrent_breakdown"].get(k, {}).get("mean_mse", "—")
+        m_mse = e2["stateless_breakdown"].get(k, {}).get("mean_mse", "—")
+        n = e2["recurrent_breakdown"].get(k, {}).get("count", "—")
+        rows.append([f"{k} steps since observed", r_mse, m_mse, n])
+    data_table(["Memory Age", "Recurrent MSE", "Stateless MSE", "N"], rows)
+    body(
+        "The recurrent model matches or beats the stateless model at nearly every memory-age bucket, with the "
+        "gap tending to widen at 2-4 steps since the entity was last seen, before both converge again near the "
+        "period boundary (5 steps, close to when the entity becomes observable again). Error does not decay "
+        "smoothly with age in either model — consistent with a short, noisy training run rather than a clean "
+        "textbook forgetting curve.",
+        size=9.5,
+    )
+
+    # --- E003 ---
+    h1("3. CSP-P2-E003 — Reproducibility Across Seeds")
+    e3 = all_results["CSP-P2-E003"]
+    data_table(
+        ["Seed", "Recurrent Hidden-step MSE", "Stateless Hidden-step MSE", "Recurrent Wins?"],
+        [[r["seed"], r["recurrent_hidden_mse"], r["stateless_hidden_mse"], "Yes" if r["recurrent_beats_stateless_on_hidden_steps"] else "No"]
+         for r in e3["per_seed_results"]],
+    )
+    kv_table([
+        ("Mean recurrent hidden-step MSE", f"{e3['summary']['mean_recurrent_hidden_mse']} (± {e3['summary']['std_recurrent_hidden_mse']})"),
+        ("Mean stateless hidden-step MSE", f"{e3['summary']['mean_stateless_hidden_mse']} (± {e3['summary']['std_stateless_hidden_mse']})"),
+        ("Recurrent win rate across seeds", f"{e3['summary']['recurrent_win_rate_pct']}%"),
+    ])
+    body(
+        "The recurrent model beats the stateless model on 4 of 5 independent seeds. This is consistent with a "
+        "real but modest effect, not an overwhelming one — one seed favored the stateless model, and the "
+        "standard deviations across seeds are large relative to the mean gap between the two models.",
+        size=9.5,
+    )
+
+    # --- E004 ---
+    h1("4. CSP-P2-E004 — Semantic Firewall Audit & Internal Memory Representation")
+    e4 = all_results["CSP-P2-E004"]
+    h2("4.1 Semantic Firewall Audit")
+    kv_table([
+        ("Status", e4["semantic_audit"]["status"]),
+        ("Tokens scanned", ", ".join(e4["semantic_audit"]["tokens_scanned"])),
+    ])
+    h2("4.2 Does Memory Produce Useful Internal State?")
+    mra = e4["memory_representation_analysis"]
+    if "status" not in mra:
+        kv_table([
+            ("Recent-memory samples (≤2 steps since seen)", mra["recent_memory_sample_count"]),
+            ("Stale-memory samples (>2 steps since seen)", mra["stale_memory_sample_count"]),
+            ("Cosine similarity, recent vs. stale hidden state", mra["recent_vs_stale_cosine_similarity"]),
+            ("Euclidean distance, recent vs. stale hidden state", mra["euclidean_distance"]),
+            ("Distinct memory states formed (threshold: cos < 0.95)", "Yes" if mra["distinct_memory_states_formed"] else "No"),
+        ])
+        verdict_color = GOOD if mra["distinct_memory_states_formed"] else WARN
+        body(
+            "NEGATIVE / INCONCLUSIVE FINDING: " if not mra["distinct_memory_states_formed"] else "POSITIVE FINDING: ",
+            bold=True, color=verdict_color, size=9.5,
+        )
+        body(
+            f"The mean hidden-state vector for 'recently observed' steps and 'stale' steps are nearly identical "
+            f"(cosine similarity {mra['recent_vs_stale_cosine_similarity']}). Despite the modest predictive "
+            f"advantage measured in E001-E003, this simple aggregate probe does not find a clearly separated "
+            f"internal representation of 'currently remembering the entity' vs. 'not'. The advantage may be "
+            f"encoded in a subtler or more distributed way than a mean-vector comparison can detect, or it may "
+            f"be a marginal effect riding mostly on the recurrent model's slightly higher effective capacity. "
+            f"This should be treated as an open question for Phase 2 follow-up, not as resolved.",
+            size=9.5,
+        )
+
+    # --- Verdict ---
+    h1("5. Overall Phase 2 Verdict")
+    body(
+        "PARTIALLY SUPPORTED. The recurrent model shows a small, fairly consistent advantage over an identical "
+        "stateless architecture specifically on the steps where memory is the only available source of "
+        "information (E001, E003), and both models clear trivial baselines by a wide margin. However, absolute "
+        "predictive fit is modest for both models (R² ≈ 0.34-0.38), the effect is not universal across seeds "
+        "(80% win rate), and a direct probe of the hidden state does not yet show a clearly separated internal "
+        "'memory' representation (E004). Recommendation: this supports proceeding cautiously to Phase 3 "
+        "prerequisites, but flags 'does memory produce useful internal state' as unresolved and worth revisiting "
+        "with a harder task (longer retention gaps, multiple entities) before drawing a strong conclusion.",
+        bold=True, size=10.5,
+    )
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    doc.save(output_path)
+    return os.path.abspath(output_path)
+
+
+def generate_p3_docx_report(all_results: Dict[str, Any], output_path: str) -> str:
+    """Generate the permanent scientific DOCX report for Phase 3 (Generalization)."""
+    doc = docx.Document()
+    for s in doc.sections:
+        s.top_margin = Inches(0.8); s.bottom_margin = Inches(0.8)
+        s.left_margin = Inches(0.8); s.right_margin = Inches(0.8)
+
+    PRIMARY = RGBColor(24, 43, 73)
+    SECONDARY = RGBColor(70, 80, 95)
+
+    def h1(text):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(14); p.paragraph_format.space_after = Pt(6)
+        r = p.add_run(text); r.font.size = Pt(15); r.font.bold = True; r.font.color.rgb = PRIMARY
+
+    def body(text, bold=False, size=10):
+        p = doc.add_paragraph(); r = p.add_run(text); r.font.size = Pt(size); r.font.bold = bold
+        return p
+
+    def kv_table(rows: List[tuple]):
+        t = doc.add_table(rows=len(rows), cols=2); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for i, (k, v) in enumerate(rows):
+            c1, c2 = t.rows[i].cells
+            c1.width, c2.width = Inches(2.6), Inches(4.2)
+            r1 = c1.paragraphs[0].add_run(str(k)); r1.font.bold = True; r1.font.size = Pt(9.5)
+            r2 = c2.paragraphs[0].add_run(str(v)); r2.font.size = Pt(9.5)
+            _set_cell_background(c1, "F0F4F8"); _set_cell_background(c2, "FAFAFA")
+            _set_cell_margins(c1); _set_cell_margins(c2)
+        doc.add_paragraph().paragraph_format.space_after = Pt(4)
+
+    def data_table(headers: List[str], rows: List[List[str]]):
+        t = doc.add_table(rows=1 + len(rows), cols=len(headers)); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for j, htext in enumerate(headers):
+            c = t.rows[0].cells[j]
+            r = c.paragraphs[0].add_run(htext); r.font.bold = True; r.font.size = Pt(9.5)
+            _set_cell_background(c, "182B49"); r.font.color.rgb = RGBColor(255, 255, 255)
+            _set_cell_margins(c)
+        for i, row in enumerate(rows):
+            for j, val in enumerate(row):
+                c = t.rows[i + 1].cells[j]
+                r = c.paragraphs[0].add_run(str(val)); r.font.size = Pt(9.5)
+                _set_cell_background(c, "FAFAFA" if i % 2 == 0 else "F0F4F8")
+                _set_cell_margins(c)
+        doc.add_paragraph().paragraph_format.space_after = Pt(6)
+
+    tp = doc.add_paragraph(); tp.paragraph_format.space_after = Pt(4)
+    r = tp.add_run("PROJECT CASPIAN"); r.font.size = Pt(24); r.font.bold = True; r.font.color.rgb = PRIMARY
+    sp = doc.add_paragraph(); sp.paragraph_format.space_after = Pt(14)
+    r = sp.add_run("Phase 3 Scientific Experiment Report — Generalization"); r.font.size = Pt(14); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    kv_table([
+        ("Phase", "Phase 3 — Generalization"),
+        ("Experiments", "CSP-P3-E001 (positions), CSP-P3-E002 (layout), CSP-P3-E003 (entity appearance)"),
+        ("Model Under Test", "Phase 1 stateless MLP (32,16 ReLU), retrained per experiment on the relevant training distribution"),
+        ("Core Question", "Does Caspian learn a reusable interaction relationship, or memorize the training configuration?"),
+    ])
+
+    h1("1. CSP-P3-E001 — Position Generalization")
+    e1 = all_results["CSP-P3-E001"]
+    body(f"Trained on {e1['train_cells']} grid cells; evaluated on {e1['test_cells']} disjoint, never-seen cells.", size=9.5)
+    data_table(
+        ["Condition", "MSE", "R²"],
+        [
+            ["In-distribution (held-out steps, trained cells)", e1["in_distribution_metrics"]["mse"], e1["in_distribution_metrics"]["r2_score"]],
+            ["Held-out positions (never seen in training)", e1["held_out_position_metrics"]["mse"], e1["held_out_position_metrics"]["r2_score"]],
+            ["Persistence baseline (held-out positions)", e1["baselines_on_held_out_positions"]["persistence"]["mse"], e1["baselines_on_held_out_positions"]["persistence"]["r2_score"]],
+            ["Reactive baseline (held-out positions)", e1["baselines_on_held_out_positions"]["reactive"]["mse"], e1["baselines_on_held_out_positions"]["reactive"]["r2_score"]],
+        ],
+    )
+    body(
+        f"Error roughly quadruples on unseen positions ({e1['generalization_gap_pct']}% relative increase), "
+        f"but the model still clears both trivial baselines by a wide margin and retains R²={e1['held_out_position_metrics']['r2_score']:.2f} "
+        f"on cells it never trained on. Interpretation: the model has learned something that transfers to new "
+        f"positions, but part of its in-distribution accuracy is specific to the trained cells — evidence of a "
+        f"partially, not fully, reusable relationship.",
+        size=9.5,
+    )
+
+    h1("2. CSP-P3-E002 — Layout Generalization (5x5 → 7x7 grid)")
+    e2 = all_results["CSP-P3-E002"]
+    data_table(
+        ["Condition", "MSE", "R²"],
+        [
+            ["In-distribution (5x5 grid)", e2["in_distribution_metrics"]["mse"], e2["in_distribution_metrics"]["r2_score"]],
+            ["Unseen layout (7x7 grid)", e2["unseen_layout_metrics"]["mse"], e2["unseen_layout_metrics"]["r2_score"]],
+            ["Persistence baseline (7x7)", e2["baselines_on_unseen_layout"]["persistence"]["mse"], e2["baselines_on_unseen_layout"]["persistence"]["r2_score"]],
+            ["Reactive baseline (7x7)", e2["baselines_on_unseen_layout"]["reactive"]["mse"], e2["baselines_on_unseen_layout"]["reactive"]["r2_score"]],
+        ],
+    )
+    body(
+        f"The gap here is small ({e2['generalization_gap_pct']}%) — the model transfers almost cleanly to a larger, "
+        f"never-seen grid. This makes sense given the encoding: the observation represents entities by relative "
+        f"position and distance rather than absolute grid coordinates, so the learned relationship is "
+        f"largely grid-size invariant. This is the strongest generalization result of the three.",
+        size=9.5,
+    )
+
+    h1("3. CSP-P3-E003 — Entity-Appearance Generalization")
+    e3 = all_results["CSP-P3-E003"]
+    mlp, ds = e3["fixed_slot_mlp"], e3["permutation_invariant_deepsets"]
+    body(
+        "Following the first version of this experiment, two real bugs were found and fixed: (1) entities were "
+        "sorted into input slots by entity_id rather than by distance, so the physically relevant entity could "
+        "land in a slot the model never learned to read from multi-entity scenes; (2) weight_decay was silently "
+        "inert for every MLP-family model in the project, because Adam/SGD only applied it to parameters named "
+        "exactly 'weight', while these models prefix names (e.g. 'layer_0_weight'). Both are fixed and covered by "
+        "regression tests. A second architecture -- a permutation-invariant DeepSets model (per-entity encoder, "
+        "mean-pooled over whichever entities are present, prediction head) -- was then built and compared "
+        "head-to-head against the fixed-slot MLP.",
+        size=9.5,
+    )
+    data_table(
+        ["Condition", "Fixed-Slot MLP MSE", "DeepSets MSE"],
+        [
+            ["In-distribution (1 entity, trained type)", mlp["in_distribution_metrics"]["mse"], ds["in_distribution_metrics"]["mse"]],
+            ["Two entities simultaneously", mlp["two_entities_simultaneous_metrics"]["mse"], ds["two_entities_simultaneous_metrics"]["mse"]],
+            ["  -> generalization gap", f"{mlp['generalization_gap_pct_multi_entity']}%", f"{ds['generalization_gap_pct_multi_entity']}%"],
+            ["Novel entity_type code", mlp["novel_entity_type_metrics"]["mse"], ds["novel_entity_type_metrics"]["mse"]],
+            ["  -> generalization gap", f"{mlp['generalization_gap_pct_novel_type']}%", f"{ds['generalization_gap_pct_novel_type']}%"],
+        ],
+    )
+    body(
+        f"Clean win on both axes. On the novel entity-type test, DeepSets beats the MLP "
+        f"({ds['novel_entity_type_metrics']['mse']:.2f} vs {mlp['novel_entity_type_metrics']['mse']:.2f} MSE) with "
+        f"essentially no generalization penalty at all ({ds['generalization_gap_pct_novel_type']}%, vs. the MLP's "
+        f"{mlp['generalization_gap_pct_novel_type']}%). On the multi-entity test -- the one that motivated this "
+        f"architecture -- DeepSets now also wins outright ({ds['two_entities_simultaneous_metrics']['mse']:.2f} vs "
+        f"{mlp['two_entities_simultaneous_metrics']['mse']:.2f} MSE, a {abs(e3['multi_entity_mse_reduction_pct'])}% "
+        f"reduction), with its generalization gap falling from the MLP's {mlp['generalization_gap_pct_multi_entity']}% "
+        f"to {ds['generalization_gap_pct_multi_entity']}%. This took three rounds of real, verified fixes: correct "
+        f"nearest-first slot ordering (CSP-P3-E003 v1), then mean-pooling instead of sum-pooling to remove the "
+        f"count-dependent scale shift (v2, multi-entity MSE 7.14 -> 1.71 -- a large improvement that still trailed "
+        f"the MLP), and finally max-pooling instead of mean-pooling (v3). The v2 -> v3 change mattered because "
+        f"averaging two *different* entity embeddings still lands the head in a region of input space it has zero "
+        f"exposure to from single-entity training, however much single-entity data it sees -- more data closed the "
+        f"gap on novel-type (where the fix is a convergence problem: entity_type is a constant, unused input, and "
+        f"more data plus weight_decay just converges its weight closer to zero) but never closed it here, because "
+        f"the multi-entity failure was never a convergence problem. Max-pooling sidesteps it structurally: the head "
+        f"always receives exactly one entity's signal (whichever is strongest per channel), which is precisely the "
+        f"kind of input it was trained on, regardless of how many entities are actually present.",
+        size=9.5,
+    )
+
+    h1("4. Overall Phase 3 Verdict")
+    body(
+        "SUPPORTED, with one open item carried forward. Caspian shows real, baseline-beating transfer along every "
+        "generalization axis tested, which rules out pure memorization. Layout changes transfer almost perfectly; "
+        "novel entity-type codes and multiple simultaneous entities both transfer well once encoded by a "
+        "permutation-invariant, max-pooled model -- the multi-entity result in particular went from the phase's "
+        "weakest finding to a clean win over three rounds of diagnosed, verified fixes (slot ordering, then "
+        "pooling operator, twice). Position generalization (CSP-P3-E001) remains the one axis not specifically "
+        "re-attacked in this pass and still shows a large gap; it was not in scope for the fixes made here and is "
+        "flagged as the next candidate for the same treatment, not as resolved.",
+        bold=True, size=10.5,
+    )
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    doc.save(output_path)
+    return os.path.abspath(output_path)
+
+
+def generate_p4_docx_report(all_results: Dict[str, Any], output_path: str) -> str:
+    """Generate the permanent scientific DOCX report for Phase 4 (World Model)."""
+    doc = docx.Document()
+    for s in doc.sections:
+        s.top_margin = Inches(0.8); s.bottom_margin = Inches(0.8)
+        s.left_margin = Inches(0.8); s.right_margin = Inches(0.8)
+
+    PRIMARY = RGBColor(24, 43, 73)
+    SECONDARY = RGBColor(70, 80, 95)
+
+    def h1(text):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(14); p.paragraph_format.space_after = Pt(6)
+        r = p.add_run(text); r.font.size = Pt(15); r.font.bold = True; r.font.color.rgb = PRIMARY
+
+    def body(text, bold=False, size=10):
+        p = doc.add_paragraph(); r = p.add_run(text); r.font.size = Pt(size); r.font.bold = bold
+        return p
+
+    def kv_table(rows: List[tuple]):
+        t = doc.add_table(rows=len(rows), cols=2); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for i, (k, v) in enumerate(rows):
+            c1, c2 = t.rows[i].cells
+            c1.width, c2.width = Inches(2.6), Inches(4.2)
+            r1 = c1.paragraphs[0].add_run(str(k)); r1.font.bold = True; r1.font.size = Pt(9.5)
+            r2 = c2.paragraphs[0].add_run(str(v)); r2.font.size = Pt(9.5)
+            _set_cell_background(c1, "F0F4F8"); _set_cell_background(c2, "FAFAFA")
+            _set_cell_margins(c1); _set_cell_margins(c2)
+        doc.add_paragraph().paragraph_format.space_after = Pt(4)
+
+    def data_table(headers: List[str], rows: List[List[str]]):
+        t = doc.add_table(rows=1 + len(rows), cols=len(headers)); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for j, htext in enumerate(headers):
+            c = t.rows[0].cells[j]
+            r = c.paragraphs[0].add_run(htext); r.font.bold = True; r.font.size = Pt(9.5)
+            _set_cell_background(c, "182B49"); r.font.color.rgb = RGBColor(255, 255, 255)
+            _set_cell_margins(c)
+        for i, row in enumerate(rows):
+            for j, val in enumerate(row):
+                c = t.rows[i + 1].cells[j]
+                r = c.paragraphs[0].add_run(str(val)); r.font.size = Pt(9.5)
+                _set_cell_background(c, "FAFAFA" if i % 2 == 0 else "F0F4F8")
+                _set_cell_margins(c)
+        doc.add_paragraph().paragraph_format.space_after = Pt(6)
+
+    tp = doc.add_paragraph(); tp.paragraph_format.space_after = Pt(4)
+    r = tp.add_run("PROJECT CASPIAN"); r.font.size = Pt(24); r.font.bold = True; r.font.color.rgb = PRIMARY
+    sp = doc.add_paragraph(); sp.paragraph_format.space_after = Pt(14)
+    r = sp.add_run("Phase 4 Scientific Experiment Report — World Model"); r.font.size = Pt(14); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    kv_table([
+        ("Phase", "Phase 4 — World Model"),
+        ("Experiments", "CSP-P4-E001, CSP-P4-E002, CSP-P4-E003"),
+        ("Core Question", "Can Caspian model P(E_t+1 | E_t, A_t) well enough to simulate multi-step futures and plan?"),
+        ("World Model", "Stateless MLP (32,16 ReLU), predicts [dx, dy, d_internal_state] -- full next state, not just one scalar"),
+        ("Environment", "5x5 grid, one blocking + interactive entity, fixed position (no randomization this phase)"),
+    ])
+
+    h1("1. CSP-P4-E001 — Single-Step Full-State Prediction")
+    e1 = all_results["CSP-P4-E001"]
+    kv_table([("Entities verified static (rollout assumption)", "CONFIRMED" if e1["entities_verified_static"] else "VIOLATED -- rollout assumption invalid")])
+    data_table(
+        ["Metric", "World Model", "Naive Physics Baseline"],
+        [
+            ["Overall MSE", e1["overall_metrics"]["world_model"]["mse"], e1["overall_metrics"]["naive_physics_baseline"]["mse"]],
+            ["Overall R²", e1["overall_metrics"]["world_model"]["r2_score"], e1["overall_metrics"]["naive_physics_baseline"]["r2_score"]],
+            ["Position-delta MSE", round(e1["position_delta_mse"]["world_model"], 4), round(e1["position_delta_mse"]["naive_physics_baseline"], 4)],
+            ["Internal-state-delta MSE", round(e1["internal_state_delta_mse"]["world_model"], 4), round(e1["internal_state_delta_mse"]["naive_physics_baseline"], 4)],
+        ],
+    )
+    body(
+        "The naive-physics baseline predicts the next state as if the chosen action always succeeds with no hidden "
+        "rules at all (position moves by its nominal delta, state always drops by exactly the step cost) -- it "
+        "cannot represent collisions or interactions. The world model beats it by a wide margin on both axes, "
+        "confirming it learned the hidden collision and interaction rules rather than just echoing the action "
+        "taken.",
+        size=9.5,
+    )
+
+    h1("2. CSP-P4-E002 — Multi-Step Open-Loop Rollout Fidelity")
+    e2 = all_results["CSP-P4-E002"]
+    body(f"{e2['num_trajectories']} random action sequences, horizon {e2['horizon']}, simulated purely from the model's own predictions (never fed the true environment mid-rollout).", size=9.5)
+    rows = []
+    for h, v in e2["horizon_curve"].items():
+        if int(h) in (1, 2, 3, 5, 7, 10, 12, 15) or int(h) == e2["horizon"]:
+            rows.append([h, v["mean_position_error"], v["mean_state_error"], f"{v['exact_position_match_rate']*100:.0f}%"])
+    data_table(["Horizon step", "Mean position error (Manhattan)", "Mean state error", "Exact position match rate"], rows)
+    body(
+        f"Rollout fidelity degrades steadily and monotonically with horizon, as expected for open-loop simulation "
+        f"with a single-step model: exact position match falls from 100% at h=1 to "
+        f"{e2['horizon_curve'][str(e2['horizon'])]['exact_position_match_rate']*100:.0f}% at h={e2['horizon']}, and "
+        f"mean state error grows from {e2['state_error_at_h1']} to {e2['state_error_at_final_h']}. This is the "
+        f"central finding the phase's goal statement asks for: simulated futures Ê_t+1 -> Ê_t+2 -> ... do diverge "
+        f"from reality, and this quantifies the rate -- which is exactly why CSP-P4-E003's planner uses a short "
+        f"lookahead horizon (2) and replans every step (receding-horizon control) rather than committing to a long "
+        f"open-loop plan.",
+        size=9.5,
+    )
+
+    h1("3. CSP-P4-E003 — Does Planning Outperform Reactive Action Selection?")
+    e3 = all_results["CSP-P4-E003"]
+    body(f"{e3['num_episodes']} episodes x {e3['episode_steps']} steps each, planning horizon {e3['planning_horizon']}. Both policies and the environment are fully deterministic here, hence zero variance across episodes.", size=9.5)
+    data_table(
+        ["Policy", "Mean Final Internal State", "Std Dev"],
+        [
+            ["Random", e3["mean_final_internal_state"]["random_policy"], e3["std_final_internal_state"]["random_policy"]],
+            ["Reactive (single-step greedy, same model)", e3["mean_final_internal_state"]["reactive_single_step"], e3["std_final_internal_state"]["reactive_single_step"]],
+            ["MPC Planning (2-step lookahead, same model)", e3["mean_final_internal_state"]["mpc_planning"], e3["std_final_internal_state"]["mpc_planning"]],
+        ],
+    )
+    body(
+        "The reactive policy ends every episode at exactly 60.0 (100 minus 40 steps at -1 each): it never once "
+        "interacts successfully. This is a textbook myopic trap -- from a distance, the model predicts 'interact' "
+        "as roughly zero immediate change while any move costs -1, so greedy single-step selection prefers "
+        "standing still over paying a short-term cost to reach the entity, and never breaks out. The planning "
+        "policy, using the identical trained model but a 2-step lookahead, ends every episode at 100.0 (the state "
+        "cap): two steps of foresight is enough to see that moving now sets up a profitable interaction shortly "
+        "after, breaking the trap, and the agent then sustains the cap by interacting repeatedly. This is a clean, "
+        "mechanistically-understood demonstration of the phase's stated goal -- 'this introduces planning' -- "
+        "using nothing but the same single-step model both policies already had access to.",
+        size=9.5,
+    )
+
+    h1("4. Overall Phase 4 Verdict")
+    body(
+        "SUPPORTED. Caspian can learn a full-state world model that substantially outperforms a naive "
+        "'trust the action' baseline (E001), that model's simulated multi-step futures degrade predictably rather "
+        "than catastrophically, quantified precisely enough to justify a short planning horizon (E002), and using "
+        "that same model for short-horizon lookahead planning solves a task the identical model cannot solve "
+        "reactively (E003) -- moving from 60% to 100% of maximum achievable internal state with no other change. "
+        "The main limitation to carry forward: this environment has a single, static, always-present entity, so "
+        "E003's myopic trap is a clean but simple case. Phase 5 and beyond should test planning under the harder "
+        "conditions established in Phases 2-3 (partial observability, multiple/novel entities) before treating "
+        "world-model planning as a general capability rather than a demonstrated one.",
+        bold=True, size=10.5,
+    )
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    doc.save(output_path)
+    return os.path.abspath(output_path)
+
+
+def generate_p5_docx_report(all_results: Dict[str, Any], output_path: str) -> str:
+    """Generate the permanent scientific DOCX report for Phase 5 (Emergent Categories)."""
+    doc = docx.Document()
+    for s in doc.sections:
+        s.top_margin = Inches(0.8); s.bottom_margin = Inches(0.8)
+        s.left_margin = Inches(0.8); s.right_margin = Inches(0.8)
+
+    PRIMARY = RGBColor(24, 43, 73)
+    SECONDARY = RGBColor(70, 80, 95)
+    WARN = RGBColor(158, 106, 3)
+
+    def h1(text):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(14); p.paragraph_format.space_after = Pt(6)
+        r = p.add_run(text); r.font.size = Pt(15); r.font.bold = True; r.font.color.rgb = PRIMARY
+
+    def h2(text):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(8); p.paragraph_format.space_after = Pt(4)
+        r = p.add_run(text); r.font.size = Pt(12); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    def body(text, bold=False, color=None, size=10):
+        p = doc.add_paragraph(); r = p.add_run(text); r.font.size = Pt(size); r.font.bold = bold
+        if color: r.font.color.rgb = color
+        return p
+
+    def kv_table(rows: List[tuple]):
+        t = doc.add_table(rows=len(rows), cols=2); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for i, (k, v) in enumerate(rows):
+            c1, c2 = t.rows[i].cells
+            c1.width, c2.width = Inches(2.6), Inches(4.2)
+            r1 = c1.paragraphs[0].add_run(str(k)); r1.font.bold = True; r1.font.size = Pt(9.5)
+            r2 = c2.paragraphs[0].add_run(str(v)); r2.font.size = Pt(9.5)
+            _set_cell_background(c1, "F0F4F8"); _set_cell_background(c2, "FAFAFA")
+            _set_cell_margins(c1); _set_cell_margins(c2)
+        doc.add_paragraph().paragraph_format.space_after = Pt(4)
+
+    def data_table(headers: List[str], rows: List[List[str]]):
+        t = doc.add_table(rows=1 + len(rows), cols=len(headers)); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for j, htext in enumerate(headers):
+            c = t.rows[0].cells[j]
+            r = c.paragraphs[0].add_run(htext); r.font.bold = True; r.font.size = Pt(9.5)
+            _set_cell_background(c, "182B49"); r.font.color.rgb = RGBColor(255, 255, 255)
+            _set_cell_margins(c)
+        for i, row in enumerate(rows):
+            for j, val in enumerate(row):
+                c = t.rows[i + 1].cells[j]
+                r = c.paragraphs[0].add_run(str(val)); r.font.size = Pt(9.5)
+                _set_cell_background(c, "FAFAFA" if i % 2 == 0 else "F0F4F8")
+                _set_cell_margins(c)
+        doc.add_paragraph().paragraph_format.space_after = Pt(6)
+
+    tp = doc.add_paragraph(); tp.paragraph_format.space_after = Pt(4)
+    r = tp.add_run("PROJECT CASPIAN"); r.font.size = Pt(24); r.font.bold = True; r.font.color.rgb = PRIMARY
+    sp = doc.add_paragraph(); sp.paragraph_format.space_after = Pt(14)
+    r = sp.add_run("Phase 5 Scientific Experiment Report — Emergent Categories"); r.font.size = Pt(14); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    kv_table([
+        ("Phase", "Phase 5 — Emergent Categories (central research phase, per Section 32)"),
+        ("Experiments", "CSP-P5-E001 through E007, plus multi-seed stability companions for E004 and E007"),
+        ("Core Question", "Does the model's internal representation organize entities by hidden functional consequence, never given as a label?"),
+        ("Design", "2 trained entity types (adjacent codes 1,2; opposite function) + 2 held-out novel codes (3,4), deliberately code-adjacent to the WRONG function, to rule out raw code-proximity as an explanation for any observed clustering"),
+        ("Criteria tested (Section 33)", "All six now covered with executed, logged results: Predictiveness (E001), Generalization (E002/E003/E004/E007), Stability (E003/E004-STABILITY/E007-STABILITY), Compression (E005), Intervention Sensitivity (E006). Behavioral Relevance folds into E002/E007."),
+        ("Update", "Re-run after a project-wide input-normalization fix (see Section 0 below) -- numbers in this report are POST-fix. This revision closes out E004 with multi-seed hardening, executes E005/E006 (previously implemented but unreported), and adds E007: a direct attempt at genuine zero-shot generalization via a different encoding."),
+    ])
+
+    h1("0. Project-Wide Fix Applied Before This Re-Run: Input Normalization")
+    body(
+        "This phase's first pass surfaced a project-wide dead-ReLU pathology: every model trains on a raw, "
+        "unnormalized feature vector in which internal_state (range 0-100, std ~12) sits alongside position/"
+        "distance/flag features (range ~0-5, std ~0.3-1.8). The huge-magnitude feature dominated the "
+        "pre-activation sum of the first layer, pushing 53-99% of units (depending on phase) into permanent "
+        "death (ReLU) or saturation (tanh, for Phase 2's RNN) early in training. A FeatureNormalizer (z-score, "
+        "fit on training data, applied inside every model's forward()) was added and is now used by every phase's "
+        "trainer automatically. Confirmed effect: first-hidden-layer dead units fell from 53-91% to 0-22% across "
+        "Phases 1, 3, and 4, and R^2 improved substantially everywhere prediction quality was re-measured (e.g. "
+        "Phase 4's world model: 0.94 -> 0.9995; Phase 3 E001: 0.83 -> 0.97). This is a real, verified, "
+        "project-wide quality improvement -- but as this report's own E002/E003 results below show, it is NOT "
+        "sufficient to fix every problem a dead network can mask. A related bug was also fixed during this pass: "
+        "get_latent_state() had its own independent forward loop that didn't apply the new normalizer, producing "
+        "degenerate all-zero representations until caught by a regression test and corrected.",
+        size=9.5,
+    )
+
+    h1("1. CSP-P5-E001 — Predictiveness")
+    e1 = all_results["CSP-P5-E001"]
+    data_table(
+        ["Model", "MSE", "R²"],
+        [
+            ["Full (with entity_type)", e1["full_model_metrics"]["mse"], e1["full_model_metrics"]["r2_score"]],
+            ["Ablated (entity_type zeroed out)", e1["type_ablated_model_metrics"]["mse"], e1["type_ablated_model_metrics"]["r2_score"]],
+        ],
+    )
+    body(
+        f"Ablating entity_type increases MSE by {e1['mse_increase_pct_from_ablation']}% and collapses R² from "
+        f"{e1['full_model_metrics']['r2_score']:.2f} to {e1['type_ablated_model_metrics']['r2_score']:.2f}. Since "
+        f"entity position is randomized independently of function every episode, position alone cannot substitute "
+        f"for type. This confirms entity_type carries real, necessary information -- satisfying Predictiveness "
+        f"and motivating the rest of this phase: if the model needs this information, does it organize it "
+        f"internally in a way that reflects the environment's actual functional structure?",
+        size=9.5,
+    )
+
+    h1("2. CSP-P5-E002 — Generalization / Core Clustering Test")
+    e2 = all_results["CSP-P5-E002"]
+    body(
+        "Two trained types (code 1 = +10, code 2 = -10) plus two entity_type codes never seen in training at all: "
+        "code 3 (+10, same function as code 1, but numerically adjacent to code 2's harmful function) and code 4 "
+        "(-10, same function as code 2, numerically far from it). If clustering tracked functional consequence, "
+        "codes {1,3} should group together and {2,4} should group together, despite code proximity pointing the "
+        "wrong way for one of those pairs.",
+        size=9.5,
+    )
+    data_table(
+        ["Pair", "Latent-space cosine similarity", "Raw-input cosine similarity"],
+        [[k.replace("_", " "), v, all_results["CSP-P5-E002"]["raw_input_similarities"][k]] for k, v in e2["latent_space_similarities"].items()],
+    )
+    kv_table([
+        ("Mean same-function latent similarity", e2["latent_same_function_avg_similarity"]),
+        ("Mean different-function latent similarity", e2["latent_diff_function_avg_similarity"]),
+        ("Mean same-function RAW-input similarity", e2["raw_same_function_avg_similarity"]),
+        ("Mean different-function RAW-input similarity", e2["raw_diff_function_avg_similarity"]),
+    ])
+    body("RESULT: functional clustering NOT supported -- and normalization did not fix it.", bold=True, color=WARN, size=10)
+    body(
+        f"Same-function pairs are not more similar than different-function pairs in latent space "
+        f"({e2['latent_same_function_avg_similarity']} vs {e2['latent_diff_function_avg_similarity']}). The "
+        f"per-pair pattern is essentially unchanged from before normalization was applied: codes 2, 3, and 4 "
+        f"cluster tightly together regardless of function, while code 1 sits apart from all three. This rules out "
+        f"'the network was just too dead to show structure' as the explanation -- the same network now fits the "
+        f"prediction task almost perfectly (E001: R^2=0.998) and still shows this pattern. The behavioral check is "
+        f"what makes this concrete rather than an artifact of one similarity metric: the novel 'beneficial' code's "
+        f"predicted-positive rate is "
+        f"{e2['behavioral_relevance_check']['novel_beneficial_predicted_positive_rate']*100:.0f}% -- the model "
+        f"predicts a NEGATIVE outcome for it every single time, despite it functioning identically to the trained "
+        f"'beneficial' type. This is not a representation-probe artifact; it is a real generalization failure, "
+        f"and (per CSP-P5-E003 below) a perfectly consistent one.",
+        size=9.5,
+    )
+
+    h1("3. CSP-P5-E003 — Stability Across Independent Training Runs")
+    e3 = all_results["CSP-P5-E003"]
+    data_table(
+        ["Seed", "Same-function similarity", "Diff-function similarity", "Clustering observed?"],
+        [[r["seed"], r["latent_same_function_avg_similarity"], r["latent_diff_function_avg_similarity"], "Yes" if r["functional_clustering_in_latent_space"] else "No"] for r in e3["per_seed_results"]],
+    )
+    body(
+        f"The negative result reproduces across all 5 independent training runs "
+        f"({e3['clustering_reproduced_rate_pct']}% clustering rate) -- not a one-seed artifact, and not fixed by "
+        f"normalization. The behavioral failure is even more striking: across all 5 seeds, the novel-beneficial "
+        f"code's predicted-positive rate is exactly 0.000 and the novel-harmful code's predicted-negative rate is "
+        f"exactly 1.000, every time -- perfectly consistent, not noisy near-misses. That precision is itself "
+        f"informative: it is the signature of a learned DECISION RULE (something like 'code >= 2 implies negative "
+        f"outcome'), not of noisy or partial learning.",
+        size=9.5,
+    )
+
+    h1("4. Diagnosis: Two Separate Problems, and a Subtlety About What 'Fixing' Means")
+    body(
+        "entity_type is fed to the model as a raw, unnormalized integer scalar (1.0, 2.0, 3.0, 4.0). Normalization "
+        "(Section 0) rescales this but cannot remove the ORDINAL relationship it imposes on an unordered category. "
+        "But a one-hot fix is not as simple as swapping the encoding: in E002/E003's design, codes 3 and 4 were "
+        "held out entirely (zero training exposure), and a one-hot column that never activates during training "
+        "carries literally no information at all -- worse than a raw scalar, which at least extrapolates "
+        "(incorrectly, via magnitude, as shown above) rather than carrying nothing. True zero-shot generalization "
+        "to a disjoint, never-seen category is not solvable by changing the encoding; it is close to ill-posed by "
+        "construction for any encoding with no shared structure between categories. The fixable version of the "
+        "question is different: given that ALL types get real training signal, does the network discover which "
+        "ones share a function, purely from outcomes, with no ordinal or structural hint pointing the way?",
+        size=9.5,
+    )
+
+    h1("5. CSP-P5-E004 — One-Hot Encoding, Redesigned Test")
+    e4 = all_results.get("CSP-P5-E004")
+    if e4:
+        raw, oh = e4["raw_scalar_control"], e4["onehot_fix"]
+        body(
+            "All four types now present during training (two +10, two -10), each its own disjoint identity, never "
+            "told which pairs share a function. Raw-scalar encoding is trained on the IDENTICAL data as a direct "
+            "control. Cosine similarity (used in E002/E003) and Euclidean distance (which also captures magnitude) "
+            "are both reported, because they turned out to disagree in an instructive way.",
+            size=9.5,
+        )
+        data_table(
+            ["Metric", "Raw-Scalar (control)", "One-Hot (fix)"],
+            [
+                ["Cosine: same-function avg", raw["cosine_same_function_avg"], oh["cosine_same_function_avg"]],
+                ["Cosine: diff-function avg", raw["cosine_diff_function_avg"], oh["cosine_diff_function_avg"]],
+                ["Euclidean: same-function avg", raw["euclidean_same_function_avg"], oh["euclidean_same_function_avg"]],
+                ["Euclidean: diff-function avg", raw["euclidean_diff_function_avg"], oh["euclidean_diff_function_avg"]],
+                ["Euclidean diff/same ratio (bigger = cleaner clustering)", raw["euclidean_diff_to_same_ratio"], oh["euclidean_diff_to_same_ratio"]],
+            ],
+        )
+        body(
+            f"Once all four types receive real training signal, BOTH encodings show strong, clean functional "
+            f"clustering by Euclidean distance -- different-function pairs sit roughly "
+            f"{raw['euclidean_diff_to_same_ratio']}x (raw-scalar) and {oh['euclidean_diff_to_same_ratio']}x "
+            f"(one-hot) farther apart than same-function pairs, essentially matched. Cosine similarity told a "
+            f"misleadingly flat story for one-hot specifically (same {oh['cosine_same_function_avg']} vs. diff "
+            f"{oh['cosine_diff_function_avg']}, a small gap) because the one-hot model's representations differ "
+            f"mainly in MAGNITUDE (mean latent norms ~7-8) rather than direction, and cosine similarity discards "
+            f"magnitude entirely -- a measurement-choice artifact, not a property of the representation. "
+            f"Conclusion: one-hot encoding is not meaningfully better than raw-scalar for the question this "
+            f"redesigned test actually asks (does the network discover shared function across trained "
+            f"categories, with no ordinal shortcut available) -- both succeed, given real training signal. "
+            f"One-hot's genuine, narrower advantage is elsewhere: it prevents the WRONG kind of extrapolation "
+            f"(E002/E003's ordinal 'bigger code -> harmful' rule) when a code IS held out, by carrying zero "
+            f"signal for it instead of a misleading one. Neither encoding solves true zero-shot generalization to "
+            f"a disjoint category; only one of them fails at it loudly and confidently rather than silently.",
+            size=9.5,
+        )
+
+    e4s = all_results.get("CSP-P5-E004-STABILITY")
+    if e4s:
+        h2("5b. CSP-P5-E004-STABILITY — Does This Reproduce Across Seeds?")
+        data_table(
+            ["Seed", "Raw diff/same ratio", "One-hot diff/same ratio", "Raw clustered?", "One-hot clustered?"],
+            [[r["seed"], r["raw_euclidean_diff_to_same_ratio"], r["onehot_euclidean_diff_to_same_ratio"],
+              "Yes" if r["raw_clustering"] else "No", "Yes" if r["onehot_clustering"] else "No"]
+             for r in e4s["per_seed_results"]],
+        )
+        body(
+            f"Functional clustering (same-function pairs nearer than different-function pairs) reproduces in "
+            f"{e4s['raw_scalar_clustering_reproduced_rate_pct']}% of raw-scalar runs and "
+            f"{e4s['onehot_clustering_reproduced_rate_pct']}% of one-hot runs across 5 independent seeds -- not a "
+            f"one-seed artifact for either encoding. The one-hot diff/same ratio is far noisier across seeds "
+            f"(1.4x to 16.7x in the single-seed report; here ranging up to 98x, mean {e4s['mean_onehot_diff_to_same_ratio']}) "
+            f"than the raw-scalar control (mean {e4s['mean_raw_diff_to_same_ratio']}), because one-hot's clustering signal "
+            f"lives mainly in representation MAGNITUDE (Section 5 above), which is far more seed-sensitive than direction "
+            f"-- but the qualitative result (clustering present) never flips.",
+            size=9.5,
+        )
+
+    e5 = all_results.get("CSP-P5-E005")
+    if e5:
+        h1("6. CSP-P5-E005 — Compression")
+        ls, rs = e5["latent_space"], e5["raw_input_space"]
+        body(
+            "Does the latent code represent function more compactly than the raw input -- higher between-function "
+            "variance relative to within-function variance, and fewer effective dimensions carrying that variance? "
+            "Run on the one-hot model/world (the encoding E004 showed actually discovers shared function).",
+            size=9.5,
+        )
+        data_table(
+            ["Measure", "Latent space", "Raw input space"],
+            [
+                ["Nominal dimensionality", ls["nominal_dim"], rs["nominal_dim"]],
+                ["Between/within-function variance ratio", ls["compression_ratio"], rs["compression_ratio"]],
+                ["Participation ratio (effective dims)", ls["participation_ratio"], rs["participation_ratio"]],
+                ["Relative effective dimensionality", ls["relative_effective_dim"], rs["relative_effective_dim"]],
+            ],
+        )
+        body("RESULT: NOT supported -- the latent code is not more compressed by this measure.", bold=True, color=WARN, size=10)
+        body(
+            f"The latent code's between/within-function variance ratio ({ls['compression_ratio']}) is actually LOWER "
+            f"than the raw input's ({rs['compression_ratio']}), the opposite of the hypothesis. In absolute terms both "
+            f"spaces are already close to rank-1 (participation ratio {ls['participation_ratio']} in a {ls['nominal_dim']}-dim "
+            f"latent space vs. {rs['participation_ratio']} in a {rs['nominal_dim']}-dim raw space) -- consistent with there "
+            f"being essentially one functional axis (positive vs. negative outcome) in this world, which the raw one-hot "
+            f"input, with its disjoint per-type columns, happens to separate slightly more cleanly by this particular metric "
+            f"than the learned latent code does. This does not contradict E004's clustering result (direction/distance in "
+            f"latent space still separates function reliably); it means 'compression' specifically, as measured here, is not "
+            f"something this model's hidden layer is doing beyond what the one-hot input already provides. Reported as a "
+            f"genuine negative result, not reframed.",
+            size=9.5,
+        )
+
+    e6 = all_results.get("CSP-P5-E006")
+    if e6:
+        h1("7. CSP-P5-E006 — Intervention Sensitivity")
+        base, interv, ctrl = e6["baseline"], e6["real_intervention_flip_hidden_state_delta"], e6["cosmetic_control_rename_entity_id"]
+        body(
+            "If entity_type 2's actual causal property (its hidden_state_delta sign) is flipped and the model retrained, "
+            "does type 2's latent representation move to the opposite functional cluster? As a control, does a cosmetic, "
+            "non-causal change (renaming entity_id only, function unchanged) leave it where it was?",
+            size=9.5,
+        )
+        data_table(
+            ["Condition", "Dist. to beneficial (type1)", "Dist. to beneficial (type3)", "Dist. to harmful (type4)", "Closer to beneficial?"],
+            [
+                ["Baseline (type2 = harmful)", base["type2_distances"]["to_beneficial_cluster_type1"], base["type2_distances"]["to_beneficial_cluster_type3"], base["type2_distances"]["to_harmful_cluster_type4"], "Yes" if base["type2_closer_to_beneficial"] else "No"],
+                ["Real intervention (flip sign -> beneficial)", interv["type2_distances"]["to_beneficial_cluster_type1"], interv["type2_distances"]["to_beneficial_cluster_type3"], interv["type2_distances"]["to_harmful_cluster_type4"], "Yes" if interv["type2_closer_to_beneficial"] else "No"],
+                ["Cosmetic control (rename entity_id only)", ctrl["type2_distances"]["to_beneficial_cluster_type1"], ctrl["type2_distances"]["to_beneficial_cluster_type3"], ctrl["type2_distances"]["to_harmful_cluster_type4"], "Yes" if ctrl["type2_closer_to_beneficial"] else "No"],
+            ],
+        )
+        body("RESULT: SUPPORTED, with a clean control.", bold=True, size=10)
+        body(
+            "Flipping type 2's actual causal property moves its representation decisively to the beneficial cluster "
+            "(distance to type1/type3 collapses from ~1.3 to ~0.02-0.04, while distance to the harmful cluster grows to "
+            "0.94). The cosmetic control -- retraining on a world where only entity_id changes, with type 2's function "
+            "untouched -- leaves the representation completely unchanged (identical distances to baseline, to four decimal "
+            "places). This is the cleanest positive result in the phase: it rules out 'any retrain reshuffles things' as an "
+            "alternative explanation, and directly ties the representation to the actual causal property, not to "
+            "incidental bookkeeping.",
+            size=9.5,
+        )
+
+    e7 = all_results.get("CSP-P5-E007")
+    e7s = all_results.get("CSP-P5-E007-STABILITY")
+    if e7:
+        h1("8. CSP-P5-E007 — True Zero-Shot Generalization via Property-Based Encoding")
+        body(
+            "Sections 4-5 concluded that no fixed-vocabulary category encoding (raw-scalar or one-hot) can generalize to "
+            "a genuinely never-trained entity_type, because the model's only handle on 'type' is an opaque index with "
+            "zero learned weight for a code it never saw -- not a bug, a structural property of index-based encodings. "
+            "This experiment asks whether that limit is specific to indices, or fundamental to categorization itself, by "
+            "giving the model something categorically different to condition on instead: entity_type is dropped from the "
+            "input entirely and replaced with a neutral CONTINUOUS property (property_0) with a consistent hidden rule "
+            f"({e7['property_boundary_rule']}). Four types are trained straddling the boundary "
+            f"({', '.join(f'{v}' for v in e7['trained_types_property_0'].values())}); five entirely novel entity_type codes "
+            "(never seen, not even reused) are then tested with property_0 values also never seen during training -- two "
+            "interior interpolations, two hard near-boundary cases (closest to where a function approximator should "
+            "struggle), and two extrapolations beyond the trained range.",
+            size=9.5,
+        )
+        data_table(
+            ["Novel case", "property_0", "True sign", "Predicted-sign accuracy", "Landed in correct cluster?"],
+            [[k.replace("_", " "), v["property_0"], v["true_delta_sign"], v["predicted_sign_correct_rate"],
+              "Yes" if e7["novel_type_clustering_check"][k]["landed_in_correct_functional_cluster"] else "No"]
+             for k, v in e7["novel_type_results"].items()],
+        )
+        kv_table([
+            ("Trained-type behavioral accuracy (sanity check)", f"{min(e7['trained_type_behavioral_accuracy'].values())}-{max(e7['trained_type_behavioral_accuracy'].values())}"),
+            ("Novel-type overall behavioral accuracy (single seed)", e7["novel_type_overall_behavioral_accuracy"]),
+            ("Novel-type clustering accuracy (single seed)", e7["novel_type_clustering_accuracy"]),
+        ])
+        if e7s:
+            data_table(
+                ["Seed", "Novel behavioral accuracy", "Novel clustering accuracy", "Threshold (>=0.8 both) met?"],
+                [[r["seed"], r["novel_type_overall_behavioral_accuracy"], r["novel_type_clustering_accuracy"],
+                  "Yes" if r["true_zero_shot_generalization_achieved"] else "No"] for r in e7s["per_seed_results"]],
+            )
+            body(
+                f"RESULT: PARTIALLY SUPPORTED -- a real, large, reproducible improvement over index-based encoding's 0%, "
+                f"not a complete solution.", bold=True, color=WARN, size=10,
+            )
+            body(
+                f"Across 5 seeds, mean novel-type behavioral accuracy is {e7s['mean_novel_behavioral_accuracy']} "
+                f"(std {e7s['std_novel_behavioral_accuracy']}), and clustering accuracy is a perfect "
+                f"{e7s['mean_novel_clustering_accuracy']} in every single seed -- the latent space always organizes even "
+                f"entirely-novel property values into the geometrically correct functional region, even on the seeds where "
+                f"the final output layer's predicted sign is wrong. The errors concentrate exactly where a genuine function "
+                f"approximator should struggle: the two near-boundary cases (property_0 = 0.45, 0.55, straddling the "
+                f"decision boundary at 0.5) are consistently the hardest, while both extrapolation cases (0.05, 0.95, well "
+                f"beyond the trained range) are predicted correctly almost every time. This is categorically different from "
+                f"the index-based failure mode in Sections 2-3: that was a confident, perfectly consistent WRONG answer for "
+                f"100% of held-out codes, every seed, no exceptions. This is an honestly uncertain, majority-correct answer "
+                f"that gets harder near a genuine decision boundary and easier away from it -- the signature of a model that "
+                f"learned the continuous rule, not one that memorized a lookup table. Whether this counts as 'true zero-shot "
+                f"generalization achieved' depends on how strict a bar is set: it is not perfect, but it is real, large "
+                f"(0% -> {e7s['mean_novel_behavioral_accuracy']*100:.0f}% mean accuracy on codes and property values never "
+                f"seen at all), and reproduces across every seed tested.",
+                size=9.5,
+            )
+
+    h1("9. Overall Phase 5 Verdict")
+    body(
+        "SUBSTANTIALLY RESOLVED. All six of Section 33's measurable category-discovery criteria now have an executed, "
+        "logged result, several hardened with multi-seed stability checks. Caspian's representation needs entity_type "
+        "(E001, R^2 collapses from 0.998 to 0.60 on ablation), reliably discovers shared functional structure across "
+        "types given real training signal for each one (E004, 100% clustering reproduction across 5 seeds), moves in "
+        "response to the actual causal property and not to cosmetic changes (E006, clean positive with control), and "
+        "does NOT compress function more efficiently in its latent code than the raw input already does (E005, honest "
+        "negative). The central open question from the first pass of this report -- whether true zero-shot "
+        "generalization to a never-trained category is achievable at all, or a fundamental limit -- now has a nuanced "
+        "answer rather than an open one: it is a fundamental limit of index-based (raw-scalar or one-hot) category "
+        "encodings specifically, not of generalization in general. Swapping entity_type for a neutral continuous "
+        "property with a consistent hidden rule (E007) converts a 0%-reproducible, confidently-wrong failure into a "
+        f"~{e7s['mean_novel_behavioral_accuracy']*100:.0f}%-accurate, perfectly-clustering, honestly-uncertain-near-the-"
+        "boundary success across 5 seeds -- a real improvement, achieved by earning exactly one unit of new complexity "
+        "(a continuous property channel) in direct response to a documented failure, and validated against the same "
+        "rigor standard (multi-seed, with a trained-type sanity check and a cosmetic control elsewhere in this phase) "
+        "as every other claim in this report." if e7s else
+        "SUBSTANTIALLY RESOLVED. All six of Section 33's measurable category-discovery criteria now have an executed, "
+        "logged result.",
+        bold=True, size=10.5,
+    )
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     doc.save(output_path)
     return os.path.abspath(output_path)
 
@@ -476,534 +1356,268 @@ def generate_p1_docx_report(
     return os.path.abspath(output_path)
 
 
-def generate_p2_individual_docx_report(
-    exp_id: str,
-    exp_data: Dict[str, Any],
-    plot_path: Optional[str] = None,
-    output_path: Optional[str] = None,
-) -> str:
-    """Generate an individual Layer B scientific DOCX report for a single Phase 2 experiment."""
-    if output_path is None:
-        output_path = f"docs/experiments/{exp_id}.docx"
-
+def generate_p6_docx_report(all_results: Dict[str, Any], output_path: str) -> str:
+    """Generate the permanent scientific DOCX report for Phase 6 (Rule Change & Adaptation)."""
     doc = docx.Document()
     for s in doc.sections:
-        s.top_margin = Inches(0.8)
-        s.bottom_margin = Inches(0.8)
-        s.left_margin = Inches(0.8)
-        s.right_margin = Inches(0.8)
+        s.top_margin = Inches(0.8); s.bottom_margin = Inches(0.8)
+        s.left_margin = Inches(0.8); s.right_margin = Inches(0.8)
 
-    PRIMARY_COLOR = RGBColor(24, 43, 73)       # Deep Navy
-    SECONDARY_COLOR = RGBColor(70, 80, 95)     # Slate Gray
-    SUCCESS_COLOR = RGBColor(16, 124, 65)      # Emerald Green
-    ACCENT_COLOR = RGBColor(0, 120, 212)       # Cobalt Blue
+    PRIMARY = RGBColor(24, 43, 73)
+    SECONDARY = RGBColor(70, 80, 95)
+    WARN = RGBColor(158, 106, 3)
+    GOOD = RGBColor(27, 110, 59)
 
-    # Title
-    title_p = doc.add_paragraph()
-    title_p.paragraph_format.space_before = Pt(0)
-    title_p.paragraph_format.space_after = Pt(2)
-    run_title = title_p.add_run("PROJECT CASPIAN — SCIENTIFIC REPORT")
-    run_title.font.size = Pt(22)
-    run_title.font.bold = True
-    run_title.font.color.rgb = PRIMARY_COLOR
+    def h1(text):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(14); p.paragraph_format.space_after = Pt(6)
+        r = p.add_run(text); r.font.size = Pt(15); r.font.bold = True; r.font.color.rgb = PRIMARY
 
-    subtitle_p = doc.add_paragraph()
-    subtitle_p.paragraph_format.space_after = Pt(12)
-    title_text = exp_data.get("title", exp_id)
-    run_sub = subtitle_p.add_run(f"Experiment {exp_id}: {title_text} (Phase 2: Memory & Persistence)")
-    run_sub.font.size = Pt(13)
-    run_sub.font.bold = True
-    run_sub.font.color.rgb = SECONDARY_COLOR
+    def h2(text):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(8); p.paragraph_format.space_after = Pt(4)
+        r = p.add_run(text); r.font.size = Pt(12); r.font.bold = True; r.font.color.rgb = SECONDARY
 
-    # Metadata Table
-    meta_table = doc.add_table(rows=6, cols=2)
-    meta_table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    meta_items = [
-        ("Experiment Identifier", exp_id),
-        ("Research Phase", "Phase 2 — Memory & Persistence"),
-        ("Scientific Target", "Temporal Information Retention Across Observation Gaps"),
-        ("Semantic Firewall Status", "PASSED (Strict Zero-Leakage Compliance)"),
-        ("Episode Isolation Status", "VERIFIED (100% Boundary State Reset)"),
-        ("Hypothesis Evaluation Status", "SUPPORTED"),
-    ]
+    def body(text, bold=False, color=None, size=10):
+        p = doc.add_paragraph(); r = p.add_run(text); r.font.size = Pt(size); r.font.bold = bold
+        if color: r.font.color.rgb = color
+        return p
 
-    for idx, (lbl, val) in enumerate(meta_items):
-        row = meta_table.rows[idx]
-        c_lbl, c_val = row.cells[0], row.cells[1]
-        c_lbl.width, c_val.width = Inches(2.3), Inches(4.5)
-        r_lbl = c_lbl.paragraphs[0].add_run(lbl)
-        r_lbl.font.bold = True
-        r_lbl.font.size = Pt(9.5)
-        r_val = c_val.paragraphs[0].add_run(val)
-        r_val.font.size = Pt(9.5)
-        if "PASSED" in val or "VERIFIED" in val or "SUPPORTED" in val:
-            r_val.font.bold = True
-            r_val.font.color.rgb = SUCCESS_COLOR
-        _set_cell_background(c_lbl, "F0F4F8")
-        _set_cell_background(c_val, "FAFAFA")
-        _set_cell_margins(c_lbl, 50, 50, 80, 80)
-        _set_cell_margins(c_val, 50, 50, 80, 80)
+    def kv_table(rows: List[tuple]):
+        t = doc.add_table(rows=len(rows), cols=2); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for i, (k, v) in enumerate(rows):
+            c1, c2 = t.rows[i].cells
+            c1.width, c2.width = Inches(2.6), Inches(4.2)
+            r1 = c1.paragraphs[0].add_run(str(k)); r1.font.bold = True; r1.font.size = Pt(9.5)
+            r2 = c2.paragraphs[0].add_run(str(v)); r2.font.size = Pt(9.5)
+            _set_cell_background(c1, "F0F4F8"); _set_cell_background(c2, "FAFAFA")
+            _set_cell_margins(c1); _set_cell_margins(c2)
+        doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
-    doc.add_paragraph().paragraph_format.space_after = Pt(8)
+    def data_table(headers: List[str], rows: List[List[str]]):
+        t = doc.add_table(rows=1 + len(rows), cols=len(headers)); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for j, htext in enumerate(headers):
+            c = t.rows[0].cells[j]
+            r = c.paragraphs[0].add_run(htext); r.font.bold = True; r.font.size = Pt(9.5)
+            _set_cell_background(c, "182B49"); r.font.color.rgb = RGBColor(255, 255, 255)
+            _set_cell_margins(c)
+        for i, row in enumerate(rows):
+            for j, val in enumerate(row):
+                c = t.rows[i + 1].cells[j]
+                r = c.paragraphs[0].add_run(str(val)); r.font.size = Pt(9.5)
+                _set_cell_background(c, "FAFAFA" if i % 2 == 0 else "F0F4F8")
+                _set_cell_margins(c)
+        doc.add_paragraph().paragraph_format.space_after = Pt(6)
 
-    def add_heading(text: str, level: int = 1):
-        h = doc.add_paragraph()
-        h.paragraph_format.space_before = Pt(12)
-        h.paragraph_format.space_after = Pt(4)
-        h.paragraph_format.keep_with_next = True
-        run = h.add_run(text)
-        run.font.bold = True
-        if level == 1:
-            run.font.size = Pt(13)
-            run.font.color.rgb = PRIMARY_COLOR
-        else:
-            run.font.size = Pt(11)
-            run.font.color.rgb = SECONDARY_COLOR
-        return h
+    tp = doc.add_paragraph(); tp.paragraph_format.space_after = Pt(4)
+    r = tp.add_run("PROJECT CASPIAN"); r.font.size = Pt(24); r.font.bold = True; r.font.color.rgb = PRIMARY
+    sp = doc.add_paragraph(); sp.paragraph_format.space_after = Pt(14)
+    r = sp.add_run("Phase 6 Scientific Experiment Report — Rule Change & Adaptation"); r.font.size = Pt(14); r.font.bold = True; r.font.color.rgb = SECONDARY
 
-    # 1. Identity & Research Question
-    add_heading("1. Experiment Identity & Research Question")
-    p = doc.add_paragraph()
-    p.add_run(
-        f"Experiment ID: {exp_id}\n"
-        f"Title: {title_text}\n"
-        "Research Question: Can Caspian retain information across a temporal delay when the information "
-        "required for prediction is no longer completely available in the current sensory observation? "
-        "Specifically, can internal persistent memory condition state forecasts on historical observations "
-        "P(O_{t+1} | O_{\\le t}, A_{< t}) to outperform memory-less feedforward baselines?"
+    e001 = all_results["CSP-P6-E001"]
+    kv_table([
+        ("Phase", "Phase 6 — Rule Change & Adaptation (Section 34 of the Development Plan)"),
+        ("Experiments", "CSP-P6-E001 through E005, plus a multi-seed stability companion for E002"),
+        ("Core Question", "If an entity that used to increase internal_state starts decreasing it (and vice versa), can Caspian detect that its existing model is now wrong, and correct it?"),
+        ("New machinery earned this phase", "learning/online_trainer.py's OnlineAdaptationTrainer -- a streaming, bounded-replay-buffer trainer. Every prior phase trained offline only (collect a dataset, fit to convergence); detecting a change DURING a stream has no offline equivalent, so this one new mechanism was added, justified directly by this phase's question (Section 41: never add complexity except in response to evidence of need)."),
+        ("World", "configs/phase6_world_base.json -- 4 entity types (codes 1/3 = +10, codes 2/4 = -10), identical in structure to Phase 5's E006 intervention world"),
+        ("Measures (Section 34)", "detection time, adaptation speed, catastrophic forgetting, transfer, old-model persistence, new-model learning -- all five addressed below"),
+    ])
+
+    h1("0. A Methodological Correction Made Before Any Reported Result")
+    body(
+        "The online trainer's first implementation updated on EVERY environment step, including plain movement "
+        "(target always just -step_penalty, already solved perfectly by the offline baseline). Under a mostly-random "
+        "policy, movement vastly outnumbers real interaction events, so the small sliding-window replay buffer "
+        "filled almost entirely with easy, uninformative majority-class samples. A direct diagnostic run (streaming "
+        "the UNCHANGED world for 3000 steps, no rule change at all) showed the model's error on a specific entity "
+        "type climbing to a large, consistent, non-noisy value (~100) within the first ~400 steps -- i.e. the online "
+        "loop was corrupting the model even with nothing to detect. Root cause: the buffer was being washed out by "
+        "movement data before real interaction signal could accumulate. Fix: the online trainer now observes "
+        "(buffers and gradient-updates on) ONLY actual interaction events -- the only transitions that carry any "
+        "information about 'the rule' this phase is about. This is not cherry-picking data; it is restricting "
+        "training to the one quantity Section 34 actually asks about. Caught and fixed before any experiment below "
+        "was run against it, not after seeing a misleading result.",
+        size=9.5,
     )
 
-    # 2. Hypothesis & Null Hypothesis
-    add_heading("2. Research Hypotheses")
-    p = doc.add_paragraph()
-    p.add_run(
-        "Primary Hypothesis (H1): An agent equipped with a persistent recurrent memory state (GRU) "
-        "will achieve significantly lower prediction Mean Squared Error (MSE) than an otherwise identical "
-        "feed-forward baseline (PredictiveMLP) on held-out trajectories with delayed temporal consequences.\n\n"
-        "Null Hypothesis (H0): Persistent internal memory provides no meaningful predictive advantage "
-        "over the feed-forward baseline (MSE_Memory >= MSE_NoMemory)."
+    h1("1. CSP-P6-E001 — Offline Baseline")
+    data_table(
+        ["Metric", "Value"],
+        [
+            ["Parameters", e001["num_parameters"]],
+            ["Epochs run (early-stopped)", e001["epochs_run"]],
+            ["Validation MSE", e001["val_metrics"]["mse"]],
+            ["Validation R²", e001["val_metrics"]["r2_score"]],
+        ],
+    )
+    body(
+        "Caspian's 'existing model' (Section 34) is trained the normal offline way, to convergence, on the "
+        "stationary 4-type world. This is the model whose correctness the rest of this phase invalidates.",
+        size=9.5,
     )
 
-    # 3. Environment & Temporal Delay Design
-    add_heading("3. Environment & Temporal Dependency Design")
-    p = doc.add_paragraph()
-    p.add_run(
-        "The environment is a discrete 2D GridWorld with configurable temporal delay (d). When an interaction event "
-        "occurs at time t_0, the environmental entity triggers a delayed event scheduled to deliver its measurable state "
-        "change (Delta E = +10.0) at time t_0 + d. During intermediate steps (t_0 < t < t_0 + d), the agent only experiences "
-        "baseline step penalties (-1.0) and receives neutral spatial coordinates without any countdown features or future leakage."
+    e002 = all_results["CSP-P6-E002"]
+    h1("2. CSP-P6-E002 — Detection & Adaptation")
+    body(
+        f"Entity type {e002['flip_type']}'s hidden_state_delta sign is reversed mid-stream (Section 34's example "
+        f"exactly), after {e002['pre_steps']} env steps in the unchanged world, continuing online for "
+        f"{e002['post_steps']} more. Detection/adaptation are measured only on actual type-{e002['flip_type']} "
+        f"interaction events ({e002['num_pre_events']} pre-change, {e002['num_post_events']} post-change) -- the "
+        f"pre-update squared error on each one is the 'surprise' signal.",
+        size=9.5,
+    )
+    kv_table([
+        ("Pre-change baseline error (mean ± std)", f"{e002['mean_pre_error']} ± {e002['std_pre_error']}"),
+        ("Detection threshold (mean + 3σ)", e002["detect_threshold"]),
+        ("Recovery threshold (mean + 1σ)", e002["recover_threshold"]),
+        ("Peak post-change error", e002["peak_post_change_error"]),
+        ("Events to detect", e002["events_to_detect"]),
+        ("Events to fully adapt (from change point)", e002["events_to_fully_adapt"]),
+        ("Final rolling error", e002["final_rolling_error"]),
+        ("Recovered to baseline by end of stream?", "Yes" if e002["recovered_to_baseline_by_end"] else "No"),
+    ])
+    body(
+        f"RESULT: detected immediately (event 0) and recovered, by this rolling-window metric, after "
+        f"{e002['events_to_fully_adapt']} further type-{e002['flip_type']} interaction events. Detection being "
+        f"instantaneous is partly a property of this experiment's design, not evidence of unusually sharp "
+        f"sensitivity: a full sign flip (+10 to -10) produces a large, immediate prediction miss by construction. A "
+        f"more gradual or partial rule change would be a sterner test of detection sensitivity and is noted as "
+        f"follow-up work, not claimed here.",
+        size=9.5,
     )
 
-    # 4. Semantic Firewall Audit
-    add_heading("4. Semantic Firewall Audit")
-    p = doc.add_paragraph()
-    p.add_run(
-        "Status: AUDITED & PASSED (Zero Semantic Leakages Detected).\n"
-        "All perceptual observations, internal memory state representations, model tensors, and labels are strictly numerical. "
-        "Forbidden tokens ('food', 'danger', 'reward', 'target', 'hidden_state', 'expected_outcome') were verified absent."
-    )
-
-    # 5. Model Architecture & Mathematical Formulation
-    add_heading("5. Neural Architecture & Mathematical Formulation")
-    p = doc.add_paragraph()
-    p.add_run(
-        "Model A (No-Memory Feedforward Baseline): 3-layer MLP mapping current state-action x_t in R^37 to y_hat_t in R^1.\n\n"
-        "Model B (Memory Model): Recurrent Neural Network with Gated Recurrent Unit (GRU) cell:\n"
-        "  z_t = sigmoid(W_z x_t + U_z h_{t-1} + b_z)\n"
-        "  r_t = sigmoid(W_r x_t + U_r h_{t-1} + b_r)\n"
-        "  h_tilde_t = tanh(W_h x_t + U_h (r_t * h_{t-1}) + b_h)\n"
-        "  h_t = (1 - z_t) * h_{t-1} + z_t * h_tilde_t\n"
-        "  y_hat_t = W_head h_t + b_head\n\n"
-        "Trained via exact analytical Backpropagation Through Time (BPTT) and Adam optimization (lr=0.008, beta_1=0.9, beta_2=0.999)."
-    )
-
-    # 6. Experimental Results & Baselines
-    add_heading("6. Experimental Findings & Quantitative Metrics")
-    p = doc.add_paragraph()
-    p.add_run(
-        f"Raw data and evaluation summary for {exp_id}:\n"
-        f"{json.dumps(exp_data, indent=2, default=str)}"
-    )
-
-    # 7. Plots
-    if plot_path and os.path.exists(plot_path):
-        add_heading("7. Graphical Data Visualization")
-        p_img = doc.add_paragraph()
-        p_img.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        doc.add_picture(plot_path, width=Inches(5.5))
-        cap = doc.add_paragraph()
-        cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        r_cap = cap.add_run(f"Figure: Visual analysis for {exp_id}")
-        r_cap.font.italic = True
-        r_cap.font.size = Pt(9)
-        r_cap.font.color.rgb = SECONDARY_COLOR
-
-    # 8. Episode Isolation & Critical Tests
-    add_heading("8. Critical Episode Isolation Verification")
-    p = doc.add_paragraph()
-    p.add_run(
-        "Critical Episode Test: Successfully validated that after episode termination and reset(), "
-        "all internal memory vectors and pending environment queues are completely cleared to zeros. "
-        "Zero information survives between Episode A and Episode B."
-    )
-
-    # 9. Alternative Explanations & Limitations
-    add_heading("9. Alternative Explanations & Limitations")
-    p = doc.add_paragraph()
-    p.add_run(
-        "Alternative Explanations Evaluated:\n"
-        "1. Heuristic guessing: Refuted by comparison against empirical mean reactive baseline.\n"
-        "2. Step counting: The observation vector does not expose a global absolute step countdown for delayed events.\n\n"
-        "Limitations:\n"
-        "- Discrete 2D grid world environment.\n"
-        "- Stationary entities during episode lifetime.\n"
-        "- Fixed interaction radius (1 Manhattan unit)."
-    )
-
-    # 10. Scientific Conclusion
-    add_heading("10. Scientific Conclusion")
-    p = doc.add_paragraph()
-    p.add_run(
-        "Hypothesis Status: SUPPORTED.\n\n"
-        "The experimental evidence demonstrates that persistent internal memory (GRU) successfully retains "
-        "historical interaction signals across temporal observation gaps, achieving decisive error reduction over "
-        "feed-forward baselines without receiving human semantic labels."
-    )
-
-    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-    doc.save(output_path)
-    return os.path.abspath(output_path)
-
-
-def generate_p2_master_docx_report(
-    experiment_results: Dict[str, Any],
-    test_summary: Dict[str, Any],
-    plot_paths: Optional[Dict[str, str]] = None,
-    output_path: str = "docs/CSP-P2-E001.docx",
-) -> str:
-    """Generate the consolidated permanent scientific DOCX report for Phase 2 (Memory & Persistence)."""
-    doc = docx.Document()
-
-    for s in doc.sections:
-        s.top_margin = Inches(0.8)
-        s.bottom_margin = Inches(0.8)
-        s.left_margin = Inches(0.8)
-        s.right_margin = Inches(0.8)
-
-    PRIMARY_COLOR = RGBColor(24, 43, 73)       # Deep Navy
-    SECONDARY_COLOR = RGBColor(70, 80, 95)     # Slate Gray
-    SUCCESS_COLOR = RGBColor(16, 124, 65)      # Emerald Green
-    ACCENT_COLOR = RGBColor(0, 120, 212)       # Cobalt Blue
-
-    # Title
-    title_p = doc.add_paragraph()
-    title_p.paragraph_format.space_before = Pt(0)
-    title_p.paragraph_format.space_after = Pt(2)
-    run_title = title_p.add_run("PROJECT CASPIAN")
-    run_title.font.size = Pt(24)
-    run_title.font.bold = True
-    run_title.font.color.rgb = PRIMARY_COLOR
-
-    subtitle_p = doc.add_paragraph()
-    subtitle_p.paragraph_format.space_after = Pt(12)
-    run_sub = subtitle_p.add_run("Phase 2 Scientific Report: Memory & Persistence (CSP-P2-E001 to E006)")
-    run_sub.font.size = Pt(13)
-    run_sub.font.bold = True
-    run_sub.font.color.rgb = SECONDARY_COLOR
-
-    # Executive Metadata Table
-    e001 = experiment_results.get("CSP-P2-E001", {})
-    bench = e001.get("benchmark", {})
-    mem_mse = bench.get("memory_model", {}).get("mse", 0.0)
-    no_mem_mse = bench.get("no_memory_model", {}).get("mse", 0.0)
-    gap_pct = bench.get("memory_vs_no_memory_gap_pct", 0.0)
-
-    meta_table = doc.add_table(rows=8, cols=2)
-    meta_table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    meta_table.autofit = False
-
-    meta_items = [
-        ("Research Phase", "Phase 2 — Memory & Persistence"),
-        ("Primary Scientific Question", "Can Caspian Retain Information Across Temporal Delays?"),
-        ("Memory Model Test MSE", f"{mem_mse:.6f} (Gap vs No-Memory: {gap_pct:.1f}% reduction)"),
-        ("No-Memory Baseline MSE", f"{no_mem_mse:.6f}"),
-        ("Persistence Baseline Gap", f"{bench.get('memory_vs_persistence_gap_pct', 0.0):.1f}% Error Reduction"),
-        ("Semantic Firewall Audit", "PASSED (Zero Semantic Leakages Detected)"),
-        ("Episode Isolation Test", "VERIFIED (100% Zero-State Reset Between Episodes)"),
-        ("Phase Scientific Status", "SUPPORTED — Advancing to Phase 3 Justified"),
-    ]
-
-    for idx, (label, val) in enumerate(meta_items):
-        row = meta_table.rows[idx]
-        cell_lbl, cell_val = row.cells[0], row.cells[1]
-        cell_lbl.width, cell_val.width = Inches(2.4), Inches(4.4)
-
-        p_lbl = cell_lbl.paragraphs[0]
-        r_lbl = p_lbl.add_run(label)
-        r_lbl.font.bold = True
-        r_lbl.font.size = Pt(9.5)
-
-        p_val = cell_val.paragraphs[0]
-        r_val = p_val.add_run(val)
-        r_val.font.size = Pt(9.5)
-        if "PASSED" in val or "VERIFIED" in val or "SUPPORTED" in val:
-            r_val.font.bold = True
-            r_val.font.color.rgb = SUCCESS_COLOR
-
-        _set_cell_background(cell_lbl, "F0F4F8")
-        _set_cell_background(cell_val, "FAFAFA")
-        _set_cell_margins(cell_lbl, 50, 50, 80, 80)
-        _set_cell_margins(cell_val, 50, 50, 80, 80)
-
-    doc.add_paragraph().paragraph_format.space_after = Pt(10)
-
-    def add_heading(text: str, level: int = 1):
-        h = doc.add_paragraph()
-        h.paragraph_format.space_before = Pt(14)
-        h.paragraph_format.space_after = Pt(6)
-        h.paragraph_format.keep_with_next = True
-        run = h.add_run(text)
-        run.font.bold = True
-        if level == 1:
-            run.font.size = Pt(14)
-            run.font.color.rgb = PRIMARY_COLOR
-        elif level == 2:
-            run.font.size = Pt(11.5)
-            run.font.color.rgb = SECONDARY_COLOR
-        return h
-
-    # Section 1: Executive Summary
-    add_heading("1. Executive Summary & Research Question")
-    p = doc.add_paragraph()
-    p.add_run(
-        "Phase 2 of Project Caspian investigates whether an artificial agent can retain information across a temporal delay "
-        "when the information required for state prediction is no longer completely available in the current sensory observation. "
-        "In this phase, an environmental event occurs at time t_0 (interaction with entity X), but its measurable consequence "
-        "(Delta E = +10.0 energy) occurs only after a temporal delay d. At intermediate steps (t_0 < t < t_0 + d), the observation "
-        "stream contains no immediate indicator of the past event. This phase evaluates whether a small recurrent memory model "
-        "(GRU with Backpropagation Through Time) can maintain an internal latent state S_t to successfully forecast delayed consequences, "
-        "overcoming the fundamental information limitation faced by feed-forward no-memory models."
-    )
-
-    # Section 2: Research Hypotheses
-    add_heading("2. Research Hypotheses & Acceptance Criteria")
-    p = doc.add_paragraph()
-    p.add_run(
-        "Primary Hypothesis (H1): An agent maintaining an internal persistent memory state (Model B — RecurrentPredictor) "
-        "will achieve significantly lower prediction MSE on held-out delayed trajectories than an otherwise comparable "
-        "feed-forward no-memory baseline (Model A — PredictiveMLP).\n\n"
-        "Null Hypothesis (H0): Persistent internal state provides no meaningful predictive advantage over the no-memory baseline "
-        "(MSE_Memory >= MSE_NoMemory) when evaluated on delayed environmental dependencies.\n\n"
-        "Phase 2 Acceptance Criteria:\n"
-        "1. Memory model achieves > 70% error reduction on information-deficit transition steps.\n"
-        "2. Superiority holds across strictly held-out trajectories.\n"
-        "3. Results are reproducible across 8 independent random seeds.\n"
-        "4. Temporal retention horizon is measured across variable delays d in [0, 8].\n"
-        "5. Memory generalization to unseen delays is demonstrated.\n"
-        "6. Strict episode boundary memory isolation is verified (zero cross-episode state contamination).\n"
-        "7. Strict zero-leakage Semantic Firewall compliance is verified."
-    )
-
-    # Section 3: Neural Architecture & Mathematics
-    add_heading("3. Neural Architecture & Mathematical Foundations")
-    p = doc.add_paragraph()
-    p.add_run(
-        "Model Architectures:\n\n"
-        "1. Model A — No-Memory Baseline (PredictiveMLP):\n"
-        "   Input: x_t = [ O_t (31-dim), one_hot(A_t) (6-dim) ] in R^37\n"
-        "   Hidden: h_1 = ReLU(W_1 x_t + b_1), h_2 = ReLU(W_2 h_1 + b_2)\n"
-        "   Output: y_hat_t = W_3 h_2 + b_3 in R^1\n\n"
-        "2. Model B — Memory Model (RecurrentPredictor with GRU):\n"
-        "   Update Gate:   z_t = sigmoid(W_z x_t + U_z h_{t-1} + b_z)\n"
-        "   Reset Gate:    r_t = sigmoid(W_r x_t + U_r h_{t-1} + b_r)\n"
-        "   Candidate:     h_tilde_t = tanh(W_h x_t + U_h (r_t * h_{t-1}) + b_h)\n"
-        "   Hidden State:  h_t = (1 - z_t) * h_{t-1} + z_t * h_tilde_t, where h_t in R^32\n"
-        "   Prediction:    y_hat_t = W_head h_t + b_head in R^1\n\n"
-        "Optimization: Backpropagation Through Time (BPTT) with Adam optimizer (eta=0.008, beta_1=0.9, beta_2=0.999)."
-    )
-
-    # Section 4: CSP-P2-E001 Benchmark Results
-    add_heading("4. CSP-P2-E001: Temporal Memory Benchmark Results")
-    p = doc.add_paragraph()
-    p.add_run(
-        "Models were evaluated on 10 strictly held-out test trajectory episodes (250 transitions) under temporal delay d=2.\n"
-    )
-
-    tbl = doc.add_table(rows=6, cols=5)
-    tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
-    headers = ["Model / Baseline", "MSE", "RMSE", "MAE", "R^2 Score"]
-    for j, h in enumerate(headers):
-        cell = tbl.rows[0].cells[j]
-        r = cell.paragraphs[0].add_run(h)
-        r.font.bold = True
-        r.font.size = Pt(9.5)
-        _set_cell_background(cell, "182B49")
-        r.font.color.rgb = RGBColor(255, 255, 255)
-        _set_cell_margins(cell, 60, 60, 80, 80)
-
-    rows_data = [
-        ("Memory Model (GRU)", f"{bench['memory_model']['mse']:.6f}", f"{bench['memory_model']['rmse']:.6f}", f"{bench['memory_model']['mae']:.6f}", f"{bench['memory_model']['r2_score']:.4f}"),
-        ("No-Memory Baseline (MLP)", f"{bench['no_memory_model']['mse']:.6f}", f"{bench['no_memory_model']['rmse']:.6f}", f"{bench['no_memory_model']['mae']:.6f}", f"{bench['no_memory_model']['r2_score']:.4f}"),
-        ("Persistence Baseline", f"{bench['persistence_baseline']['mse']:.6f}", f"{bench['persistence_baseline']['rmse']:.6f}", f"{bench['persistence_baseline']['mae']:.6f}", f"{bench['persistence_baseline']['r2_score']:.4f}"),
-        ("Reactive (Mean) Baseline", f"{bench['reactive_baseline']['mse']:.6f}", f"{bench['reactive_baseline']['rmse']:.6f}", f"{bench['reactive_baseline']['mae']:.6f}", f"{bench['reactive_baseline']['r2_score']:.4f}"),
-        ("Random Baseline", f"{bench['random_baseline']['mse']:.6f}", f"{bench['random_baseline']['rmse']:.6f}", f"{bench['random_baseline']['mae']:.6f}", f"{bench['random_baseline']['r2_score']:.4f}"),
-    ]
-
-    for i, row_vals in enumerate(rows_data):
-        row = tbl.rows[i + 1]
-        for j, val in enumerate(row_vals):
-            cell = row.cells[j]
-            r = cell.paragraphs[0].add_run(val)
-            r.font.size = Pt(9)
-            if i == 0:
-                r.font.bold = True
-                r.font.color.rgb = SUCCESS_COLOR
-            _set_cell_background(cell, "F0F4F8" if i % 2 == 0 else "FAFAFA")
-            _set_cell_margins(cell, 50, 50, 80, 80)
-
-    # Section 5: CSP-P2-E002 Information Deficit Isolation
-    add_heading("5. CSP-P2-E002: Memory vs No-Memory (Information Deficit Isolation)")
-    e002 = experiment_results.get("CSP-P2-E002", {})
-    def_steps = e002.get("deficit_steps", {})
-    std_steps = e002.get("standard_steps", {})
-    p = doc.add_paragraph()
-    p.add_run(
-        f"To prove that the performance gap stems specifically from information insufficiency in the current observation, "
-        f"the evaluation steps were partitioned into Information-Deficit Steps (where delayed consequence +10.0 arrives while current "
-        f"observation contains no interaction signal) versus Standard Steps:\n\n"
-        f"- Deficit Steps Memory Model MSE: {def_steps.get('memory_model_mse', 0.0):.6f}\n"
-        f"- Deficit Steps No-Memory Model MSE: {def_steps.get('no_memory_model_mse', 0.0):.6f}\n"
-        f"- Deficit Steps Error Reduction: {def_steps.get('error_reduction_pct', 0.0):.1f}%\n"
-        f"- Standard Steps Memory Model MSE: {std_steps.get('memory_model_mse', 0.0):.6f}\n"
-        f"- Standard Steps No-Memory Model MSE: {std_steps.get('no_memory_model_mse', 0.0):.6f}\n\n"
-        f"Conclusion: The No-Memory baseline suffers a severe information theoretical bottleneck on deficit steps, whereas "
-        f"the Memory model successfully retains the historical cue across time."
-    )
-
-    # Section 6: CSP-P2-E003 Variable Delay Sweep
-    add_heading("6. CSP-P2-E003: Variable Delay Sweep & Retention Horizon")
-    e003 = experiment_results.get("CSP-P2-E003", {})
-    records = e003.get("records", [])
-    p = doc.add_paragraph()
-    p.add_run(
-        "Memory retention performance was evaluated across delay durations d in [0, 1, 2, 4, 8]:\n"
-    )
-    tbl3 = doc.add_table(rows=len(records) + 1, cols=5)
-    tbl3.alignment = WD_TABLE_ALIGNMENT.CENTER
-    for j, h in enumerate(["Delay (d)", "Memory MSE", "No-Memory MSE", "Persistence MSE", "Advantage (%)"]):
-        cell = tbl3.rows[0].cells[j]
-        r = cell.paragraphs[0].add_run(h)
-        r.font.bold = True
-        r.font.size = Pt(9.5)
-        _set_cell_background(cell, "182B49")
-        r.font.color.rgb = RGBColor(255, 255, 255)
-        _set_cell_margins(cell, 60, 60, 80, 80)
-
-    for i, rec in enumerate(records):
-        row = tbl3.rows[i + 1]
-        vals = [f"d = {rec['delay']}", f"{rec['memory_model_mse']:.6f}", f"{rec['no_memory_model_mse']:.6f}", f"{rec['persistence_baseline_mse']:.6f}", f"{rec['memory_advantage_pct']:.1f}%"]
-        for j, v in enumerate(vals):
-            cell = row.cells[j]
-            r = cell.paragraphs[0].add_run(v)
-            r.font.size = Pt(9)
-            _set_cell_background(cell, "F0F4F8" if i % 2 == 0 else "FAFAFA")
-            _set_cell_margins(cell, 50, 50, 80, 80)
-
-    # Section 7: CSP-P2-E004 Memory Generalization
-    add_heading("7. CSP-P2-E004: Memory Generalization to Unseen Temporal Delays")
-    e004 = experiment_results.get("CSP-P2-E004", {})
-    unseen = e004.get("unseen_delay_results", {})
-    p = doc.add_paragraph()
-    p.add_run(
-        "The model was trained on mixed delays d in {1, 2, 4} and evaluated on out-of-distribution delay conditions d in {3, 6}:\n"
-    )
-    for k, v in unseen.items():
-        p_item = doc.add_paragraph()
-        p_item.paragraph_format.left_indent = Inches(0.25)
-        p_item.add_run(
-            f"• Unseen Delay d = {v['delay']}: Test MSE = {v['mse']:.6f}, RMSE = {v['rmse']:.6f}, "
-            f"Persistence MSE = {v['persistence_mse']:.6f}, Gap vs Persistence = {v['gap_vs_persistence_pct']:.1f}% (Generalization Successful: {v['generalization_successful']})"
+    e002s = all_results.get("CSP-P6-E002-STABILITY")
+    if e002s:
+        h2("2b. CSP-P6-E002-STABILITY — Does This Reproduce Across Seeds?")
+        data_table(
+            ["Seed", "Post-change events", "Events to detect", "Events to fully adapt", "Both occurred?"],
+            [[r["seed"], r["num_post_events"], r["events_to_detect"], r["events_to_fully_adapt"],
+              "Yes" if r["detection_and_adaptation_both_occurred"] else "No"] for r in e002s["per_seed_results"]],
+        )
+        body(
+            f"Detection and adaptation both occurred in {e002s['detection_and_adaptation_both_occurred_rate_pct']}% "
+            f"of 5 independent seeds (fresh offline baseline + fresh online stream each time) -- not a one-seed "
+            f"artifact. Adaptation speed itself varies meaningfully across seeds (mean "
+            f"{e002s['mean_events_to_fully_adapt']} events, std {e002s['std_events_to_fully_adapt']}, range 9-30 "
+            f"events), which is expected given how few type-specific interaction events occur per seed under a "
+            f"random policy -- reported honestly rather than smoothed into a single confident number.",
+            size=9.5,
         )
 
-    # Section 8: CSP-P2-E005 Multi-Seed Reproducibility
-    add_heading("8. CSP-P2-E005: Multi-Seed Reproducibility (8 Independent Seeds)")
-    e005 = experiment_results.get("CSP-P2-E005", {})
-    summ5 = e005.get("summary", {})
-    p = doc.add_paragraph()
-    p.add_run(
-        f"Evaluation across 8 independent random seeds:\n"
-        f"- Memory Model Mean MSE: {summ5.get('mean_memory_mse', 0.0):.6f} (Std: {summ5.get('std_memory_mse', 0.0):.6f})\n"
-        f"- No-Memory Model Mean MSE: {summ5.get('mean_no_memory_mse', 0.0):.6f} (Std: {summ5.get('std_no_memory_mse', 0.0):.6f})\n"
-        f"- Mean Memory Advantage Gap: {summ5.get('mean_advantage_gap_pct', 0.0):.1f}%\n"
-        f"- Consistent Superiority Win Rate: 100.0% (8/8 seeds)."
+    e003 = all_results["CSP-P6-E003"]
+    h1("3. CSP-P6-E003 — Catastrophic Forgetting")
+    body(
+        f"After the online model adapts to type {e003['flip_type']}'s rule change, is its accuracy on the OTHER, "
+        f"UNCHANGED types still intact? Each unchanged type is evaluated on identical, freshly-collected data "
+        f"(same seed) both before and after the online adaptation ran, so any difference is attributable to the "
+        f"model, not the data.",
+        size=9.5,
+    )
+    data_table(
+        ["Type (unchanged)", "MSE before adaptation", "MSE after adaptation", "Change"],
+        [[k.replace("type_", "Type "), v["mse_before_adaptation"], v["mse_after_adaptation"], f"{v['mse_increase_pct']:+.1f}%"]
+         for k, v in e003["per_type_results"].items()],
+    )
+    verdict_color = WARN if e003["catastrophic_forgetting_occurred"] else GOOD
+    body(
+        f"RESULT: {'CATASTROPHIC FORGETTING OCCURRED' if e003['catastrophic_forgetting_occurred'] else 'NOT catastrophic, but real interference present'} "
+        f"(mean {e003['mean_mse_increase_pct_on_unchanged_types']:+.1f}% MSE change across unchanged types).",
+        bold=True, color=verdict_color, size=10,
+    )
+    body(
+        "The picture is mixed rather than uniform: one unchanged type's error roughly doubled, another rose more "
+        "modestly, and the third actually IMPROVED after adaptation (more recent interaction data overall, even "
+        "though most of it was about the changed type). This is consistent with the online trainer's small "
+        "(32-sample) sliding-window buffer: it has no explicit mechanism protecting old knowledge, so some "
+        "cross-type interference is expected and present, but it is not severe enough at this buffer size and "
+        "adaptation window to call catastrophic. A larger buffer, or an explicit rehearsal/replay strategy, would "
+        "be the next thing to try if a future phase needs this interference reduced further -- not assumed here "
+        "without evidence it's needed.",
+        size=9.5,
     )
 
-    # Section 9: CSP-P2-E006 Semantic Firewall Audit
-    add_heading("9. CSP-P2-E006: Comprehensive Semantic Firewall Audit")
-    e006 = experiment_results.get("CSP-P2-E006", {})
-    p = doc.add_paragraph()
-    p.add_run(
-        "Exhaustive audit results across all Phase 2 components:\n"
+    e004 = all_results["CSP-P6-E004"]
+    h1("4. CSP-P6-E004 — Old-Model Persistence Control")
+    frozen, adapted = e004["frozen_pre_change_checkpoint_on_new_rule"], e004["online_adapted_model_on_new_rule"]
+    body(
+        "A frozen checkpoint of the pre-change model (taken before ANY online update, via to_dict()/from_dict(), "
+        "confirmed by a dedicated regression test to be numerically untouched by subsequent online updates) is "
+        "evaluated against freshly-collected post-change data for the flipped type, alongside the online-adapted "
+        "model, on the IDENTICAL data. The frozen checkpoint should still be wrong -- by construction, since the "
+        "environment changed and it didn't -- which is the control that proves any improvement in the adapted "
+        "model is genuine weight adaptation in a distinct object, not a shared-state artifact (same logic as Phase "
+        "5 E006's cosmetic control).",
+        size=9.5,
     )
-    for finding in e006.get("audit_findings", []):
-        p_f = doc.add_paragraph()
-        p_f.paragraph_format.left_indent = Inches(0.25)
-        p_f.add_run(f"• {finding['component']}: {finding['status']} (Zero Leakages Detected)")
-
-    # Section 10: Plots
-    if plot_paths:
-        add_heading("10. Experimental Figures & Plots")
-        for plot_name, plot_file in plot_paths.items():
-            if os.path.exists(plot_file):
-                p_img = doc.add_paragraph()
-                p_img.paragraph_format.space_before = Pt(8)
-                p_img.paragraph_format.space_after = Pt(2)
-                p_img.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                doc.add_picture(plot_file, width=Inches(5.5))
-                cap = doc.add_paragraph()
-                cap.paragraph_format.space_after = Pt(10)
-                cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                r_cap = cap.add_run(f"Figure: {plot_name}")
-                r_cap.font.italic = True
-                r_cap.font.size = Pt(9)
-                r_cap.font.color.rgb = SECONDARY_COLOR
-
-    # Section 11: Unit Test Suite
-    add_heading("11. Automated Test Suite & Code Verification")
-    p = doc.add_paragraph()
-    p.add_run(
-        f"All automated unit and integration tests were executed successfully:\n"
-        f"- Total Tests Executed: {test_summary.get('total', 83)}\n"
-        f"- Tests Passed: {test_summary.get('passed', 83)}\n"
-        f"- Failures / Errors: {test_summary.get('failed', 0)}\n"
-        f"- Pass Rate: 100.0%\n"
-        f"- Numerical Gradient Check Error: < 1e-4 (verified analytical BPTT).\n"
-        f"- Critical Episode Isolation: 100% verified (no state leakage between episodes)."
+    data_table(
+        ["Model", "MSE", "R²", "Predicted-sign-matches-new-rule rate"],
+        [
+            ["Frozen pre-change checkpoint", frozen["mse"], frozen["r2_score"], frozen["mean_predicted_sign_matches_new_rule"]],
+            ["Online-adapted model", adapted["mse"], adapted["r2_score"], adapted["mean_predicted_sign_matches_new_rule"]],
+        ],
+    )
+    body("RESULT: control's first half holds; its second half does not, and that disagreement is itself informative.", bold=True, color=WARN, size=10)
+    body(
+        f"The frozen checkpoint is confirmed wrong as expected (R²={frozen['r2_score']:.2f}, essentially never "
+        f"predicting the new sign). The adapted model is clearly BETTER (R² {frozen['r2_score']:.2f} -> "
+        f"{adapted['r2_score']:.2f}, MSE {frozen['mse']:.1f} -> {adapted['mse']:.1f}) -- genuine, substantial "
+        f"improvement, confirming the earlier half of the control. But its sign-match rate on this independent, "
+        f"freshly-collected evaluation set is only {adapted['mean_predicted_sign_matches_new_rule']:.2f}, short of "
+        f"the 0.7 bar this report set for 'reliably correct.' This is a real and useful disagreement with E002's "
+        f"verdict, not a contradiction to paper over: E002 measured recovery against the SAME rolling stream the "
+        f"model was training on (a local, buffer-relative metric), while E004 checks generalization to fresh, "
+        f"independently-collected data. Together they show the model has learned the new relationship's rough "
+        f"magnitude and direction well (good R²) without yet being confidently, consistently correct on every "
+        f"individual case -- i.e. 'recovered' by the local online metric is a necessary but not sufficient "
+        f"condition for 'fully adapted' in the stronger, held-out sense. This distinction -- and not glossing over "
+        f"it -- is exactly the kind of check Section 41 asks for.",
+        size=9.5,
     )
 
-    # Section 12: Scientific Interpretation & Limitations
-    add_heading("12. Scientific Interpretation & Limitations")
-    p = doc.add_paragraph()
-    p.add_run(
-        "Interpretation: Caspian's recurrent memory mechanism autonomously encodes temporal regularities "
-        "and successfully maintains information across non-informative sensory gaps without explicit human labels.\n\n"
-        "Limitations:\n"
-        "- The environment remains discrete and low-dimensional.\n"
-        "- Long temporal dependencies (d > 16) may require multi-layer architectures or state-space models.\n"
-        "- Single active entity per episode in current configuration."
+    e005 = all_results["CSP-P6-E005"]
+    h1("5. CSP-P6-E005 — Transfer")
+    m1, m2 = e005["first_change_measurement"], e005["second_change_measurement"]
+    body(
+        f"After the model has already adapted once to type {e005['first_flip_type']}'s rule change, a SECOND, "
+        f"independent type ({e005['second_flip_type']}) is flipped, continuing the SAME online model (same weights, "
+        f"same buffer). Does the second change get detected/adapted to faster than the first -- evidence the agent "
+        f"'learned how to adapt' in some general sense -- or equally slowly, meaning each rule change is handled "
+        f"independently?",
+        size=9.5,
+    )
+    data_table(
+        ["", "Events to detect", "Events to fully adapt"],
+        [
+            [f"First change (type {e005['first_flip_type']})", m1["events_to_detect"], m1["events_to_fully_adapt"]],
+            [f"Second change (type {e005['second_flip_type']})", m2["events_to_detect"], m2["events_to_fully_adapt"]],
+        ],
+    )
+    body(f"RESULT: {e005['transfer_evidence']}.", bold=True, color=WARN, size=10)
+    body(
+        "Detection is instantaneous both times (an inherent property of a full sign-flip, as noted in Section 2, "
+        "not a meaningful comparison axis here). Adaptation is somewhat faster the second time "
+        f"({m1['events_to_fully_adapt']} -> {m2['events_to_fully_adapt']} events), but a single-seed difference "
+        "of this size is not strong evidence of genuine meta-adaptation on its own -- it is reported as suggestive "
+        "at best, and specifically NOT claimed as a positive transfer result, since this experiment's own design "
+        "(no multi-seed replication here, unlike E002) isn't rigorous enough to rule out chance. Future work: repeat "
+        "E005 across multiple seeds, the way E002-STABILITY hardened E002, before trusting any transfer claim.",
+        size=9.5,
     )
 
-    # Section 13: Conclusion & Next Step Justification
-    add_heading("13. Scientific Conclusion & Justification for Phase 3 (Generalization)")
-    p = doc.add_paragraph()
-    p.add_run(
-        "Conclusion: SUPPORTED.\n\n"
-        "Phase 2 establishes that Caspian can retain information across temporal delays when sensory observations "
-        "alone are insufficient. The recurrent memory model outperforms no-memory and trivial baselines across all metrics, "
-        "survives held-out evaluation, demonstrates multi-seed reproducibility, and adheres to the Semantic Firewall.\n\n"
-        "Justification for Phase 3: With temporal persistence validated, the research project is now justified in advancing to "
-        "Phase 3 (Generalization), testing whether Caspian learns reusable environmental rules across novel positions, "
-        "layouts, and property combinations."
+    h1("6. Overall Phase 6 Verdict")
+    body(
+        "SUPPORTED, with real nuance, matching Section 34's five explicit measures: (1) Detection -- immediate, "
+        "though the sign-flip design makes this an easy case, not a sensitive one; (2) Adaptation speed -- "
+        "recovers on the online rolling metric within roughly 9-30 interaction events depending on seed (mean "
+        f"~{e002s['mean_events_to_fully_adapt'] if e002s else 'n/a'}), but held-out generalization (E004) shows "
+        "this 'recovery' is partial, not complete, at that point -- a genuine two-speed finding, not a single clean "
+        "number; (3) Catastrophic forgetting -- present but moderate, not severe, with one unchanged type even "
+        "improving; (4) Old-model persistence -- confirmed as a clean control (frozen checkpoint stays wrong); (5) "
+        "Transfer -- no reliable evidence either way from a single-seed experiment. Caspian CAN detect and begin "
+        "correcting a rule change using the simplest online mechanism available (a bounded replay buffer, no "
+        "exotic continual-learning machinery), earning exactly the complexity this question required and no more. "
+        "Whether that correction is fast, complete, and non-disruptive enough for a given downstream use is "
+        "answered with real numbers above, not asserted.",
+        bold=True, size=10.5,
     )
 
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
@@ -1011,1000 +1625,472 @@ def generate_p2_master_docx_report(
     return os.path.abspath(output_path)
 
 
-# ---------------------------------------------------------------------------
-# CSP-P2-E007 Report Generator Functions
-# ---------------------------------------------------------------------------
-
-def generate_p2_e007_individual_docx_report(
-    sub_id: str,
-    data: Dict[str, Any],
-    plot_path: Optional[str] = None,
-    output_path: Optional[str] = None,
-) -> str:
-    """Generate an individual Layer B DOCX report for one E007 sub-experiment."""
-    if output_path is None:
-        output_path = f"docs/experiments/{sub_id}.docx"
-
-    PRIMARY_COLOR = RGBColor(24, 43, 73)
-    SECONDARY_COLOR = RGBColor(70, 80, 95)
-    SUCCESS_COLOR = RGBColor(16, 124, 65)
-    WARNING_COLOR = RGBColor(200, 80, 20)
-
+def generate_p7_docx_report(all_results: Dict[str, Any], output_path: str) -> str:
+    """Generate the permanent scientific DOCX report for Phase 7 (Causal Experimentation)."""
     doc = docx.Document()
     for s in doc.sections:
-        s.top_margin = Inches(0.8)
-        s.bottom_margin = Inches(0.8)
-        s.left_margin = Inches(0.8)
-        s.right_margin = Inches(0.8)
+        s.top_margin = Inches(0.8); s.bottom_margin = Inches(0.8)
+        s.left_margin = Inches(0.8); s.right_margin = Inches(0.8)
 
-    # Title
-    tp = doc.add_paragraph()
-    tp.paragraph_format.space_after = Pt(2)
-    run = tp.add_run("PROJECT CASPIAN — SCIENTIFIC REPORT")
-    run.font.size = Pt(22)
-    run.font.bold = True
-    run.font.color.rgb = PRIMARY_COLOR
+    PRIMARY = RGBColor(24, 43, 73)
+    SECONDARY = RGBColor(70, 80, 95)
+    WARN = RGBColor(158, 106, 3)
+    GOOD = RGBColor(27, 110, 59)
 
-    sp = doc.add_paragraph()
-    sp.paragraph_format.space_after = Pt(12)
-    title_text = data.get("title", sub_id)
-    sub_run = sp.add_run(f"{sub_id}: {title_text} (Phase 2 Diagnostic Follow-Up)")
-    sub_run.font.size = Pt(13)
-    sub_run.font.bold = True
-    sub_run.font.color.rgb = SECONDARY_COLOR
+    def h1(text):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(14); p.paragraph_format.space_after = Pt(6)
+        r = p.add_run(text); r.font.size = Pt(15); r.font.bold = True; r.font.color.rgb = PRIMARY
 
-    def add_heading(text: str, level: int = 1):
-        h = doc.add_paragraph()
-        h.paragraph_format.space_before = Pt(12)
-        h.paragraph_format.space_after = Pt(4)
-        r = h.add_run(text)
-        r.font.bold = True
-        r.font.size = Pt(13) if level == 1 else Pt(11)
-        r.font.color.rgb = PRIMARY_COLOR if level == 1 else SECONDARY_COLOR
+    def h2(text):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(8); p.paragraph_format.space_after = Pt(4)
+        r = p.add_run(text); r.font.size = Pt(12); r.font.bold = True; r.font.color.rgb = SECONDARY
 
-    # Metadata table
-    meta_rows = [
-        ("Sub-Experiment ID", sub_id),
-        ("Phase", "Phase 2 — Memory & Persistence (Diagnostic)"),
-        ("Research Purpose", "Rule out training-procedure and capacity confounds"),
-        ("Semantic Firewall", "ACTIVE (unchanged from Phase 2)"),
-        ("Part B Triggered", str(data.get("_part_b_triggered", "N/A"))),
-    ]
-    meta_table = doc.add_table(rows=len(meta_rows), cols=2)
-    meta_table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    for idx, (lbl, val) in enumerate(meta_rows):
-        row = meta_table.rows[idx]
-        c_lbl, c_val = row.cells[0], row.cells[1]
-        c_lbl.width, c_val.width = Inches(2.3), Inches(4.5)
-        r_lbl = c_lbl.paragraphs[0].add_run(lbl)
-        r_lbl.font.bold = True
-        r_lbl.font.size = Pt(9.5)
-        r_val = c_val.paragraphs[0].add_run(str(val))
-        r_val.font.size = Pt(9.5)
-        _set_cell_background(c_lbl, "F0F4F8")
-        _set_cell_background(c_val, "FAFAFA")
-        _set_cell_margins(c_lbl, 50, 50, 80, 80)
-        _set_cell_margins(c_val, 50, 50, 80, 80)
+    def body(text, bold=False, color=None, size=10):
+        p = doc.add_paragraph(); r = p.add_run(text); r.font.size = Pt(size); r.font.bold = bold
+        if color: r.font.color.rgb = color
+        return p
 
-    doc.add_paragraph().paragraph_format.space_after = Pt(8)
+    def kv_table(rows: List[tuple]):
+        t = doc.add_table(rows=len(rows), cols=2); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for i, (k, v) in enumerate(rows):
+            c1, c2 = t.rows[i].cells
+            c1.width, c2.width = Inches(2.6), Inches(4.2)
+            r1 = c1.paragraphs[0].add_run(str(k)); r1.font.bold = True; r1.font.size = Pt(9.5)
+            r2 = c2.paragraphs[0].add_run(str(v)); r2.font.size = Pt(9.5)
+            _set_cell_background(c1, "F0F4F8"); _set_cell_background(c2, "FAFAFA")
+            _set_cell_margins(c1); _set_cell_margins(c2)
+        doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
-    # Full data dump
-    add_heading("Experiment Data & Metrics")
-    # Strip internal keys (prefixed with _)
-    clean_data = {k: v for k, v in data.items() if not k.startswith("_")}
-    p = doc.add_paragraph()
-    p.add_run(json.dumps(clean_data, indent=2, default=str))
-    p.runs[0].font.size = Pt(8)
+    def data_table(headers: List[str], rows: List[List[str]]):
+        t = doc.add_table(rows=1 + len(rows), cols=len(headers)); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for j, htext in enumerate(headers):
+            c = t.rows[0].cells[j]
+            r = c.paragraphs[0].add_run(htext); r.font.bold = True; r.font.size = Pt(9.5)
+            _set_cell_background(c, "182B49"); r.font.color.rgb = RGBColor(255, 255, 255)
+            _set_cell_margins(c)
+        for i, row in enumerate(rows):
+            for j, val in enumerate(row):
+                c = t.rows[i + 1].cells[j]
+                r = c.paragraphs[0].add_run(str(val)); r.font.size = Pt(9.5)
+                _set_cell_background(c, "FAFAFA" if i % 2 == 0 else "F0F4F8")
+                _set_cell_margins(c)
+        doc.add_paragraph().paragraph_format.space_after = Pt(6)
 
-    # Plot
-    if plot_path and os.path.exists(plot_path):
-        add_heading("Graphical Analysis")
-        doc.add_picture(plot_path, width=Inches(5.5))
-        cap = doc.add_paragraph()
-        cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        r_cap = cap.add_run(f"Figure: {title_text}")
-        r_cap.font.italic = True
-        r_cap.font.size = Pt(9)
-        r_cap.font.color.rgb = SECONDARY_COLOR
+    tp = doc.add_paragraph(); tp.paragraph_format.space_after = Pt(4)
+    r = tp.add_run("PROJECT CASPIAN"); r.font.size = Pt(24); r.font.bold = True; r.font.color.rgb = PRIMARY
+    sp = doc.add_paragraph(); sp.paragraph_format.space_after = Pt(14)
+    r = sp.add_run("Phase 7 Scientific Experiment Report — Causal Experimentation"); r.font.size = Pt(14); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    e1 = all_results["CSP-P7-E001"]; e2 = all_results["CSP-P7-E002"]
+    e2s = all_results.get("CSP-P7-E002-STABILITY"); e3 = all_results["CSP-P7-E003"]
+
+    kv_table([
+        ("Phase", "Phase 7 — Causal Experimentation (Section 35)"),
+        ("Experiments", "CSP-P7-E001 through E007 (E004/E005 autonomous selection, E006 noise, E007 harder confound), plus a multi-seed stability companion for E002"),
+        ("Core Question", "Can an agent discover causal structure by choosing its interventions, where passive observation cannot (or cannot as efficiently)?"),
+        ("What changed vs. Phases 1-6", "Every earlier dataset came from a passive policy (random movement, random INTERACT). Here the agent navigates to a chosen entity, interacts, moves away, returns and repeats (approach / interact / move away / repeat / compare outcomes, per Section 35). No new learning machinery: same PredictiveMLP and trainer; only the data-collection policy differs."),
+        ("Semantic firewall", "Unchanged. The agent cannot choose which entity TYPE appears (the environment resamples it); it chooses only where to go and when to interact."),
+    ])
+
+    h1("0. Two Methodological Corrections Made During This Phase")
+    body(
+        "(a) E001 first reported 22.5% reproducibility. Root cause was not noise: episodes started at "
+        "internal_state = 100 (the maximum), so whether a +10 interaction clipped at the ceiling depended on how many "
+        "approach steps (each -1) had preceded it. The measured 'outcome' conflated the entity's effect with boundary "
+        "clamping. Fixed by starting the E001 world mid-range (50), after which the effect is exactly reproducible.  "
+        "(b) E003 first reported the active policy saving 95% of environment steps. That number was an artifact: it "
+        "counted repeated within-episode interactions (~4 episodes) as independent samples, quantized the passive arm in "
+        "2000-step chunks, and validated each model on its own stream. Replaced by equal step budgets, an independent "
+        "common test set, and 5 seeds. E002's first version also gave the active arm twice the data; budgets are now "
+        "equal (4800 vs 4800 training samples). All three were caught before being reported as results.",
+        size=9.5,
+    )
+
+    h1("1. CSP-P7-E001 — Repeated-Intervention Consistency")
+    kv_table([
+        ("Trials completed", e1["num_trials_completed"]),
+        ("Mean outcome, 1st vs 2nd interaction", f"{e1['mean_first_outcome']} vs {e1['mean_second_outcome']}"),
+        ("Max absolute difference", e1["max_absolute_difference"]),
+        ("Reproducibility", f"{e1['reproducibility_rate_pct']}%"),
+    ])
+    body(
+        "RESULT: SUPPORTED, with a modest claim. Repeating the same intervention (approach, interact, move away, "
+        "return, interact) gives exactly the same outcome every time. This environment is deterministic, so perfect "
+        "reproducibility is the expected answer; the test's value is as a sanity check that the agent's own control "
+        "logic introduces no hidden variation, and it is what makes the repeat-and-compare procedure a valid basis for "
+        "the experiments below. It would be far more informative in a stochastic world.", size=9.5)
+
+    h1("2. CSP-P7-E002 — Confounded Observation vs. Active Intervention")
+    body(
+        "A passive collector confined to one region sees type 1 only near one corner and type 3 only near the "
+        "opposite corner, so type and position are perfectly confounded (a side effect of where it looked; nothing in "
+        "the environment is adversarial). The active arm deliberately samples each type at all four corners. Both arms "
+        "have 4800 training samples. Models are evaluated where each type appears in its own matched region and where "
+        "the regions are SWAPPED; a model that learned the true cause (type) should not care.", size=9.5)
+    data_table(["Model", "R2, matched positions", "R2, swapped positions"], [
+        ["Passive (confounded)", e2["passive_matched_position_r2"], e2["passive_swapped_position_r2"]],
+        ["Active (varied positions)", e2["active_matched_position_r2"], e2["active_swapped_position_r2"]],
+    ])
+    if e2s:
+        data_table(["Seed", "Passive matched", "Passive swapped", "Active matched", "Active swapped"],
+                   [[r["seed"], r["passive_matched_r2"], r["passive_swapped_r2"], r["active_matched_r2"], r["active_swapped_r2"]] for r in e2s["per_seed_results"]])
+        body(f"RESULT: SUPPORTED. Reproduced in {e2s['reproduced_rate_pct']}% of 5 seeds. Mean R2 drop under the swap: "
+             f"passive {e2s['mean_passive_swap_drop']}, active {e2s['mean_active_swap_drop']}. The passive model leaned on "
+             f"position (its swapped R2 ranges from about 0.05 to 0.64 across seeds, and that variation itself shows how "
+             f"unreliable it is); the actively-trained model is unaffected.", bold=True, color=GOOD, size=10)
+    body(
+        "Scope of the claim: this shows that choosing to vary the circumstances of an intervention breaks a "
+        "spurious correlation, which is the core of Section 35's question. It does not show that Caspian decides to "
+        "vary circumstances on its own: the varied-position policy here is designed by the experimenter. An agent that "
+        "selects such interventions autonomously (for instance from its own uncertainty) is the natural next test and is "
+        "NOT claimed here.", size=9.5)
+
+    h1("3. CSP-P7-E003 — Active vs. Passive Sample Efficiency")
+    body("Equal environment-step budgets, 5 seeds, evaluated on an independent test set collected by the passive "
+         "policy. 'Interaction events' asks whether the model learned what entities do; 'all transitions' also includes "
+         "everything else the passive distribution contains (e.g. INTERACT attempted far from any entity).", size=9.5)
+    rows = []
+    for B, v in e3["per_budget"].items():
+        rows.append([B, f"{v['passive_interaction_r2']['mean']} ± {v['passive_interaction_r2']['std']}",
+                     f"{v['active_interaction_r2']['mean']} ± {v['active_interaction_r2']['std']}",
+                     v["passive_all_r2"]["mean"], v["active_all_r2"]["mean"]])
+    data_table(["Env steps", "Passive R2 (interactions)", "Active R2 (interactions)", "Passive R2 (all)", "Active R2 (all)"], rows)
+    body(f"RESULT: MIXED, a genuine trade-off. The active policy is better on interaction events at "
+         f"{e3['budgets_where_active_better_on_interaction_events']} budgets (largest gap at 1000-2000 steps), but the "
+         f"passive policy catches up by 4000 steps. On all transitions the active policy is worse at "
+         f"{5 - int(e3['budgets_where_active_better_on_all_transitions'].split('/')[0])}/5 budgets, by a wide margin: it "
+         f"never samples situations like INTERACT far from an entity, so its model mispredicts them badly. Targeted "
+         f"intervention buys sample efficiency on what it targets and costs coverage of everything it doesn't.",
+         bold=True, color=WARN, size=10)
+
+    e4 = all_results.get("CSP-P7-E004")
+    if e4:
+        h1("4. CSP-P7-E004 — Autonomous, Uncertainty-Driven Intervention Selection")
+        body("Does Caspian itself, using only its own model uncertainty, choose where to intervene well enough to break "
+             "the position/type confound? All arms share the same confounded seed data (type 1 near one corner, type 3 "
+             "near the opposite), the same exact env-step budget (%d), and are scored on SWAPPED worlds (R2 on interaction "
+             "events). 'uncertainty' picks the candidate site whose probe inputs a 3-member ensemble disagrees on most; "
+             "probe steps are charged to the budget. 'count' = fewest samples so far; 'roundrobin' = hand-designed cycle; "
+             "'random' = random site; 'confounded' = never leaves the seed sites. The agent chooses among a menu of "
+             "(type, corner) sites supplied by the experimenter." % e4["budget"], size=9.5)
+        rows = []
+        for arm in e4["arms"]:
+            v = e4["summary"][arm]
+            rows.append([arm, f"{v['swapped_r2_mean']} ± {v['swapped_r2_std']}", v["matched_r2_mean"], f"{v['seeds_swapped_r2_above_0.9']}/{len(e4['seeds'])}"])
+        data_table(["Policy", "Swapped R2 (mean ± std)", "Matched R2", "Seeds swapped R2 > 0.9"], rows)
+        body("RESULT: NEGATIVE for the autonomous policy. Any form of coverage beats staying confounded (swapped R2 near "
+             "-20), but the ensemble-uncertainty policy was WORSE than random, round-robin and the trivial count-based "
+             "heuristic, and highly unstable across seeds. Plausible causes (not tested here): with only 3 small ensemble "
+             "members trained for 40 epochs, disagreement mostly reflects training noise rather than genuine ignorance, and "
+             "probe inputs from a 30-step probe are few. Earn-complexity holds: the simplest heuristic (count) did best. "
+             "Not claimed: that uncertainty-driven selection cannot work, only that this implementation does not.",
+             bold=True, color=WARN, size=10)
+
+    e5 = all_results.get("CSP-P7-E005"); e5r = all_results.get("CSP-P7-E005-R2")
+    if e5:
+        h1("5. CSP-P7-E005 — Strengthened Uncertainty and Mixed Exploration (follow-up to E004)")
+        body("E004's uncertainty policy covered only 4-5 of 8 candidate sites per seed. Before E005, a diagnostic showed the "
+             "ensemble disagreement signal itself is sound (lowest on already-seen sites in 4/4 trials), so E005 changed the "
+             "policy side: a 6-member x 80-epoch ensemble trained once per round (E004 retrained per site), a "
+             "diversity-discounted variant (score / (1 + steps at site / block)), and 'mix' variants that spend 25%% of each "
+             "block on broad passive exploration. Arms were declared before running. Same seed data, budget (%d), swapped-world "
+             "test and 5 seeds as E004." % e5["budget"], size=9.5)
+        rows = []
+        def add(res, tag=""):
+            for arm in res["arms"]:
+                v = res["summary"][arm]
+                rows.append([arm + tag, f"{v['swapped_r2_mean']} ± {v['swapped_r2_std']}", v["swapped_r2_min"], v["swapped_all_transitions_r2_mean"], v["mean_sites_covered"], f"{v['seeds_swapped_r2_above_0.9']}/5"])
+        add(e5, " *" if e5r else "")
+        if e5r:
+            add(e5r, " (corrected broad world)")
+        data_table(["Policy", "Swapped R2 (mean ± std)", "Worst seed", "Swapped R2, all transitions", "Mean sites covered", "Seeds > 0.9"], rows)
+        if e5r:
+            body("* DESIGN BUG, disclosed and kept in the log: the first E005 run's mix arms used a broad world in which type 3 "
+                 "has delta +10, while the site worlds use -10, so those arms trained on contradictory labels and collapsed "
+                 "(swapped R2 near 0 or below). That collapse is a test defect, not evidence about mixing. The mix arms were "
+                 "rerun (CSP-P7-E005-R2) on a broad world with the same rules as the sites; the corrected rows are the valid ones.",
+                 bold=True, color=WARN, size=9.5)
+        body("RESULT: NEGATIVE for beating the simple heuristic, with real improvement over E004. Uncertainty selection rose "
+             "from E004's 0.19 mean (worst seed -2.36) to 0.74 (worst 0.33); the discounted variant with mixing is the most "
+             "stable uncertainty policy (0.85, worst 0.76). But none exceeds the count-based heuristic (0.91, worst 0.79, all 8 "
+             "sites covered). Mixing broad exploration did not raise swapped-world accuracy and gave essentially no coverage "
+             "gain on this metric. Earn-complexity verdict: use count-based selection; model-uncertainty selection is not "
+             "justified by this evidence.", bold=True, color=WARN, size=10)
+
+    e6a = all_results.get("CSP-P7-E006a"); e6b = all_results.get("CSP-P7-E006b"); e7 = all_results.get("CSP-P7-E007")
+    if e6a:
+        h1("6. CSP-P7-E006 — Noise Robustness (success criteria written before running)")
+        body("Phase 7's earlier tests used a deterministic world. The environment gained an optional, seeded Gaussian noise on "
+             "interaction outcomes only (default 0 = unchanged behavior; tested). E006a: the agent repeats approach-interact-step "
+             "away r times on an unknown entity (true outcome +9 or -11), averages, and decides beneficial vs harmful. "
+             "Decision accuracy (%) by noise sigma and repeats r:", size=9.5)
+        rows = []
+        for sg, v in e6a["results"].items():
+            rows.append([sg] + [f"{v[str(r)]['decision_accuracy_pct']}" for r in e6a["repeats"]])
+        data_table(["sigma"] + [f"r={r}" for r in e6a["repeats"]], rows)
+        c = e6a["preregistered_checks"]
+        body(f"RESULT: SUPPORTED, all three pre-registered checks met. (i) noise-free accuracy is 100% at every r; (ii) at sigma=10, "
+             f"accuracy rises from {e6a['results']['10.0']['1']['decision_accuracy_pct']}% (r=1) to {e6a['results']['10.0']['16']['decision_accuracy_pct']}% (r=16); "
+             f"(iii) the spread of the repeat-mean falls with log-log slope {c['iii_loglog_slope']} (expected -0.5). Repeating an "
+             f"intervention separates a real effect from noise, as Section 35 intends. Caveat: this largely confirms the "
+             f"statistics of averaging inside the real agent/environment loop; it is not a surprising result.",
+             bold=True, color=GOOD, size=10)
+    if e6b:
+        h2("E006b — Confound recovery under noise (scored against noise-free truth, pooled R2 across swapped worlds, 5 seeds)")
+        rows = [[sg, v["passive_swapped_r2_mean"], v["active_swapped_r2_mean"], f"{v['active_seeds_ge_0.8']}/5", "yes" if v["prereg_met"] else "no"] for sg, v in e6b["summary"].items()]
+        data_table(["sigma", "Passive swapped R2", "Active swapped R2", "Active seeds >= 0.8", "Pre-registered criteria met"], rows)
+        body("RESULT: SUPPORTED where it matters, with a nuance that changes how E002 should be read. Under noise (sigma 3 and 6) the "
+             "confounded passive model fails on swapped positions (0.30, -0.14) while active, position-varied collection stays "
+             "at 0.97-0.99, meeting the criteria. But at sigma=0 in this clean, unclamped world the passive model does NOT fail "
+             "(0.98), so the sigma=0 criterion (gap >= 0.3) was not met. Honest reading: how badly a position confound hurts "
+             "depends on the world; in E002's clamped world it was severe, here it appears only once noise makes the spurious "
+             "cue attractive. A scoring bug found before interpretation (per-world R2 is degenerate when targets are constant; "
+             "every score printed 0.0) was fixed by pooling across worlds; criteria were not changed.", bold=True, color=WARN, size=9.5)
+    if e7:
+        h1("7. CSP-P7-E007 — Harder Confound: 4 Types, 16 Sites, Cyclic-Shift Test")
+        body("Seed data confound each of 4 types (effects +6, -6, +3, -3) with its own corner; 16 (type x corner) candidate sites; test "
+             "worlds move every type to a different corner. Equal budget (%d), 5 seeds, scored on noise-free truth." % e7["budget"], size=9.5)
+        rows = []
+        for sg, v in e7["summary"].items():
+            for arm in ["confounded", "random", "count"]:
+                rows.append([sg, arm, v[arm]["swapped_r2_mean"], v[arm]["swapped_r2_min"], f"{v[arm]['seeds_ge_0.8']}/5"])
+        data_table(["sigma", "Policy", "Swapped R2 mean", "Worst seed", "Seeds >= 0.8"], rows)
+        body("RESULT: PARTIAL. Staying confounded fails badly (about -1.5). Systematic coverage (count-based: always sample the "
+             "least-covered site) recovers the causal structure: 1.00 in 5/5 seeds noise-free and 0.84 in 4/5 seeds at sigma=3. "
+             "Random site choice is clearly weaker (0.75, 3/5 seeds; 0.21 at sigma=3). The pre-registered criterion required BOTH "
+             "random and count to pass, so it was NOT met as written; count alone meets it. Structure in intervention choice "
+             "matters, not just variety.", bold=True, color=WARN, size=10)
+
+    h1("8. Overall Phase 7 Verdict")
+    body(
+        "SUPPORTED for the central claim, with explicit limits. Evidence that choosing interventions recovers causal structure "
+        "that confounded passive observation misses: E002 (5 seeds, equal data), E006b (holds under outcome noise, scored on "
+        "noise-free truth) and E007 (4 types, 16 sites; systematic coverage recovers it, confounded data fails). Repeating "
+        "interventions separates signal from noise as theory predicts (E006a, all pre-registered checks met). Active "
+        "collection is more sample-efficient on what it targets but gives up coverage (E003). NOT supported: that Caspian "
+        "selects informative interventions from its own model uncertainty better than a trivial count-based rule (E004, E005, "
+        "two attempts); the working policy is a simple systematic-coverage heuristic over an experimenter-supplied site menu. "
+        "Other limits: the confound's severity depends on the world (E006b sigma=0), the noise is simple Gaussian on one "
+        "outcome channel, and the grid is small. Phase 7 is therefore supported as 'systematic intervention recovers causal "
+        "structure, robustly to noise', not as 'autonomous scientific curiosity'.", bold=True, size=10.5)
 
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     doc.save(output_path)
     return os.path.abspath(output_path)
 
 
-def generate_p2_e007_master_docx_report(
-    all_e007_results: Dict[str, Any],
-    plot_paths: Optional[Dict[str, str]] = None,
-    output_path: str = "docs/CSP-P2-E007.docx",
-) -> str:
-    """Generate the consolidated Phase 2 E007 diagnostic DOCX report.
-
-    Follows the Section 20 format: includes side-by-side comparison tables for
-    E007a and E007b, the decide_part_b decision rationale, and an explicit
-    Phase 3 justification statement in the conclusion.
-    """
-    PRIMARY_COLOR = RGBColor(24, 43, 73)
-    SECONDARY_COLOR = RGBColor(70, 80, 95)
-    SUCCESS_COLOR = RGBColor(16, 124, 65)
-    WARNING_COLOR = RGBColor(200, 80, 20)
-
+def generate_p8_docx_report(all_results: Dict[str, Any], output_path: str) -> str:
+    """Permanent scientific DOCX report for Phase 8 (Novel Worlds)."""
     doc = docx.Document()
-    for s in doc.sections:
-        s.top_margin = Inches(0.8)
-        s.bottom_margin = Inches(0.8)
-        s.left_margin = Inches(0.8)
-        s.right_margin = Inches(0.8)
+    for sec in doc.sections:
+        sec.top_margin = Inches(0.8); sec.bottom_margin = Inches(0.8)
+        sec.left_margin = Inches(0.8); sec.right_margin = Inches(0.8)
+    PRIMARY = RGBColor(24, 43, 73); SECONDARY = RGBColor(70, 80, 95); WARN = RGBColor(158, 106, 3); GOOD = RGBColor(27, 110, 59)
 
-    # Title block
-    tp = doc.add_paragraph()
-    tp.paragraph_format.space_after = Pt(2)
-    run = tp.add_run("PROJECT CASPIAN")
-    run.font.size = Pt(24)
-    run.font.bold = True
-    run.font.color.rgb = PRIMARY_COLOR
+    def h1(text):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(14); p.paragraph_format.space_after = Pt(6)
+        r = p.add_run(text); r.font.size = Pt(15); r.font.bold = True; r.font.color.rgb = PRIMARY
 
-    sp = doc.add_paragraph()
-    sp.paragraph_format.space_after = Pt(12)
-    sub_run = sp.add_run(
-        "Phase 2 Diagnostic Report: CSP-P2-E007 (Early Stopping + Parameter Matching)"
-    )
-    sub_run.font.size = Pt(13)
-    sub_run.font.bold = True
-    sub_run.font.color.rgb = SECONDARY_COLOR
+    def body(text, bold=False, color=None, size=10):
+        p = doc.add_paragraph(); r = p.add_run(text); r.font.size = Pt(size); r.font.bold = bold
+        if color: r.font.color.rgb = color
 
-    def add_heading(text: str, level: int = 1):
-        h = doc.add_paragraph()
-        h.paragraph_format.space_before = Pt(14)
-        h.paragraph_format.space_after = Pt(6)
-        h.paragraph_format.keep_with_next = True
-        r = h.add_run(text)
-        r.font.bold = True
-        r.font.size = Pt(14) if level == 1 else Pt(11.5)
-        r.font.color.rgb = PRIMARY_COLOR if level == 1 else SECONDARY_COLOR
+    def kv_table(rows):
+        t = doc.add_table(rows=len(rows), cols=2); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for i, (k, v) in enumerate(rows):
+            c1, c2 = t.rows[i].cells; c1.width, c2.width = Inches(2.6), Inches(4.2)
+            r1 = c1.paragraphs[0].add_run(str(k)); r1.font.bold = True; r1.font.size = Pt(9.5)
+            r2 = c2.paragraphs[0].add_run(str(v)); r2.font.size = Pt(9.5)
+            _set_cell_background(c1, "F0F4F8"); _set_cell_background(c2, "FAFAFA"); _set_cell_margins(c1); _set_cell_margins(c2)
+        doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
-    # 1. Executive summary
-    add_heading("1. Executive Summary")
-    e007a = all_e007_results.get("CSP-P2-E007a", {})
-    e007b = all_e007_results.get("CSP-P2-E007b", {})
-    e007c = all_e007_results.get("CSP-P2-E007c", {})
-    decision = all_e007_results.get("part_b_decision", {})
-    cmp = e007a.get("comparison_vs_original", {})
+    def data_table(headers, rows):
+        t = doc.add_table(rows=1 + len(rows), cols=len(headers)); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for j, htext in enumerate(headers):
+            c = t.rows[0].cells[j]; r = c.paragraphs[0].add_run(htext); r.font.bold = True; r.font.size = Pt(9.5)
+            _set_cell_background(c, "182B49"); r.font.color.rgb = RGBColor(255, 255, 255); _set_cell_margins(c)
+        for i, row in enumerate(rows):
+            for j, val in enumerate(row):
+                c = t.rows[i + 1].cells[j]; r = c.paragraphs[0].add_run(str(val)); r.font.size = Pt(9.5)
+                _set_cell_background(c, "FAFAFA" if i % 2 == 0 else "F0F4F8"); _set_cell_margins(c)
+        doc.add_paragraph().paragraph_format.space_after = Pt(6)
 
-    p = doc.add_paragraph()
-    p.add_run(
-        "This report documents the CSP-P2-E007 diagnostic follow-up, which investigates two confounds "
-        "identified in the original CSP-P2-E001 comparison: (1) absence of explicit best-epoch "
-        "benchmarking at the restored checkpoint, and (2) an unmatched parameter budget between the "
-        f"memory model (6,753 params) and the no-memory baseline (1,761 params, 3.8x fewer). "
-        "Both confounds are resolved and results are reported side-by-side against the original numbers."
-    )
+    tp = doc.add_paragraph(); r = tp.add_run("PROJECT CASPIAN"); r.font.size = Pt(24); r.font.bold = True; r.font.color.rgb = PRIMARY
+    sp = doc.add_paragraph(); r = sp.add_run("Phase 8 Scientific Experiment Report — Novel Worlds"); r.font.size = Pt(14); r.font.bold = True; r.font.color.rgb = SECONDARY
 
-    # 2. Side-by-side comparison table: original vs E007a (early-stopped)
-    add_heading("2. Before/After Comparison: Early Stopping Fix (E007a)")
-    table_data = [
-        ("Metric", "Original (CSP-P2-E001)", "Corrected (E007a)"),
-        ("Memory Model MSE",
-         str(cmp.get("original_memory_mse", "N/A")),
-         str(cmp.get("corrected_memory_mse", "N/A"))),
-        ("No-Memory Baseline MSE",
-         str(cmp.get("original_no_memory_mse", "N/A")),
-         str(cmp.get("corrected_no_memory_mse", "N/A"))),
-        ("Memory vs No-Memory Gap %",
-         str(cmp.get("original_gap_pct", "N/A")) + "%",
-         str(cmp.get("corrected_gap_pct", "N/A")) + "%"),
-        ("Memory best_epoch",
-         str(all_e007_results.get("_original_best_epoch_memory", 48)),
-         str(e007a.get("memory_model", {}).get("best_epoch", "N/A"))),
-        ("No-Memory best_epoch",
-         str(all_e007_results.get("_original_best_epoch_no_memory", 82)),
-         str(e007a.get("no_memory_model", {}).get("best_epoch", "N/A"))),
-    ]
-    comp_table = doc.add_table(rows=len(table_data), cols=3)
-    comp_table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    for i, (col0, col1, col2) in enumerate(table_data):
-        row = comp_table.rows[i]
-        for j, (cell, txt) in enumerate(zip(row.cells, [col0, col1, col2])):
-            r = cell.paragraphs[0].add_run(txt)
-            r.font.size = Pt(9.5)
-            if i == 0:
-                r.font.bold = True
-                _set_cell_background(cell, "E8EFF5")
-            else:
-                _set_cell_background(cell, "FAFAFA" if j == 0 else "FFFFFF")
-            _set_cell_margins(cell, 50, 50, 80, 80)
+    e1 = all_results["CSP-P8-E001"]; e2 = all_results.get("CSP-P8-E002")
+    kv_table([
+        ("Phase", "Phase 8 — Novel Worlds (Section 36)"),
+        ("Experiments", "CSP-P8-E001 (six novel worlds + null world), CSP-P8-E002 (appearance with property channel)"),
+        ("Core Question", "Do representations learned in one world transfer to worlds that differ in geometry, appearance, dynamics, rules, resource distribution and action consequences?"),
+        ("Design", "One source world (5x5, 1 entity, types +10/-10, unclamped linear internal state). Seven test worlds. Zero-shot R2 plus few-shot adaptation at 4 budgets against two controls: training from scratch, and fine-tuning from a model pretrained on SHUFFLED targets (a warm start with no knowledge). 5 seeds; independent test sets."),
+        ("Pre-registered", "H1 sanity, H2 novelty (>= 3 of 6 worlds drop >= 0.3 zero-shot), H3 transfer (fine-tune beats scratch by >= 0.1 and control by >= 0.05 at >= 2 of 4 budgets). Written before running."),
+    ])
 
-    doc.add_paragraph().paragraph_format.space_after = Pt(8)
+    h1("1. CSP-P8-E001 — Zero-Shot and Few-Shot Transfer")
+    c = e1["preregistered_checks"]
+    body(f"Source in-distribution R2 = {e1['source_in_dist_r2_mean']}. The null world (identical) scores "
+         f"{e1['summary']['identical']['zero_shot_r2_mean']}, so measurement itself is sound (H1 met).", size=9.5)
+    rows = []
+    for w, v in e1["summary"].items():
+        b = v["budgets"]
+        rows.append([w, v["zero_shot_r2_mean"], v["zero_shot_drop"]] + [f"{b[k]['scratch']} / {b[k]['finetune']}" for k in ["50", "150", "500", "1500"]] + ["yes" if v["transfer_supported"] else "no"])
+    data_table(["World", "Zero-shot R2", "Drop", "50: scratch/FT", "150", "500", "1500", "Transfer"], rows)
+    body(f"H2 (novelty) NOT met as pre-registered: only {c['H2_novelty_worlds_with_drop_ge_0_3'] if 'H2_novelty_worlds_with_drop_ge_0_3' in c else c['H2_novelty_worlds_with_drop_ge_0.3']} of 6 worlds dropped >= 0.3 zero-shot. "
+         "The model's features are largely relative (entity offset, distance), so a larger grid (geometry, 0.98), more entities "
+         "(0.87) and a new action cost (0.77) are not very novel to it, and 'rules' (0.70) missed the threshold by 0.003. "
+         "This is a finding about the model, not a failure of the worlds, and the criterion is reported as not met rather than relaxed.",
+         bold=True, color=WARN, size=9.5)
+    body(f"H3 (transfer): supported in {c['H3_count']} of 6 worlds ({', '.join(c['H3_worlds_supported'])}). Fine-tuning from the source "
+         "reaches R2 0.5-0.8 with 150 environment steps where scratch is still negative, and 0.95-0.99 at 500 steps where scratch "
+         "is at 0.45-0.75. The single failure is APPEARANCE: never-seen type codes give catastrophic zero-shot R2 (about -55 on average) "
+         "and NEGATIVE transfer at small budgets (fine-tuned below scratch at 50-500 steps). This matches Phase 5: an opaque scalar type "
+         "code carries no information for a code never trained on, and the pretrained weights respond to it wildly. "
+         "Caveats: the shuffled-pretrain control is itself worse than scratch (a bad warm start hurts), so 'beats control' is a lenient "
+         "bar and the scratch comparison is the informative one; and small-budget scratch R2 is negative partly because 50-150 steps "
+         "contain only a handful of interaction events.", bold=True, color=WARN, size=9.5)
 
-    # 3. Parameter-matched comparison table
-    add_heading("3. Three-Way Comparison: Memory vs Matched MLP vs Small MLP (E007b)")
-    bench3 = e007b.get("three_way_benchmark", {})
-    gaps = e007b.get("gaps", {})
-    p = doc.add_paragraph()
-    p.add_run(
-        f"Matched MLP architecture: hidden_dims=(173,) → "
-        f"{e007b.get('matched_mlp_architecture', {}).get('num_parameters', 6748)} params "
-        f"(target 6,753, within "
-        f"{e007b.get('matched_mlp_architecture', {}).get('parameter_match_pct_error', 0):.2f}%).\n\n"
-        f"Memory vs Matched-MLP gap: {gaps.get('memory_vs_matched_mlp_pct', 0):.1f}%\n"
-        f"Memory vs Small-MLP gap:   {gaps.get('memory_vs_small_mlp_pct', 0):.1f}%\n"
-        f"Matched vs Small-MLP gap:  {gaps.get('matched_vs_small_mlp_pct', 0):.1f}%\n\n"
-        f"Capacity analysis: {e007b.get('capacity_analysis', {}).get('interpretation', 'N/A')}\n"
-        f"Fraction of original 6.9% gap surviving capacity match: "
-        f"{e007b.get('capacity_analysis', {}).get('fraction_of_gap_surviving_capacity_match', 0):.4f}"
-    )
+    if e2:
+        h1("2. CSP-P8-E002 — Does the Property Channel Repair Appearance Transfer?")
+        body("Hypotheses recorded before running (H4: zero-shot R2 >= 0.8 in >= 4/5 seeds on new codes with the same property values; "
+             "H5: fine-tune beats scratch criterion). The type code is dropped and a 1-D continuous property (Phase 5 E007 design) is used. "
+             "Limitation: the property is informative about the outcome by construction; this tests whether a representation built on such "
+             "a channel transfers, not whether the agent can discover which observable matters.", size=9.5)
+        rows = []
+        for w, v in e2["summary"].items():
+            b = v["budgets"]
+            rows.append([w, v["zero_shot_r2_mean"], v["zero_shot_r2_min"], f"{v['seeds_zero_shot_ge_0.8']}/5"] + [f"{b[k]['scratch']} / {b[k]['finetune']}" for k in ["50", "150", "500"]] + ["yes" if v["transfer_supported"] else "no"])
+        data_table(["World", "Zero-shot R2", "Worst seed", "Seeds >= 0.8", "50: scratch/FT", "150", "500", "Transfer"], rows)
+        body("RESULT: SUPPORTED. With the property channel, never-seen type codes transfer zero-shot (R2 0.99 with the same property values; "
+             "0.96 with NEW property values 0.8/0.2, every seed >= 0.93), and fine-tuning beats scratch at small budgets. The appearance "
+             "failure in E001 is therefore a property of the closed-vocabulary code, not of the transfer approach.", bold=True, color=GOOD, size=10)
 
-    # 4. Representation metric audit
-    add_heading("4. Representation-Metric Sanity Check (E007c)")
-    ra = e007c.get("representation_analysis", {})
-    ta = e007c.get("threshold_audit", {})
-    p = doc.add_paragraph()
-    p.add_run(
-        f"Corrected inter_class_cosine_similarity: {ra.get('inter_class_cosine_similarity', 'N/A')}\n"
-        f"Threshold: {ra.get('cosine_similarity_threshold', 0.95)}\n"
-        f"Margin from threshold: {ra.get('cosine_sim_margin_from_threshold', 'N/A')}\n"
-        f"distinct_memory_representations_formed: {ra.get('distinct_memory_representations_formed', 'N/A')}\n"
-        f"Confidence: {ra.get('representation_distinctness_confidence', 'N/A')}\n\n"
-        f"Contradiction explanation: {ta.get('contradiction_resolved', 'N/A')}"
-    )
-
-    # 5. Part B decision
-    add_heading("5. Part B Decision Point")
-    p = doc.add_paragraph()
-    trigger = decision.get("trigger_part_b", False)
-    rationale = decision.get("rationale", "Not evaluated.")
-    p.add_run(
-        f"Part B Triggered: {'YES — Hidden-state diagnostics (E007d/e) were executed.' if trigger else 'NO'}\n\n"
-        f"Rationale: {rationale}"
-    )
-
-    # 6. Delay sweep comparison
-    add_heading("6. Delay Sweep Re-Run (E003, E007a models)")
-    sweep_a = e007a.get("delay_sweep", [])
-    if sweep_a:
-        p = doc.add_paragraph()
-        lines = ["d | Memory MSE | No-Memory MSE | Persist MSE | Advantage%"]
-        for r in sweep_a:
-            lines.append(
-                f"{r['delay']} | {r['memory_model_mse']:.4f} | "
-                f"{r['no_memory_model_mse']:.4f} | "
-                f"{r['persistence_baseline_mse']:.4f} | {r['memory_advantage_pct']:.1f}%"
-            )
-        p.add_run("\n".join(lines))
-        p.runs[0].font.size = Pt(9)
-
-    # 7. Generalization test comparison
-    add_heading("7. Generalization Test Re-Run (E004, E007a models)")
-    gen_a = e007a.get("generalization_results", {})
-    if gen_a:
-        p = doc.add_paragraph()
-        lines = ["Delay | MSE | Persistence MSE | Gap% | Success"]
-        for key, v in gen_a.items():
-            lines.append(
-                f"d={v.get('delay','?')} | {v.get('mse','?'):.4f} | "
-                f"{v.get('persistence_mse','?'):.4f} | "
-                f"{v.get('gap_vs_persistence_pct','?'):.1f}% | "
-                f"{'YES' if v.get('generalization_successful') else 'NO'}"
-            )
-        p.add_run("\n".join(lines))
-        p.runs[0].font.size = Pt(9)
-
-    # 8. Phase 3 justification
-    add_heading("8. Revised Conclusion & Phase 3 Justification")
-    # Determine Phase 3 status based on results
-    gap_after_fix = cmp.get("corrected_gap_pct", 0.0)
-    gen_success = e007a.get("generalization_results", {})
-    all_gen_pass = all(v.get("generalization_successful", False) for v in gen_success.values())
-    part_b_needed = trigger
-
-    if all_gen_pass and gap_after_fix > 0 and not part_b_needed:
-        phase3_verdict = (
-            "SUPPORTED. After applying early-stopping and parameter-matching corrections, "
-            f"the memory model retains a {gap_after_fix:.1f}% MSE advantage over the "
-            "capacity-matched no-memory baseline, and generalization to unseen delays is confirmed. "
-            "Both confounds have been ruled out. Phase 3 is justified."
-        )
-    elif part_b_needed:
-        e007d = all_e007_results.get("CSP-P2-E007d")
-        e007e = all_e007_results.get("CSP-P2-E007e")
-        phase3_verdict = (
-            "CONDITIONALLY SUPPORTED — Part B diagnostics (E007d/e) were triggered and executed. "
-            f"Part B rationale: {rationale} "
-            f"{'Hidden-state analysis completed; see E007d and E007e sections.' if e007d else 'E007d/e not yet complete.'}"
-        )
-    else:
-        phase3_verdict = (
-            f"PARTIALLY SUPPORTED. Memory advantage {gap_after_fix:.1f}% after early-stopping fix, "
-            f"but generalization test outcome: {'passed' if all_gen_pass else 'failed'}. "
-            "Further investigation required before Phase 3 advancement."
-        )
+    h1("3. Overall Phase 8 Verdict")
+    body("SUPPORTED, with stated limits. Representations learned in a source world transfer to worlds with a different grid size, interaction "
+         "range and step cost, different effect sizes, more entities and a changed action cost: zero-shot R2 is already 0.70-0.98 on most, and "
+         "few-shot fine-tuning from the source clearly beats learning from scratch (E001, 5 of 6 worlds, pre-registered H3). Never-seen entity "
+         "codes are the exception, failing with negative transfer, and this is repaired by the continuous property channel (E002). "
+         "Honest limits: (1) the pre-registered novelty criterion H2 was NOT met: most of these worlds are not very novel for a model built "
+         "on relative features, so the 'transfer' result is partly 'the model never needed to change'; (2) every novel world is a small "
+         "perturbation of one source world with the same single-output task (predict the internal-state change), not a different kind of world; "
+         "(3) the property channel is informative by construction; (4) a plain MLP at small scale, 5 seeds. Larger structural novelty "
+         "(different entity roles, multiple interacting rules, new observation structure) is untested and is the natural content of further "
+         "Phase 8 work or Phase 9.", bold=True, size=10.5)
 
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     doc.save(output_path)
     return os.path.abspath(output_path)
 
 
-# ---------------------------------------------------------------------------
-# CSP-P2-E008 Report Generators (Reproducibility & 7-Criteria Reconciliation)
-# ---------------------------------------------------------------------------
-
-def _set_document_margins(doc: docx.Document) -> None:
-    for s in doc.sections:
-        s.top_margin = Inches(0.8)
-        s.bottom_margin = Inches(0.8)
-        s.left_margin = Inches(0.8)
-        s.right_margin = Inches(0.8)
-
-
-def _create_styled_table(doc: docx.Document, headers: List[str], rows: List[Any]) -> None:
-    table = doc.add_table(rows=len(rows) + 1, cols=len(headers))
-    table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    hdr_row = table.rows[0]
-    for col_idx, h in enumerate(headers):
-        cell = hdr_row.cells[col_idx]
-        _set_cell_background(cell, "1B365D")
-        _set_cell_margins(cell, 80, 80, 100, 100)
-        p = cell.paragraphs[0]
-        r = p.add_run(str(h))
-        r.font.bold = True
-        r.font.size = Pt(9.5)
-        r.font.color.rgb = RGBColor(255, 255, 255)
-    for row_idx, r_data in enumerate(rows):
-        row = table.rows[row_idx + 1]
-        bg = "F9FAFB" if row_idx % 2 == 0 else "FFFFFF"
-        for col_idx, val in enumerate(r_data):
-            cell = row.cells[col_idx]
-            _set_cell_background(cell, bg)
-            _set_cell_margins(cell, 60, 60, 80, 80)
-            p = cell.paragraphs[0]
-            r = p.add_run(str(val))
-            r.font.size = Pt(9.0)
-
-
-def generate_p2_e008_individual_docx_report(
-    experiment_id: str,
-    results: Dict[str, Any],
-    output_path: str,
-) -> str:
-    """Generate an individual Word (.docx) report for a CSP-P2-E008 sub-experiment."""
+def generate_p9_docx_report(all_results: Dict[str, Any], output_path: str) -> str:
+    """Permanent scientific DOCX report for Phase 9 (Scale Study)."""
     doc = docx.Document()
-    _set_document_margins(doc)
-
-    title = results.get("title", f"CSP-P2-{experiment_id}")
-    p = doc.add_paragraph()
-    run = p.add_run(f"Project Caspian — {experiment_id}: {title}")
-    run.font.size = Pt(18)
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
-
-    p_meta = doc.add_paragraph()
-    p_meta.add_run(f"Experiment ID: {experiment_id} | Phase: Phase 2 — Memory & Persistence (CSP-P2-E008)\n")
-    p_meta.add_run("Focus: Reproducibility, Confound Isolation & Final 7-Criteria Acceptance Reconciliation")
-
-    def add_h(text):
-        h = doc.add_paragraph()
-        r = h.add_run(text)
-        r.font.size = Pt(13)
-        r.font.bold = True
-        r.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
-        return h
-
-    # Section 1: Executive Summary
-    add_h("1. Executive Summary")
-    p = doc.add_paragraph()
-    if experiment_id == "CSP-P2-E008a":
-        p.add_run(
-            "This experiment isolates the root causes of protocol variance and discrepancy between "
-            "the original exploratory Phase 2 runs and the follow-up diagnostic runs. It explicitly defines the "
-            f"p parameter ({results.get('p_parameter_identification', {}).get('parameter_name')}), performs a 3-way "
-            "controlled ablation study (episode count, interaction density, early stopping), and provides a bit-identical "
-            "triple-run determinism proof alongside a divergent negative control."
-        )
-    elif experiment_id == "CSP-P2-E008b":
-        p.add_run(
-            "This experiment provides the canonical, standardized evaluation of the variable delay sweep (d in [0, 8]) "
-            "and out-of-distribution generalization (d in {3, 6}) comparing the early-stopped recurrent memory model "
-            "against the capacity-matched MLP baseline (6,748 params). A complete 3-way side-by-side table compares "
-            "original, diagnostic, and corrected numbers."
-        )
-    elif experiment_id == "CSP-P2-E008c":
-        p.add_run(
-            "This experiment re-tests Acceptance Criterion 1 by evaluating memory vs capacity-matched MLP performance "
-            "specifically isolated on Information-Deficit transition steps (Delta E > 0) vs standard steps, directly "
-            "evaluating against the 70% error reduction threshold."
-        )
-    elif experiment_id == "CSP-P2-E008d":
-        p.add_run(
-            "This experiment re-evaluates Acceptance Criterion 3 across 8 independent random seeds using the "
-            "capacity-matched MLP control, replacing the original report's incorrect assertion with verified empirical "
-            "win rates and consistent superiority metrics."
-        )
-    elif experiment_id == "CSP-P2-E008e":
-        p.add_run(
-            "This document presents the definitive 7-Criteria Acceptance Reconciliation Table for Project Caspian Phase 2, "
-            "synthesizing all experimental evidence from E001 through E008, stating the final scientific conclusion and "
-            "Phase 3 readiness status."
-        )
-
-    # Section 2: Numerical Results & Tables
-    add_h("2. Empirical Results & Findings")
-    if experiment_id == "CSP-P2-E008a":
-        det = results.get("determinism_proof", {})
-        p = doc.add_paragraph()
-        p.add_run(f"Triple-Run Identical (seed=42): {det.get('triple_run_identical')}\n")
-        p.add_run(f"Negative Control Divergent (seed=43): {det.get('negative_control_divergent')}\n\n")
-        p.add_run("3-Way Ablation Study Results:\n")
-
-        abl = results.get("ablations", {})
-        headers = ["Configuration / Ablation", "Episodes", "p (interact_prob)", "Early Stopping", "d=3 Beats Persist", "d=6 Beats Persist"]
-        rows = [
-            ("Baseline E004 Settings", str(abl.get("baseline_e004_settings", {}).get("num_episodes_total")), str(abl.get("baseline_e004_settings", {}).get("interaction_prob")), str(abl.get("baseline_e004_settings", {}).get("early_stopping")), str(abl.get("baseline_e004_settings", {}).get("eval_results", {}).get("delay_3", {}).get("beats_persistence")), str(abl.get("baseline_e004_settings", {}).get("eval_results", {}).get("delay_6", {}).get("beats_persistence"))),
-            ("Ablation A (30 episodes)", str(abl.get("ablation_a_episode_count_30_vs_36", {}).get("num_episodes_total")), str(abl.get("ablation_a_episode_count_30_vs_36", {}).get("interaction_prob")), str(abl.get("ablation_a_episode_count_30_vs_36", {}).get("early_stopping")), str(abl.get("ablation_a_episode_count_30_vs_36", {}).get("eval_results", {}).get("delay_3", {}).get("beats_persistence")), str(abl.get("ablation_a_episode_count_30_vs_36", {}).get("eval_results", {}).get("delay_6", {}).get("beats_persistence"))),
-            ("Ablation B (p=0.30)", str(abl.get("ablation_b_interaction_density_030_vs_025", {}).get("num_episodes_total")), str(abl.get("ablation_b_interaction_density_030_vs_025", {}).get("interaction_prob")), str(abl.get("ablation_b_interaction_density_030_vs_025", {}).get("early_stopping")), str(abl.get("ablation_b_interaction_density_030_vs_025", {}).get("eval_results", {}).get("delay_3", {}).get("beats_persistence")), str(abl.get("ablation_b_interaction_density_030_vs_025", {}).get("eval_results", {}).get("delay_6", {}).get("beats_persistence"))),
-            ("Ablation C (Early Stopping)", str(abl.get("ablation_c_early_stopping_vs_none", {}).get("num_episodes_total")), str(abl.get("ablation_c_early_stopping_vs_none", {}).get("interaction_prob")), str(abl.get("ablation_c_early_stopping_vs_none", {}).get("early_stopping")), str(abl.get("ablation_c_early_stopping_vs_none", {}).get("eval_results", {}).get("delay_3", {}).get("beats_persistence")), str(abl.get("ablation_c_early_stopping_vs_none", {}).get("eval_results", {}).get("delay_6", {}).get("beats_persistence"))),
-            ("Combined Corrected Settings", str(abl.get("combined_corrected_settings", {}).get("num_episodes_total")), str(abl.get("combined_corrected_settings", {}).get("interaction_prob")), str(abl.get("combined_corrected_settings", {}).get("early_stopping")), str(abl.get("combined_corrected_settings", {}).get("eval_results", {}).get("delay_3", {}).get("beats_persistence")), str(abl.get("combined_corrected_settings", {}).get("eval_results", {}).get("delay_6", {}).get("beats_persistence"))),
-        ]
-        _create_styled_table(doc, headers, rows)
-
-    elif experiment_id == "CSP-P2-E008b":
-        sbs = results.get("side_by_side_comparisons", {})
-        p = doc.add_paragraph()
-        p.add_run("Delay Sweep 3-Way Side-by-Side Comparison:\n")
-        headers = ["Delay (d)", "Original Mem MSE", "Original No-Mem MSE", "Original Gap %", "E008 Corrected Mem MSE", "E008 Matched MLP MSE", "E008 Gap vs Matched %", "Beats Matched"]
-        rows = [
-            (str(r["delay"]), f"{r.get('original_memory_mse', 'N/A')}", f"{r.get('original_no_mem_mse', 'N/A')}", f"{r.get('original_gap_pct', 'N/A')}%", f"{r.get('corrected_memory_mse', 'N/A')}", f"{r.get('corrected_matched_mlp_mse', 'N/A')}", f"{r.get('corrected_gap_pct', 'N/A')}%", str(r.get("beats_matched_mlp", "N/A")))
-            for r in sbs.get("delay_sweep", [])
-        ]
-        _create_styled_table(doc, headers, rows)
-
-        p = doc.add_paragraph()
-        p.add_run("\nGeneralization to Unseen Delays 3-Way Side-by-Side Comparison:\n")
-        gen_sbs = sbs.get("generalization", {})
-        headers = ["Condition", "Original E004 MSE", "Original Beats Persist", "E007 Zero-Shot MSE", "E007 Beats Persist", "E008 Canonical MSE", "E008 Beats Persist", "E008 Advantage %"]
-        d3 = gen_sbs.get("delay_3_interpolation", {})
-        d6 = gen_sbs.get("delay_6_extrapolation", {})
-        rows = [
-            ("d=3 (Interpolation)", f"{d3.get('original_e004_mse', 'N/A')}", str(d3.get('original_e004_beats_persistence')), f"{d3.get('e007_zero_shot_mse', 'N/A')}", str(d3.get('e007_zero_shot_beats_persistence')), f"{d3.get('corrected_e008_canonical_mse', 'N/A')}", str(d3.get('corrected_e008_beats_persistence')), f"{d3.get('corrected_e008_gap_vs_persistence_pct', 'N/A')}%"),
-            ("d=6 (Extrapolation)", f"{d6.get('original_e004_mse', 'N/A')}", str(d6.get('original_e004_beats_persistence')), f"{d6.get('e007_zero_shot_mse', 'N/A')}", str(d6.get('e007_zero_shot_beats_persistence')), f"{d6.get('corrected_e008_canonical_mse', 'N/A')}", str(d6.get('corrected_e008_beats_persistence')), f"{d6.get('corrected_e008_gap_vs_persistence_pct', 'N/A')}%"),
-        ]
-        _create_styled_table(doc, headers, rows)
-
-    elif experiment_id == "CSP-P2-E008c":
-        def_res = results.get("deficit_step_results", {})
-        std_res = results.get("standard_step_results", {})
-        headers = ["Step Category", "Memory MSE", "Matched MLP MSE", "Small MLP MSE", "Error Reduction vs Matched %", "Threshold / Status"]
-        rows = [
-            ("Information-Deficit Steps (Delta E > 0)", f"{def_res.get('memory_mse')}", f"{def_res.get('matched_mlp_mse')}", f"{def_res.get('small_mlp_mse')}", f"{def_res.get('error_reduction_vs_matched_pct')}%", f"Target >70% -> {'PASS' if def_res.get('cleared_70pct_threshold') else 'FAIL'}"),
-            ("Standard Non-Delayed Steps (Delta E = 0)", f"{std_res.get('memory_mse')}", f"{std_res.get('matched_mlp_mse')}", f"{std_res.get('small_mlp_mse')}", f"{std_res.get('error_reduction_vs_matched_pct')}%", "Benchmark check"),
-        ]
-        _create_styled_table(doc, headers, rows)
-
-    elif experiment_id == "CSP-P2-E008d":
-        sum_d = results.get("summary", {})
-        headers = ["Seed", "Memory MSE", "Matched MLP MSE", "Advantage Gap %", "Memory Beats Matched MLP"]
-        rows = [
-            (str(r["seed"]), f"{r['memory_mse']:.6f}", f"{r['matched_mlp_mse']:.6f}", f"{r['advantage_gap_pct']:.2f}%", str(r["memory_beats_matched_mlp"]))
-            for r in results.get("records", [])
-        ]
-        _create_styled_table(doc, headers, rows)
-        p = doc.add_paragraph()
-        p.add_run(f"\nWin Rate: {sum_d.get('win_rate')} | Consistent Superiority: {sum_d.get('consistent_superiority')}\n")
-        p.add_run(f"Mean Memory MSE: {sum_d.get('mean_memory_mse')} | Mean Matched MLP MSE: {sum_d.get('mean_matched_mlp_mse')} | Mean Gap: {sum_d.get('mean_advantage_gap_pct')}%")
-
-    elif experiment_id == "CSP-P2-E008e":
-        table = results.get("criteria_table", [])
-        headers = ["#", "Criterion Title", "Original Result", "Status After E007", "Status After E008", "Final Status"]
-        rows = [
-            (str(c["criterion_id"]), c["title"], c["original_result"], c["status_after_e007"], c["status_after_e008"], c["final_status"])
-            for c in table
-        ]
-        _create_styled_table(doc, headers, rows)
-
-        p = doc.add_paragraph()
-        p.add_run(f"\nOverall Scientific Conclusion: {results.get('scientific_conclusion')}\n")
-        p.add_run(f"Phase 3 Status: {results.get('phase3_status', {}).get('decision')}\n")
-        p.add_run(f"Guidance: {results.get('phase3_status', {}).get('remediation_guidance')}")
-
-    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-    doc.save(output_path)
-    return os.path.abspath(output_path)
-
-
-def generate_p2_e008_master_docx_report(
-    all_e008_results: Dict[str, Any],
-    output_path: str,
-) -> str:
-    """Generate the comprehensive master Word (.docx) report for CSP-P2-E008."""
-    doc = docx.Document()
-    _set_document_margins(doc)
-
-    p = doc.add_paragraph()
-    run = p.add_run("Project Caspian — Phase 2 Master Reconciliation Report (CSP-P2-E008)")
-    run.font.size = Pt(20)
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
-
-    p_sub = doc.add_paragraph()
-    p_sub.add_run("Reproducibility Root-Cause Isolation, Confound Ablations, and Final 7-Criteria Acceptance Reconciliation\n")
-    p_sub.add_run("Phase: Phase 2 — Memory & Persistence | Standard Contract v2 / Section 20 Compliance")
-
-    def add_heading(text):
-        h = doc.add_paragraph()
-        r = h.add_run(text)
-        r.font.size = Pt(14)
-        r.font.bold = True
-        r.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
-        return h
-
-    # Section 1: Executive Summary & Confound Resolution
-    add_heading("1. Executive Summary & Root-Cause Resolution")
-    p = doc.add_paragraph()
-    p.add_run(
-        "CSP-P2-E008 resolves the experimental discrepancies between the initial Phase 2 exploratory runs and "
-        "subsequent diagnostic runs. By establishing canonical evaluation protocols, defining and isolating the "
-        "p parameter (interaction_prob), conducting a 3-way ablation study, and proving bit-for-bit determinism, "
-        "all experimental ambiguities have been eliminated. This report provides the definitive evaluation of all "
-        "7 Phase 2 Acceptance Criteria against capacity-matched baselines."
-    )
-
-    # Section 2: 3-Way Ablation Study & Determinism Proof
-    add_heading("2. CSP-P2-E008a: Reproducibility & Confound Ablation Study")
-    e008a = all_e008_results.get("CSP-P2-E008a", {})
-    abl = e008a.get("ablations", {})
-    p = doc.add_paragraph()
-    p.add_run(
-        f"Parameter Identification: p is strictly identified as '{e008a.get('p_parameter_identification', {}).get('parameter_name')}', "
-        "governing interaction density during exploratory trajectory collection.\n\n"
-        "Ablation Findings:\n"
-    )
-    headers = ["Configuration / Ablation", "Episodes", "p (interact_prob)", "Early Stopping", "d=3 Beats Persist", "d=6 Beats Persist"]
-    rows = [
-        ("Baseline E004 Settings", str(abl.get("baseline_e004_settings", {}).get("num_episodes_total")), str(abl.get("baseline_e004_settings", {}).get("interaction_prob")), str(abl.get("baseline_e004_settings", {}).get("early_stopping")), str(abl.get("baseline_e004_settings", {}).get("eval_results", {}).get("delay_3", {}).get("beats_persistence")), str(abl.get("baseline_e004_settings", {}).get("eval_results", {}).get("delay_6", {}).get("beats_persistence"))),
-        ("Ablation A (30 episodes)", str(abl.get("ablation_a_episode_count_30_vs_36", {}).get("num_episodes_total")), str(abl.get("ablation_a_episode_count_30_vs_36", {}).get("interaction_prob")), str(abl.get("ablation_a_episode_count_30_vs_36", {}).get("early_stopping")), str(abl.get("ablation_a_episode_count_30_vs_36", {}).get("eval_results", {}).get("delay_3", {}).get("beats_persistence")), str(abl.get("ablation_a_episode_count_30_vs_36", {}).get("eval_results", {}).get("delay_6", {}).get("beats_persistence"))),
-        ("Ablation B (p=0.30)", str(abl.get("ablation_b_interaction_density_030_vs_025", {}).get("num_episodes_total")), str(abl.get("ablation_b_interaction_density_030_vs_025", {}).get("interaction_prob")), str(abl.get("ablation_b_interaction_density_030_vs_025", {}).get("early_stopping")), str(abl.get("ablation_b_interaction_density_030_vs_025", {}).get("eval_results", {}).get("delay_3", {}).get("beats_persistence")), str(abl.get("ablation_b_interaction_density_030_vs_025", {}).get("eval_results", {}).get("delay_6", {}).get("beats_persistence"))),
-        ("Ablation C (Early Stopping)", str(abl.get("ablation_c_early_stopping_vs_none", {}).get("num_episodes_total")), str(abl.get("ablation_c_early_stopping_vs_none", {}).get("interaction_prob")), str(abl.get("ablation_c_early_stopping_vs_none", {}).get("early_stopping")), str(abl.get("ablation_c_early_stopping_vs_none", {}).get("eval_results", {}).get("delay_3", {}).get("beats_persistence")), str(abl.get("ablation_c_early_stopping_vs_none", {}).get("eval_results", {}).get("delay_6", {}).get("beats_persistence"))),
-        ("Combined Corrected Settings", str(abl.get("combined_corrected_settings", {}).get("num_episodes_total")), str(abl.get("combined_corrected_settings", {}).get("interaction_prob")), str(abl.get("combined_corrected_settings", {}).get("early_stopping")), str(abl.get("combined_corrected_settings", {}).get("eval_results", {}).get("delay_3", {}).get("beats_persistence")), str(abl.get("combined_corrected_settings", {}).get("eval_results", {}).get("delay_6", {}).get("beats_persistence"))),
-    ]
-    _create_styled_table(doc, headers, rows)
-
-    det = e008a.get("determinism_proof", {})
-    p = doc.add_paragraph()
-    p.add_run(
-        f"\nDeterminism Proof: Triple execution at seed=42 bit-identical = {det.get('triple_run_identical')}. "
-        f"Negative control at seed=43 divergent = {det.get('negative_control_divergent')}."
-    )
-
-    # Section 3: Side-by-Side Comparisons (Delay Sweep & Generalization)
-    add_heading("3. CSP-P2-E008b: Side-by-Side Benchmark Comparisons")
-    e008b = all_e008_results.get("CSP-P2-E008b", {})
-    sbs = e008b.get("side_by_side_comparisons", {})
-
-    p = doc.add_paragraph()
-    p.add_run("Delay Sweep Side-by-Side (Original vs Diagnostic vs Corrected):\n")
-    headers = ["Delay (d)", "Original Mem MSE", "Original No-Mem MSE", "Original Gap %", "E008 Corrected Mem MSE", "E008 Matched MLP MSE", "E008 Gap vs Matched %", "Beats Matched"]
-    rows = [
-        (str(r["delay"]), f"{r.get('original_memory_mse', 'N/A')}", f"{r.get('original_no_mem_mse', 'N/A')}", f"{r.get('original_gap_pct', 'N/A')}%", f"{r.get('corrected_memory_mse', 'N/A')}", f"{r.get('corrected_matched_mlp_mse', 'N/A')}", f"{r.get('corrected_gap_pct', 'N/A')}%", str(r.get("beats_matched_mlp", "N/A")))
-        for r in sbs.get("delay_sweep", [])
-    ]
-    _create_styled_table(doc, headers, rows)
-
-    p = doc.add_paragraph()
-    p.add_run("\nGeneralization Side-by-Side (Original vs Diagnostic vs Corrected):\n")
-    gen_sbs = sbs.get("generalization", {})
-    headers = ["Condition", "Original E004 MSE", "Original Beats Persist", "E007 Zero-Shot MSE", "E007 Beats Persist", "E008 Canonical MSE", "E008 Beats Persist", "E008 Advantage %"]
-    d3 = gen_sbs.get("delay_3_interpolation", {})
-    d6 = gen_sbs.get("delay_6_extrapolation", {})
-    rows = [
-        ("d=3 (Interpolation)", f"{d3.get('original_e004_mse', 'N/A')}", str(d3.get('original_e004_beats_persistence')), f"{d3.get('e007_zero_shot_mse', 'N/A')}", str(d3.get('e007_zero_shot_beats_persistence')), f"{d3.get('corrected_e008_canonical_mse', 'N/A')}", str(d3.get('corrected_e008_beats_persistence')), f"{d3.get('corrected_e008_gap_vs_persistence_pct', 'N/A')}%"),
-        ("d=6 (Extrapolation)", f"{d6.get('original_e004_mse', 'N/A')}", str(d6.get('original_e004_beats_persistence')), f"{d6.get('e007_zero_shot_mse', 'N/A')}", str(d6.get('e007_zero_shot_beats_persistence')), f"{d6.get('corrected_e008_canonical_mse', 'N/A')}", str(d6.get('corrected_e008_beats_persistence')), f"{d6.get('corrected_e008_gap_vs_persistence_pct', 'N/A')}%"),
-    ]
-    _create_styled_table(doc, headers, rows)
-
-    # Section 4: Criterion 1 & Criterion 3 Re-Tests
-    add_heading("4. CSP-P2-E008c & E008d: Acceptance Criteria 1 and 3 Re-Tests")
-    e008c = all_e008_results.get("CSP-P2-E008c", {})
-    e008d = all_e008_results.get("CSP-P2-E008d", {})
-
-    p = doc.add_paragraph()
-    p.add_run("Criterion 1: Information-Deficit Step Isolation (vs 70% threshold):\n")
-    def_res = e008c.get("deficit_step_results", {})
-    std_res = e008c.get("standard_step_results", {})
-    headers = ["Step Category", "Memory MSE", "Matched MLP MSE", "Small MLP MSE", "Error Reduction vs Matched %", "Threshold / Status"]
-    rows = [
-        ("Information-Deficit Steps (Delta E > 0)", f"{def_res.get('memory_mse')}", f"{def_res.get('matched_mlp_mse')}", f"{def_res.get('small_mlp_mse')}", f"{def_res.get('error_reduction_vs_matched_pct')}%", f"Target >70% -> {'PASS' if def_res.get('cleared_70pct_threshold') else 'FAIL'}"),
-        ("Standard Non-Delayed Steps (Delta E = 0)", f"{std_res.get('memory_mse')}", f"{std_res.get('matched_mlp_mse')}", f"{std_res.get('small_mlp_mse')}", f"{std_res.get('error_reduction_vs_matched_pct')}%", "Benchmark check"),
-    ]
-    _create_styled_table(doc, headers, rows)
-
-    p = doc.add_paragraph()
-    sum_d = e008d.get("summary", {})
-    p.add_run(
-        f"\nCriterion 3: 8-Seed Reproducibility Re-Test against Capacity-Matched Baseline:\n"
-        f"Corrected Win Rate: {sum_d.get('win_rate')} | Consistent Superiority: {sum_d.get('consistent_superiority')} | Mean Advantage Gap: {sum_d.get('mean_advantage_gap_pct')}%\n"
-    )
-
-    # Section 5: Final 7-Criteria Reconciliation Table
-    add_heading("5. Final 7-Criteria Acceptance Reconciliation Table")
-    e008e = all_e008_results.get("CSP-P2-E008e", {})
-    table = e008e.get("criteria_table", [])
-    headers = ["#", "Criterion Title", "Original Result", "Status After E007", "Status After E008", "Final Status"]
-    rows = [
-        (str(c["criterion_id"]), c["title"], c["original_result"], c["status_after_e007"], c["status_after_e008"], c["final_status"])
-        for c in table
-    ]
-    _create_styled_table(doc, headers, rows)
-
-    # Section 6: Scientific Conclusion & Phase 3 Status
-    add_heading("6. Scientific Conclusion & Phase 3 Determination")
-    p = doc.add_paragraph()
-    p.add_run(
-        f"Definitive Scientific Conclusion: {e008e.get('scientific_conclusion')}\n"
-        f"Criteria Passed: {e008e.get('criteria_passed')} / {e008e.get('total_criteria')}\n"
-        f"Phase 3 Status: {e008e.get('phase3_status', {}).get('decision')}\n\n"
-        f"Remediation / Justification Guidance: {e008e.get('phase3_status', {}).get('remediation_guidance')}"
-    )
-
-    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-    doc.save(output_path)
-    return os.path.abspath(output_path)
-
-
-# ---------------------------------------------------------------------------
-# CSP-P3 Report Generators (Phase 3: Generalization)
-# ---------------------------------------------------------------------------
-
-def generate_p3_individual_docx_report(
-    experiment_id: str,
-    results: Dict[str, Any],
-    output_path: str,
-) -> str:
-    """Generate an individual Word (.docx) report for a Phase 3 sub-experiment."""
-    doc = docx.Document()
-    _set_document_margins(doc)
-
-    title = results.get("title", f"CSP-P3-{experiment_id}")
-    p = doc.add_paragraph()
-    run = p.add_run(f"Project Caspian — {experiment_id}: {title}")
-    run.font.size = Pt(18)
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
-
-    p_meta = doc.add_paragraph()
-    p_meta.add_run(f"Experiment ID: {experiment_id} | Phase: Phase 3 — Generalization\n")
-    p_meta.add_run("Focus: Reusable Rule Learning, Zero-Shot Transfer & Unseen Position/Layout Scaling")
-
-    def add_h(text):
-        h = doc.add_paragraph()
-        r = h.add_run(text)
-        r.font.size = Pt(13)
-        r.font.bold = True
-        r.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
-        return h
-
-    # Section 1: Executive Summary
-    add_h("1. Executive Summary")
-    p = doc.add_paragraph()
-    p.add_run(
-        f"This document records the empirical results and scientific evaluation for {experiment_id} ({title}). "
-        "Phase 3 tests whether Caspian learns reusable environmental rules or merely memorizes specific training configurations."
-    )
-
-    # Section 2: Results Table
-    add_h("2. Quantitative Findings & Metrics")
-    p_res = doc.add_paragraph()
-    p_res.add_run(json.dumps({k: v for k, v in results.items() if not k.startswith("_")}, indent=2, default=str))
-
-    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-    doc.save(output_path)
-    return os.path.abspath(output_path)
-
-
-def generate_p3_master_docx_report(
-    all_p3_results: Dict[str, Any],
-    output_path: str,
-) -> str:
-    """Generate the comprehensive master Word (.docx) report for Phase 3 (Generalization)."""
-    doc = docx.Document()
-    _set_document_margins(doc)
-
-    p = doc.add_paragraph()
-    run = p.add_run("Project Caspian — Phase 3 Master Scientific Report")
-    run.font.size = Pt(20)
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
-
-    p_sub = doc.add_paragraph()
-    p_sub.add_run("Generalization Across Unseen Positions, Layouts, and Multi-Entity Environments\n")
-    p_sub.add_run("Phase: Phase 3 — Generalization | Layer B Permanent Scientific Record")
-
-    def add_heading(text):
-        h = doc.add_paragraph()
-        r = h.add_run(text)
-        r.font.size = Pt(14)
-        r.font.bold = True
-        r.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
-        return h
-
-    add_heading("1. Executive Summary & Generalization Scope")
-    p = doc.add_paragraph()
-    p.add_run(
-        "Phase 3 investigates whether Caspian's learned predictive representations demonstrate true structural "
-        "generalization across novel environmental configurations without retraining. Across spatial position shifts, "
-        "world layout dimension changes (5x5 -> 7x7, 10x10), multi-entity tracking, and multi-seed evaluations, "
-        "Caspian consistently maintains its memory advantage over capacity-matched baselines."
-    )
-
-    add_heading("2. Final Phase 3 Acceptance Criteria Assessment")
-    e005 = all_p3_results.get("CSP-P3-E005", {})
-    table = e005.get("criteria_table", [])
-
-    headers = ["#", "Phase 3 Criterion Title", "Requirement", "Empirical Result", "Status"]
-    rows = [
-        (str(c["criterion_id"]), c["title"], c["requirement"], c["result"], c["status"])
-        for c in table
-    ]
-    _create_styled_table(doc, headers, rows)
-
-    p_conc = doc.add_paragraph()
-    p_conc.add_run(f"\nFinal Scientific Conclusion: {e005.get('scientific_conclusion')}")
-
-    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-    doc.save(output_path)
-    return os.path.abspath(output_path)
-
-
-# ---------------------------------------------------------------------------
-# CSP-P2-E009 Report Generators (2x2 Factorial Confound Isolation & Event Weighting)
-# ---------------------------------------------------------------------------
-
-def generate_p2_e009_individual_docx_report(
-    experiment_id: str,
-    results: Dict[str, Any],
-    output_path: str,
-) -> str:
-    """Generate an individual Word (.docx) report for a CSP-P2-E009 sub-experiment."""
-    doc = docx.Document()
-    _set_document_margins(doc)
-
-    title = results.get("title", f"CSP-P2-{experiment_id}")
-    p = doc.add_paragraph()
-    run = p.add_run(f"Project Caspian — {experiment_id}: {title}")
-    run.font.size = Pt(18)
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
-
-    p_meta = doc.add_paragraph()
-    p_meta.add_run(f"Experiment ID: {experiment_id} | Phase: Phase 2 — Memory & Persistence (CSP-P2-E009)\n")
-    p_meta.add_run("Focus: 2x2 Factorial Confound Isolation, Event-Weighted Loss & Frozen Criteria Assessment")
-
-    def add_h(text):
-        h = doc.add_paragraph()
-        r = h.add_run(text)
-        r.font.size = Pt(13)
-        r.font.bold = True
-        r.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
-        return h
-
-    # Section 1: Executive Summary
-    add_h("1. Executive Summary")
-    p = doc.add_paragraph()
-    if experiment_id == "CSP-P2-E009a":
-        p.add_run(
-            "This experiment evaluates a predefined 2x2 factorial intervention across all 8 seeds to isolate the "
-            "effects of Event-Weighted Loss (w_event=3.0) and Balanced Trajectory Collection (min 2 interactions/ep) "
-            "against the capacity-matched MLP baseline (6,748 params vs GRU 6,753 params)."
-        )
-    elif experiment_id == "CSP-P2-E009b":
-        p.add_run(
-            "This experiment evaluates predefined loss-weight sensitivity conditions (w_event in {3.0, 4.0, 5.0}) "
-            "under balanced collection across all 8 seeds to assess deficit error reduction and standard-step stability."
-        )
-    elif experiment_id == "CSP-P2-E009c":
-        p.add_run(
-            "This experiment evaluates temporal retention horizon scaling (d in [0..8]) and canonical out-of-distribution "
-            "generalization (d in {3, 6}) under the primary E009 condition."
-        )
-    elif experiment_id == "CSP-P2-E009d":
-        p.add_run(
-            "This experiment verifies strict episode boundary memory isolation (0 cross-episode leaks) and semantic firewall "
-            "compliance (0 forbidden token violations)."
-        )
-    elif experiment_id == "CSP-P2-E009e":
-        p.add_run(
-            "This document presents the definitive frozen Phase 2 Acceptance Criteria assessment and paired statistical "
-            "analysis across all 8 matched seeds."
-        )
-
-    # Section 2: Numerical Results & Tables
-    add_h("2. Empirical Results & Findings")
-    if experiment_id == "CSP-P2-E009a":
-        sum_cond = results.get("summary_by_condition", {})
-        effects = results.get("factorial_effects_on_deficit_reduction_pp", {})
-
-        headers = ["2x2 Experimental Condition", "Collection Protocol", "Loss Weight (w_event)", "Deficit Error Reduction %", "Overall Advantage Gap %", "Win Rate", "Seed 4 Won?"]
-        rows = [
-            ("Condition A (Control)", "Original E008", "1.0 (Standard MSE)", f"{sum_cond.get('Condition_A_Control', {}).get('mean_deficit_error_reduction_pct')}%", f"{sum_cond.get('Condition_A_Control', {}).get('mean_overall_gap_pct')}%", sum_cond.get('Condition_A_Control', {}).get('win_rate', ''), str(sum_cond.get('Condition_A_Control', {}).get('seed_4_metrics', {}).get('gru_beats_mlp'))),
-            ("Condition B (Balanced-Only)", "Balanced (>=2/ep)", "1.0 (Standard MSE)", f"{sum_cond.get('Condition_B_BalancedOnly', {}).get('mean_deficit_error_reduction_pct')}%", f"{sum_cond.get('Condition_B_BalancedOnly', {}).get('mean_overall_gap_pct')}%", sum_cond.get('Condition_B_BalancedOnly', {}).get('win_rate', ''), str(sum_cond.get('Condition_B_BalancedOnly', {}).get('seed_4_metrics', {}).get('gru_beats_mlp'))),
-            ("Condition C (Weighted-Only)", "Original E008", "3.0 (Event-Weighted)", f"{sum_cond.get('Condition_C_WeightedOnly', {}).get('mean_deficit_error_reduction_pct')}%", f"{sum_cond.get('Condition_C_WeightedOnly', {}).get('mean_overall_gap_pct')}%", sum_cond.get('Condition_C_WeightedOnly', {}).get('win_rate', ''), str(sum_cond.get('Condition_C_WeightedOnly', {}).get('seed_4_metrics', {}).get('gru_beats_mlp'))),
-            ("Condition D (Full E009)", "Balanced (>=2/ep)", "3.0 (Event-Weighted)", f"{sum_cond.get('Condition_D_FullE009', {}).get('mean_deficit_error_reduction_pct')}%", f"{sum_cond.get('Condition_D_FullE009', {}).get('mean_overall_gap_pct')}%", sum_cond.get('Condition_D_FullE009', {}).get('win_rate', ''), str(sum_cond.get('Condition_D_FullE009', {}).get('seed_4_metrics', {}).get('gru_beats_mlp'))),
-        ]
-        _create_styled_table(doc, headers, rows)
-
-        p = doc.add_paragraph()
-        p.add_run(f"\nFactorial Effect Decomposition on Deficit Error Reduction:\n")
-        p.add_run(f"  - Collection Effect (B - A): {effects.get('collection_effect_B_minus_A'):+.2f} percentage points\n")
-        p.add_run(f"  - Loss Weight Effect (C - A): {effects.get('loss_effect_C_minus_A'):+.2f} percentage points\n")
-        p.add_run(f"  - Combined Effect (D - A): {effects.get('combined_effect_D_minus_A'):+.2f} percentage points\n")
-        p.add_run(f"  - Interaction Effect: {effects.get('interaction_effect'):+.2f} percentage points\n")
-
-    elif experiment_id == "CSP-P2-E009b":
-        sw = results.get("sweep_summary", {})
-        headers = ["Event Loss Weight (w_event)", "Mean Deficit Error Reduction %", "Mean Overall Advantage Gap %", "Standard Step GRU MSE", "Win Rate"]
-        rows = [
-            (f"w_event = {v.get('w_event')}", f"{v.get('mean_deficit_error_reduction_pct')}%", f"{v.get('mean_overall_gap_pct')}%", f"{v.get('mean_standard_step_mse_gru'):.6f}", v.get('win_rate'))
-            for k, v in sw.items()
-        ]
-        _create_styled_table(doc, headers, rows)
-
-    elif experiment_id == "CSP-P2-E009c":
-        ds = results.get("delay_sweep", [])
-        ood = results.get("ood_generalization", {})
-        headers = ["Temporal Delay (d)", "Memory GRU MSE", "Matched MLP MSE", "Advantage Gap %", "GRU Beats MLP"]
-        rows = [
-            (str(r["delay"]), f"{r['memory_gru_mse']:.6f}", f"{r['matched_mlp_mse']:.6f}", f"{r['advantage_gap_pct']:.2f}%", str(r["gru_beats_mlp"]))
-            for r in ds
-        ]
-        _create_styled_table(doc, headers, rows)
-
-        p = doc.add_paragraph()
-        p.add_run("\nOut-of-Distribution Delay Generalization:\n")
-        headers_ood = ["Condition", "Type", "Memory MSE", "Persistence Baseline MSE", "Advantage vs Persist %", "Beats Persistence"]
-        rows_ood = [
-            (f"Delay d={v['delay']}", v['type'], f"{v['memory_mse']:.6f}", f"{v['persistence_mse']:.6f}", f"{v['gap_vs_persistence_pct']:.2f}%", str(v['beats_persistence']))
-            for k, v in ood.items()
-        ]
-        _create_styled_table(doc, headers_ood, rows_ood)
-
-    elif experiment_id == "CSP-P2-E009d":
-        p = doc.add_paragraph()
-        p.add_run(f"Boundary Isolation Perfect: {results.get('boundary_isolation', {}).get('isolation_perfect')}\n")
-        p.add_run(f"Semantic Firewall Passed: {results.get('semantic_firewall', {}).get('firewall_passed')} (0 violations across {results.get('semantic_firewall', {}).get('steps_audited')} steps)")
-
-    elif experiment_id == "CSP-P2-E009e":
-        table = results.get("criteria_table", [])
-        p_stats = results.get("paired_statistics_8_seeds", {})
-
-        p = doc.add_paragraph()
-        p.add_run(f"Paired Statistical Test across 8 Matched Seeds (Matched MLP vs GRU):\n")
-        p.add_run(f"  - Mean MSE Difference (MLP - GRU): {p_stats.get('mean_difference_mlp_minus_gru'):.6f} (positive = GRU outperforms)\n")
-        p.add_run(f"  - Paired t-statistic: {p_stats.get('t_statistic')}, p-value: {p_stats.get('p_value'):.4e}\n")
-        p.add_run(f"  - 95% Confidence Interval: {p_stats.get('confidence_interval_95_pct')}\n\n")
-
-        headers = ["#", "Frozen Criterion Title", "E008 Baseline", "E009 Result", "Final Status"]
-        rows = [
-            (str(c["criterion_id"]), c["title"], c["e008_baseline_result"], c["e009_result"], c["final_status"])
-            for c in table
-        ]
-        _create_styled_table(doc, headers, rows)
-
-        p2 = doc.add_paragraph()
-        p2.add_run(f"\nFinal Scientific Conclusion: {results.get('scientific_conclusion')}")
-
-    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-    doc.save(output_path)
-    return os.path.abspath(output_path)
-
-
-def generate_p2_e009_master_docx_report(
-    all_e009_results: Dict[str, Any],
-    output_path: str,
-) -> str:
-    """Generate the comprehensive master Word (.docx) report for CSP-P2-E009."""
-    doc = docx.Document()
-    _set_document_margins(doc)
-
-    p = doc.add_paragraph()
-    run = p.add_run("Project Caspian — CSP-P2-E009 Master Scientific Report")
-    run.font.size = Pt(20)
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
-
-    p_sub = doc.add_paragraph()
-    p_sub.add_run("2x2 Factorial Confound Isolation, Event-Weighted Loss & Frozen Criteria Assessment\n")
-    p_sub.add_run("Phase: Phase 2 — Memory & Persistence | Standard Scientific Record")
-
-    def add_heading(text):
-        h = doc.add_paragraph()
-        r = h.add_run(text)
-        r.font.size = Pt(14)
-        r.font.bold = True
-        r.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
-        return h
-
-    # Section 1: Executive Summary & Objective
-    add_heading("1. Executive Summary & Research Hypothesis")
-    p = doc.add_paragraph()
-    p.add_run(
-        "CSP-P2-E009 tested the engineering hypothesis that weak deficit-step performance (19.05% in E008c) and the "
-        "Seed 4 inversion were caused by loss dilution (zero-change steps overwhelming sparse consequences) and "
-        "sparse exploratory interaction exposure. Using a 2x2 factorial experimental design, E009 isolated the causal "
-        "contributions of event-weighted loss (w_event=3.0) and balanced interaction collection (min 2 interactions/ep) "
-        "while evaluating against the strictly frozen Phase 2 Acceptance Criteria."
-    )
-
-    # Section 2: 2x2 Factorial Results
-    add_heading("2. CSP-P2-E009a: 2x2 Factorial Intervention Analysis")
-    e009a = all_e009_results.get("CSP-P2-E009a", {})
-    sum_cond = e009a.get("summary_by_condition", {})
-    effects = e009a.get("factorial_effects_on_deficit_reduction_pp", {})
-
-    headers = ["2x2 Experimental Condition", "Collection Protocol", "Loss Weight (w_event)", "Deficit Error Reduction %", "Overall Advantage Gap %", "Win Rate", "Seed 4 Won?"]
-    rows = [
-        ("Condition A (Control)", "Original E008", "1.0 (Standard MSE)", f"{sum_cond.get('Condition_A_Control', {}).get('mean_deficit_error_reduction_pct')}%", f"{sum_cond.get('Condition_A_Control', {}).get('mean_overall_gap_pct')}%", sum_cond.get('Condition_A_Control', {}).get('win_rate', ''), str(sum_cond.get('Condition_A_Control', {}).get('seed_4_metrics', {}).get('gru_beats_mlp'))),
-        ("Condition B (Balanced-Only)", "Balanced (>=2/ep)", "1.0 (Standard MSE)", f"{sum_cond.get('Condition_B_BalancedOnly', {}).get('mean_deficit_error_reduction_pct')}%", f"{sum_cond.get('Condition_B_BalancedOnly', {}).get('mean_overall_gap_pct')}%", sum_cond.get('Condition_B_BalancedOnly', {}).get('win_rate', ''), str(sum_cond.get('Condition_B_BalancedOnly', {}).get('seed_4_metrics', {}).get('gru_beats_mlp'))),
-        ("Condition C (Weighted-Only)", "Original E008", "3.0 (Event-Weighted)", f"{sum_cond.get('Condition_C_WeightedOnly', {}).get('mean_deficit_error_reduction_pct')}%", f"{sum_cond.get('Condition_C_WeightedOnly', {}).get('mean_overall_gap_pct')}%", sum_cond.get('Condition_C_WeightedOnly', {}).get('win_rate', ''), str(sum_cond.get('Condition_C_WeightedOnly', {}).get('seed_4_metrics', {}).get('gru_beats_mlp'))),
-        ("Condition D (Full E009)", "Balanced (>=2/ep)", "3.0 (Event-Weighted)", f"{sum_cond.get('Condition_D_FullE009', {}).get('mean_deficit_error_reduction_pct')}%", f"{sum_cond.get('Condition_D_FullE009', {}).get('mean_overall_gap_pct')}%", sum_cond.get('Condition_D_FullE009', {}).get('win_rate', ''), str(sum_cond.get('Condition_D_FullE009', {}).get('seed_4_metrics', {}).get('gru_beats_mlp'))),
-    ]
-    _create_styled_table(doc, headers, rows)
-
-    p = doc.add_paragraph()
-    p.add_run(f"\nFactorial Effect Decomposition on Deficit Error Reduction:\n")
-    p.add_run(f"  - Collection Effect (B - A): {effects.get('collection_effect_B_minus_A'):+.2f} percentage points\n")
-    p.add_run(f"  - Loss Weight Effect (C - A): {effects.get('loss_effect_C_minus_A'):+.2f} percentage points\n")
-    p.add_run(f"  - Combined Effect (D - A): {effects.get('combined_effect_D_minus_A'):+.2f} percentage points\n")
-    p.add_run(f"  - Interaction Effect: {effects.get('interaction_effect'):+.2f} percentage points\n")
-
-    # Section 3: Predefined Sensitivity Analysis
-    add_heading("3. CSP-P2-E009b: Predefined Loss Weight Sensitivity Analysis")
-    e009b = all_e009_results.get("CSP-P2-E009b", {})
-    sw = e009b.get("sweep_summary", {})
-    headers_sw = ["Event Loss Weight (w_event)", "Mean Deficit Error Reduction %", "Mean Overall Advantage Gap %", "Standard Step GRU MSE", "Win Rate"]
-    rows_sw = [
-        (f"w_event = {v.get('w_event')}", f"{v.get('mean_deficit_error_reduction_pct')}%", f"{v.get('mean_overall_gap_pct')}%", f"{v.get('mean_standard_step_mse_gru'):.6f}", v.get('win_rate'))
-        for k, v in sw.items()
-    ]
-    _create_styled_table(doc, headers_sw, rows_sw)
-
-    # Section 4: Delay Scaling & Generalization
-    add_heading("4. CSP-P2-E009c: Delay Scaling & Generalization")
-    e009c = all_e009_results.get("CSP-P2-E009c", {})
-    ds = e009c.get("delay_sweep", [])
-    ood = e009c.get("ood_generalization", {})
-    headers_ds = ["Temporal Delay (d)", "Memory GRU MSE", "Matched MLP MSE", "Advantage Gap %", "GRU Beats MLP"]
-    rows_ds = [
-        (str(r["delay"]), f"{r['memory_gru_mse']:.6f}", f"{r['matched_mlp_mse']:.6f}", f"{r['advantage_gap_pct']:.2f}%", str(r["gru_beats_mlp"]))
-        for r in ds
-    ]
-    _create_styled_table(doc, headers_ds, rows_ds)
-
-    p = doc.add_paragraph()
-    p.add_run("\nOut-of-Distribution Generalization:\n")
-    headers_ood = ["Condition", "Type", "Memory MSE", "Persistence Baseline MSE", "Advantage vs Persist %", "Beats Persistence"]
-    rows_ood = [
-        (f"Delay d={v['delay']}", v['type'], f"{v['memory_mse']:.6f}", f"{v['persistence_mse']:.6f}", f"{v['gap_vs_persistence_pct']:.2f}%", str(v['beats_persistence']))
-        for k, v in ood.items()
-    ]
-    _create_styled_table(doc, headers_ood, rows_ood)
-
-    # Section 5: Frozen Phase 2 Acceptance Criteria Assessment
-    add_heading("5. Final Frozen Phase 2 Acceptance Criteria Assessment")
-    e009e = all_e009_results.get("CSP-P2-E009e", {})
-    table = e009e.get("criteria_table", [])
-    p_stats = e009e.get("paired_statistics_8_seeds", {})
-
-    p = doc.add_paragraph()
-    p.add_run(f"Paired Statistical Test across 8 Matched Seeds (Capacity-Matched MLP vs GRU):\n")
-    p.add_run(f"  - Mean MSE Difference (MLP - GRU): {p_stats.get('mean_difference_mlp_minus_gru'):.6f} (t = {p_stats.get('t_statistic')}, p = {p_stats.get('p_value'):.4e})\n")
-    p.add_run(f"  - 95% Confidence Interval: {p_stats.get('confidence_interval_95_pct')}\n\n")
-
-    headers_crit = ["#", "Frozen Criterion Title", "E008 Baseline", "E009 Result", "Final Status"]
-    rows_crit = [
-        (str(c["criterion_id"]), c["title"], c["e008_baseline_result"], c["e009_result"], c["final_status"])
-        for c in table
-    ]
-    _create_styled_table(doc, headers_crit, rows_crit)
-
-    p2 = doc.add_paragraph()
-    p2.add_run(f"\nFinal Scientific Conclusion: {e009e.get('scientific_conclusion')}")
+    for sec in doc.sections:
+        sec.top_margin = Inches(0.8); sec.bottom_margin = Inches(0.8)
+        sec.left_margin = Inches(0.8); sec.right_margin = Inches(0.8)
+    PRIMARY = RGBColor(24, 43, 73); SECONDARY = RGBColor(70, 80, 95); WARN = RGBColor(158, 106, 3); GOOD = RGBColor(27, 110, 59)
+
+    def h1(text):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(14); p.paragraph_format.space_after = Pt(6)
+        r = p.add_run(text); r.font.size = Pt(15); r.font.bold = True; r.font.color.rgb = PRIMARY
+
+    def h2(text):
+        p = doc.add_paragraph(); r = p.add_run(text); r.font.size = Pt(12); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    def body(text, bold=False, color=None, size=10):
+        p = doc.add_paragraph(); r = p.add_run(text); r.font.size = Pt(size); r.font.bold = bold
+        if color: r.font.color.rgb = color
+
+    def kv_table(rows):
+        t = doc.add_table(rows=len(rows), cols=2); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for i, (k, v) in enumerate(rows):
+            c1, c2 = t.rows[i].cells; c1.width, c2.width = Inches(2.6), Inches(4.2)
+            r1 = c1.paragraphs[0].add_run(str(k)); r1.font.bold = True; r1.font.size = Pt(9.5)
+            r2 = c2.paragraphs[0].add_run(str(v)); r2.font.size = Pt(9.5)
+            _set_cell_background(c1, "F0F4F8"); _set_cell_background(c2, "FAFAFA"); _set_cell_margins(c1); _set_cell_margins(c2)
+        doc.add_paragraph().paragraph_format.space_after = Pt(4)
+
+    def data_table(headers, rows):
+        t = doc.add_table(rows=1 + len(rows), cols=len(headers)); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for j, htext in enumerate(headers):
+            c = t.rows[0].cells[j]; r = c.paragraphs[0].add_run(htext); r.font.bold = True; r.font.size = Pt(9)
+            _set_cell_background(c, "182B49"); r.font.color.rgb = RGBColor(255, 255, 255); _set_cell_margins(c)
+        for i, row in enumerate(rows):
+            for j, val in enumerate(row):
+                c = t.rows[i + 1].cells[j]; r = c.paragraphs[0].add_run(str(val)); r.font.size = Pt(9)
+                _set_cell_background(c, "FAFAFA" if i % 2 == 0 else "F0F4F8"); _set_cell_margins(c)
+        doc.add_paragraph().paragraph_format.space_after = Pt(6)
+
+    tp = doc.add_paragraph(); r = tp.add_run("PROJECT CASPIAN"); r.font.size = Pt(24); r.font.bold = True; r.font.color.rgb = PRIMARY
+    sp = doc.add_paragraph(); r = sp.add_run("Phase 9 Scientific Experiment Report — Scale Study"); r.font.size = Pt(14); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    e1 = all_results["CSP-P9-E001"]; e2 = all_results.get("CSP-P9-E002")
+    pc = e1["param_counts"]; sizes = list(e1["sizes"])
+    kv_table([
+        ("Phase", "Phase 9 — Scale Study (Section 37)"),
+        ("Core Question", "Which capabilities appear, and when, as model capacity, training data and world complexity grow? (Scaling is an experiment, not a default strategy.)"),
+        ("E001 design", "Full grid: 6 model sizes (%s parameters) x 3 data budgets (500/2000/8000 steps) x 3 world complexities (C1: 1 entity/2 types, C2: 3/4, C3: 5/8), 5 seeds, 60 epochs, no tuning." % "/".join(str(pc[n]) for n in sizes)),
+        ("Capabilities scored", "In-distribution interaction prediction (R2) and generalization to entity positions never present in training (held-out 2x2 corner block), on independent test sets."),
+        ("Not covered", "Memory capacity (recurrent models), action-space complexity, observation richness. Open scale variables, not tested here."),
+    ])
+
+    h1("0. Measurement Issue Found Before the Main Run")
+    body("The first smoke test gave unseen-position R2 of exactly 0.0 everywhere. Cause: the held-out test world started the agent at the origin, "
+         "and a passive walker almost never reached the far corner (3 interaction events in 1500 steps, all the same value). "
+         "Fixed by starting the held-out test agent beside the held-out block (about 200-470 interaction events per test set). "
+         "No hypothesis was changed.", size=9.5)
+
+    h1("1. CSP-P9-E001 — Model Size x Data x World Complexity")
+    cells = e1["cells"]
+    for lv in e1["levels"]:
+        h2(f"{lv}: in-distribution R2 (mean of 5 seeds), rows = training steps, columns = model size (params)")
+        rows = [[D] + [cells[f"{lv}|{D}|{n}"]["in_dist_r2_mean"] for n in sizes] for D in e1["data_steps"]]
+        data_table(["steps"] + [f"{n} ({pc[n]})" for n in sizes], rows)
+        h2(f"{lv}: unseen-position R2")
+        rows = [[D] + [cells[f"{lv}|{D}|{n}"]["unseen_pos_r2_mean"] for n in sizes] for D in e1["data_steps"]]
+        data_table(["steps"] + [f"{n} ({pc[n]})" for n in sizes], rows)
+    c = e1["preregistered_checks"]
+    data_table(["Hypothesis", "Met?", "Detail"], [
+        ["H1 more data/size never hurts (in-dist, tol. 0.05)", "NO", "C3: at 8000 steps the tiny model (0.36) beat the xlarge model (0.16); size axis not monotone."],
+        ["H2 data shrinks the generalization gap more than size", "yes (weakly)", f"{c['H2_votes']}/3 levels; but at C3 in-dist R2 is below 0.2, so the 'gap' is mostly noise."],
+        ["H3 required capacity grows with complexity", "yes (nominally)", f"min params for R2>=0.9 at 8000 steps: {c['H3_min_params_for_R2_0.9']}; C2/C3 were unreachable, which counts as infinite but cannot separate 'needs more capacity' from 'needs more data'. That is what E002 tests."],
+    ])
+    body("Findings. (1) In the simplest world a tiny capacity suffices and extra capacity buys nothing: 313 parameters reach R2 0.9995 at 8000 steps, "
+         "13,185 parameters score the same; 157 parameters do not (0.79), so a capacity floor lies between them. (2) Data is the binding constraint: "
+         "C1 goes 0.64 -> 0.91 -> 0.9995 as steps go 500 -> 2000 -> 8000. Only three data points, so this is a rapid improvement, not a demonstrated "
+         "threshold. (3) Capacity without data can hurt out-of-position generalization: in C1 at 2000 steps the bigger models are fine in-distribution "
+         "(0.91) but score only 0.41-0.59 on unseen positions (0.41-0.46 for the three largest) while the tiny/small models score 0.67-0.85; at 8000 steps every model except the tiny one converges (0.98-0.999). "
+         "(4) C2 and C3 were not solved by any size at 8000 steps.", bold=True, color=WARN, size=9.5)
+
+    if e2:
+        h1("2. CSP-P9-E002 — Data-Limited or Capacity-Limited?")
+        body("A follow-up recorded after E001 (not a rescue of E001's failed H1): C2 with 32000 steps, C3 with 32000 and 96000 steps, models tiny/small/medium/xlarge, 3 seeds. Hypotheses written before running.", size=9.5)
+        rows = []
+        for k, v in e2["cells"].items():
+            rows.append([v["level"], v["data_steps"], v["size"], v["params"], v["in_dist_r2_mean"], v["unseen_pos_r2_mean"]])
+        data_table(["World", "Steps", "Model", "Params", "In-dist R2", "Unseen-pos R2"], rows)
+        k = e2["preregistered_checks"]
+        data_table(["Hypothesis", "Met?"], [["H6 C2 reaches R2>=0.9 at 32000 steps for medium and xlarge (data-limited)", "yes" if k["H6_met"] else "no"],
+                                             ["H7 C3 reaches R2>=0.9 at 96000 steps for medium and xlarge", "yes" if k["H7_met"] else "NO (0.78 and 0.83, still improving)"],
+                                             ["H8 tiny (157 params) stays below 0.9 even with ample data at C2 and C3", "yes" if k["H8_met"] else "no"]])
+        body("Findings. C2 was data-limited: with 32000 steps medium (0.94) and xlarge (0.96) solve it. But a capacity floor now shows: the "
+             "157-parameter model stays at 0.50 and the 313-parameter model reaches only 0.86, so C2 needs between 313 and 1761 parameters "
+             "where C1 needed 313 or fewer. C3 is not solved: at 32000 steps every size plateaus around 0.45-0.52, and at 96000 steps size starts to "
+             "matter (0.51 / 0.59 / 0.78 / 0.83) with no sign of having converged. Unseen-position generalization remains clearly worse than "
+             "in-distribution in the complex worlds (e.g. C2 xlarge 0.96 vs 0.80), and extra data narrows it only partly.", bold=True, color=WARN, size=9.5)
+
+    h1("3. Overall Phase 9 Verdict")
+    body("CHARACTERIZED, NOT 'EMERGENCE DEMONSTRATED'. The scale study answers the question it can: in this setting, "
+         "(a) data is the first bottleneck and capacity is the second; (b) the capacity needed to predict entity effects grows with world "
+         "complexity (about 313 parameters for 2 types and 1 entity, between 313 and 1761 for 4 types and 3 entities, more than 13,000 for 8 types "
+         "and 5 entities within 96000 steps); (c) beyond what a world requires, more capacity is wasted and, at moderate data, can worsen "
+         "generalization to unseen positions; (d) generalization to unseen positions lags in-distribution accuracy at every complexity level and "
+         "closes slowly with data. The pre-registered hypotheses went 3 of 6 met (H2 weakly, H3 nominally in E001; H6 and H8 in E002), with H1 and "
+         "H7 failed and reported. Limits: only a plain MLP with fixed, untuned training (larger models may need different learning rates, so "
+         "'size does not help at C3 with little data' may partly be an optimization effect); the type code is an opaque scalar, which makes "
+         "type count a hard tabulation problem (Phase 5's property channel would likely change the capacity curve); passive data; "
+         "3-5 seeds; memory capacity, action-space complexity and observation richness untested. No claim is made about emergent "
+         "capabilities beyond these measured curves.", bold=True, size=10.5)
 
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     doc.save(output_path)

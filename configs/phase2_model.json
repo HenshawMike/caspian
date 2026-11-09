@@ -1,0 +1,13 @@
+{
+  "input_dim": 37,
+  "hidden_dim": 24,
+  "output_dim": 1,
+  "learning_rate": 0.01,
+  "weight_decay": 0.00001,
+  "optimizer": "adam",
+  "batch_size": 8,
+  "epochs": 150,
+  "early_stopping_patience": 20,
+  "exploration_rate": 0.1,
+  "seed": 42
+}

@@ -11,6 +11,7 @@ import numpy as np
 
 from models.layers import LinearLayer
 from models.activations import Activation, get_activation
+from models.normalization import FeatureNormalizer
 
 
 class PredictiveMLP:
@@ -43,6 +44,8 @@ class PredictiveMLP:
         self.hidden_act = get_activation(hidden_activation)
         self.output_act = get_activation(output_activation)
 
+        self.normalizer = FeatureNormalizer()
+
         # Build layers
         self.layers: List[LinearLayer] = []
         layer_dims = [self.input_dim] + list(self.hidden_dims) + [self.output_dim]
@@ -73,6 +76,12 @@ class PredictiveMLP:
                 total += layer.bias.size
         return total
 
+    def fit_normalizer(self, X: np.ndarray) -> None:
+        """Fit the input feature normalizer from training data. Called automatically by
+        PredictiveTrainer at the start of fit() -- see that class for why.
+        """
+        self.normalizer.fit(X)
+
     def forward(self, x: np.ndarray) -> np.ndarray:
         """Forward pass through encoder and prediction head.
 
@@ -84,6 +93,9 @@ class PredictiveMLP:
         """
         is_1d = (x.ndim == 1)
         curr = x.reshape(1, -1) if is_1d else x
+
+        if self.normalizer.is_fit:
+            curr = self.normalizer.transform(curr)
 
         self._cached_pre_activations = []
         self._cached_post_activations = [curr]
@@ -112,6 +124,9 @@ class PredictiveMLP:
         """
         is_1d = (x.ndim == 1)
         curr = x.reshape(1, -1) if is_1d else x
+
+        if self.normalizer.is_fit:
+            curr = self.normalizer.transform(curr)
 
         num_hidden = len(self.layers) - 1
         if num_hidden == 0:
@@ -184,6 +199,7 @@ class PredictiveMLP:
             "init_method": self.init_method,
             "num_parameters": self.num_parameters,
             "layers": [layer.to_dict() for layer in self.layers],
+            "normalizer": self.normalizer.to_dict(),
         }
 
     @classmethod
@@ -200,6 +216,8 @@ class PredictiveMLP:
         )
         for i, layer_data in enumerate(data["layers"]):
             model.layers[i] = LinearLayer.from_dict(layer_data)
+        if data.get("normalizer"):
+            model.normalizer = FeatureNormalizer.from_dict(data["normalizer"])
         return model
 
     def save_checkpoint(self, filepath: str, metadata: Optional[Dict[str, Any]] = None) -> None:

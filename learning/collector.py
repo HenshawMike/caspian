@@ -12,6 +12,7 @@ from environment.actions import Action
 from agent.base import BaseAgent
 from agent.random_agent import RandomAgent
 from learning.dataset import ExperienceDataset, Transition
+from learning.sequence_dataset import Episode, EpisodeDataset
 
 
 class TrajectoryCollector:
@@ -115,5 +116,60 @@ class TrajectoryCollector:
                 obs = world.get_observation()
             else:
                 obs = next_obs
+
+        return dataset
+
+    def collect_episode_dataset(
+        self,
+        num_episodes: int = 40,
+        steps_per_episode: int = 64,
+        interaction_prob: float = 0.3,
+        base_seed: int = 42,
+    ) -> EpisodeDataset:
+        """Collect fixed-length, temporally-ordered episodes for recurrent (BPTT) training.
+
+        Each episode runs from a fresh reset for exactly `steps_per_episode` steps
+        (each episode's WorldConfig.max_timesteps must be >= steps_per_episode) and
+        preserves transition order, so gradients can be backpropagated through
+        time. Per-step entity observability is recorded from the environment's
+        non-semantic `info["observable_entity_ids"]` for later retention analysis
+        only — it is never part of the model's input features.
+
+        Args:
+            num_episodes: Number of independent episodes to collect.
+            steps_per_episode: Fixed number of steps per episode.
+            interaction_prob: Probability of attempting INTERACT at each step.
+            base_seed: Base seed; episode i uses seed base_seed + i.
+
+        Returns:
+            EpisodeDataset: Collection of fixed-length Episode sequences.
+        """
+        dataset = EpisodeDataset()
+        movement_actions = [Action.UP, Action.DOWN, Action.LEFT, Action.RIGHT, Action.NOOP]
+
+        for ep_idx in range(num_episodes):
+            ep_seed = base_seed + ep_idx
+            rng = random.Random(ep_seed)
+            world = GridWorld(config=self.world_config)
+            world.reset(seed=ep_seed)
+
+            obs = world.get_observation()
+            transitions: List = []
+            observable_flags: List[bool] = []
+
+            for _ in range(steps_per_episode):
+                act = Action.INTERACT if rng.random() < interaction_prob else rng.choice(movement_actions)
+                next_obs, delta, done, info = world.step(act)
+
+                transitions.append(
+                    Transition(obs=obs, action=act, state_delta=delta, next_obs=next_obs, done=done, info=info)
+                )
+                observable_flags.append(len(info.get("observable_entity_ids", [])) > 0)
+
+                obs = next_obs
+                if done:
+                    break
+
+            dataset.add_episode(Episode(transitions=transitions, entity_observable=observable_flags))
 
         return dataset

@@ -8,11 +8,11 @@ from typing import Dict, Any, List, Optional, Tuple
 import numpy as np
 
 from models.mlp import PredictiveMLP
-from models.recurrent import RecurrentPredictor
 from evaluation.metrics import compute_all_metrics, compute_baseline_gap, compute_cosine_similarity
-from evaluation.baselines import PersistencePredictor, RandomPredictor, ReactivePredictor, FeedForwardBaseline
+from evaluation.baselines import PersistencePredictor, RandomPredictor, ReactivePredictor
 from learning.dataset import ExperienceDataset
 from learning.collector import TrajectoryCollector
+from learning.sequence_dataset import EpisodeDataset
 from environment.world import GridWorld, WorldConfig
 from environment.entities import Entity
 
@@ -196,73 +196,62 @@ class ModelEvaluator:
             "distinct_representations_formed": cosine_sim_between_classes < 0.95,
         }
 
-    def benchmark_sequence_models(
+    def evaluate_memory_retention(
         self,
-        memory_model: RecurrentPredictor,
-        no_memory_model: PredictiveMLP,
-        X_test_seq: np.ndarray,
-        Y_test_seq: np.ndarray,
-        Y_train_seq: Optional[np.ndarray] = None,
-        seed: Optional[int] = None,
+        model,
+        episode_dataset: EpisodeDataset,
+        max_bucket: int = 8,
     ) -> Dict[str, Any]:
-        """Benchmark Memory model (Model B) against No-Memory baseline (Model A) and trivial baselines.
+        """Break down prediction error by steps-since-entity-last-observable (Phase 2).
+
+        Answers "for how long is information retained?" — if the model has
+        genuinely learned to remember, error should stay low for small
+        steps-since-observed values and may degrade as that value grows.
 
         Args:
-            memory_model: Trained RecurrentPredictor (Model B).
-            no_memory_model: Trained PredictiveMLP (Model A).
-            X_test_seq: 3D test sequence features of shape (num_episodes, seq_len, in_dim).
-            Y_test_seq: 3D test sequence targets of shape (num_episodes, seq_len, 1).
-            Y_train_seq: Optional training sequence targets for Reactive baseline.
-            seed: Random seed for stochastic baselines.
+            model: A RecurrentPredictiveModel (must expose forward_sequence()).
+            episode_dataset: EpisodeDataset to evaluate on.
+            max_bucket: Steps-since-observed values above this are grouped into
+                a single "max_bucket+" bucket.
 
         Returns:
-            Dict[str, Any]: Comprehensive comparison metrics across models and baselines.
+            Dict[str, Any]: Per-bucket MSE/count, plus aggregate visible-vs-hidden comparison.
         """
-        eval_seed = seed if seed is not None else self.seed
+        X, Y = episode_dataset.to_numpy_arrays()
+        if X.shape[0] == 0:
+            return {"status": "empty_dataset"}
 
-        # 1. Model B — Memory Model (RecurrentPredictor)
-        y_memory_pred = memory_model.forward(X_test_seq)
-        memory_metrics = compute_all_metrics(y_memory_pred, Y_test_seq)
+        Y_pred = model.forward_sequence(X)
+        sq_err = np.square(Y_pred - Y)  # (N, T, output_dim)
 
-        # 2. Model A — No-Memory Baseline (PredictiveMLP)
-        ff_baseline = FeedForwardBaseline(no_memory_model)
-        y_no_memory_pred = ff_baseline.predict(X_test_seq)
-        no_memory_metrics = compute_all_metrics(y_no_memory_pred, Y_test_seq)
+        breakdown = episode_dataset.retention_breakdown()
+        bucket_sq_errors: Dict[str, List[float]] = {}
+        visible_errors: List[float] = []
+        hidden_errors: List[float] = []
+        never_seen_errors: List[float] = []
 
-        # 3. Persistence Baseline
-        persistence = PersistencePredictor(default_value=0.0)
-        y_persist_pred = persistence.predict(X_test_seq)
-        persist_metrics = compute_all_metrics(y_persist_pred, Y_test_seq)
+        for ei, t, s in zip(breakdown["episode_index"], breakdown["timestep"], breakdown["steps_since_observed"]):
+            err = float(sq_err[ei, t, :].mean())
+            if s is None:
+                never_seen_errors.append(err)
+                continue
+            if s == 0:
+                visible_errors.append(err)
+            else:
+                hidden_errors.append(err)
+                key = str(min(s, max_bucket)) + ("+" if s >= max_bucket else "")
+                bucket_sq_errors.setdefault(key, []).append(err)
 
-        # 4. Random Baseline
-        random_pred = RandomPredictor(low=-1.0, high=10.0, seed=eval_seed)
-        y_rand_pred = random_pred.predict(X_test_seq)
-        rand_metrics = compute_all_metrics(y_rand_pred, Y_test_seq)
-
-        # 5. Reactive (Empirical Mean) Baseline
-        mean_val = float(np.mean(Y_train_seq)) if Y_train_seq is not None else float(np.mean(Y_test_seq))
-        reactive = ReactivePredictor(mean_value=mean_val)
-        y_react_pred = reactive.predict(X_test_seq)
-        react_metrics = compute_all_metrics(y_react_pred, Y_test_seq)
-
-        # 6. Comparative Gaps
-        gap_vs_no_memory = compute_baseline_gap(memory_metrics["mse"], no_memory_metrics["mse"])
-        gap_vs_persistence = compute_baseline_gap(memory_metrics["mse"], persist_metrics["mse"])
-        gap_vs_random = compute_baseline_gap(memory_metrics["mse"], rand_metrics["mse"])
-        gap_vs_reactive = compute_baseline_gap(memory_metrics["mse"], react_metrics["mse"])
+        bucket_summary = {
+            k: {"mean_mse": round(float(np.mean(v)), 6), "count": len(v)}
+            for k, v in sorted(bucket_sq_errors.items(), key=lambda kv: int(kv[0].rstrip("+")))
+        }
 
         return {
-            "memory_model": memory_metrics,
-            "no_memory_model": no_memory_metrics,
-            "persistence_baseline": persist_metrics,
-            "random_baseline": rand_metrics,
-            "reactive_baseline": react_metrics,
-            "memory_vs_no_memory_gap_pct": round(gap_vs_no_memory, 2),
-            "memory_vs_persistence_gap_pct": round(gap_vs_persistence, 2),
-            "memory_vs_random_gap_pct": round(gap_vs_random, 2),
-            "memory_vs_reactive_gap_pct": round(gap_vs_reactive, 2),
-            "beats_no_memory": memory_metrics["mse"] < no_memory_metrics["mse"],
-            "beats_persistence": memory_metrics["mse"] < persist_metrics["mse"],
-            "beats_random": memory_metrics["mse"] < rand_metrics["mse"],
-            "beats_reactive": memory_metrics["mse"] < react_metrics["mse"],
+            "visible_step_mse": round(float(np.mean(visible_errors)), 6) if visible_errors else None,
+            "hidden_step_mse": round(float(np.mean(hidden_errors)), 6) if hidden_errors else None,
+            "never_yet_observed_mse": round(float(np.mean(never_seen_errors)), 6) if never_seen_errors else None,
+            "steps_since_observed_breakdown": bucket_summary,
+            "visible_sample_count": len(visible_errors),
+            "hidden_sample_count": len(hidden_errors),
         }

@@ -1,521 +1,340 @@
 """Experimental Suite for Project Caspian (Phase 2 — Memory & Persistence).
 
-Executes the 6 core scientific experiments defined in the Caspian Development Plan:
-- CSP-P2-E001: Temporal Memory (Comparing No-Memory vs Memory model on held-out delayed trajectories)
-- CSP-P2-E002: Memory vs No-Memory (Information-insufficient step isolation analysis)
-- CSP-P2-E003: Variable Delay Sweep (Retention horizon across d in [0, 1, 2, 4, 8])
-- CSP-P2-E004: Memory Generalization (Evaluating on unseen delays d in {3, 6})
-- CSP-P2-E005: Reproducibility across 8 independent random seeds
-- CSP-P2-E006: Semantic Firewall Audit & Feature Ablation Analysis
+Executes the core scientific experiments for Phase 2, addressing the questions
+posed in Section 29 of the Development Plan:
+
+- CSP-P2-E001: Does memory improve prediction? (Recurrent model vs stateless
+  Phase 1 architecture vs trivial baselines, under partial observability.)
+- CSP-P2-E002: For how long is information retained? (Error vs steps-since-
+  entity-last-observed, recurrent vs stateless.)
+- CSP-P2-E003: Is the advantage reproducible across seeds?
+- CSP-P2-E004: Semantic firewall audit + does memory produce useful internal state?
 """
 
 import json
-import os
 import sys
 from pathlib import Path
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, Any, List, Tuple
 import numpy as np
 
-# Ensure project root is on sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from environment.world import GridWorld, WorldConfig
-from environment.entities import Entity
-from environment.actions import Action
-from environment.observations import (
-    FORBIDDEN_SEMANTIC_TOKENS,
-    _check_semantic_purity_recursive,
-    Observation,
-)
+from environment.world import WorldConfig
+from environment.observations import FORBIDDEN_SEMANTIC_TOKENS
 from models.mlp import PredictiveMLP
-from models.recurrent import RecurrentPredictor
-from agent.memory import InternalMemory
-from agent.memory_agent import Phase2MemoryAgent
+from models.rnn import RecurrentPredictiveModel
+from learning.collector import TrajectoryCollector
 from learning.trainer import PredictiveTrainer
-from learning.sequential_dataset import (
-    SequentialExperienceDataset,
-    TrajectoryEpisode,
-    collect_sequential_trajectories,
-)
-from learning.sequential_trainer import SequentialTrainer
+from learning.recurrent_trainer import RecurrentTrainer
+from learning.sequence_dataset import EpisodeDataset
 from evaluation.evaluator import ModelEvaluator
 from evaluation.metrics import compute_all_metrics, compute_baseline_gap, compute_cosine_similarity
+from evaluation.baselines import PersistencePredictor, RandomPredictor, ReactivePredictor
+
+CONFIG_DIR = Path(__file__).parent.parent / "configs"
 
 
-def run_experiment_p2_e001(
-    delay: int = 2,
-    num_train_episodes: int = 30,
-    num_test_episodes: int = 10,
-    steps_per_episode: int = 25,
-    seed: int = 42,
-) -> Dict[str, Any]:
-    """CSP-P2-E001: Temporal Memory Benchmark.
+def _load_phase2_world_config() -> WorldConfig:
+    with open(CONFIG_DIR / "phase2_world.json", "r", encoding="utf-8") as f:
+        return WorldConfig.from_dict(json.load(f))
 
-    Trains both Model A (No-Memory Baseline / PredictiveMLP) and Model B (Memory Model / RecurrentPredictor)
-    on identical environmental data with temporal delay d=2, and evaluates on strictly held-out trajectories.
+
+def _flatten(X: np.ndarray, Y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """Flatten (N, T, dim) episode arrays into (N*T, dim) per-step arrays."""
+    n, t, d_in = X.shape
+    return X.reshape(n * t, d_in), Y.reshape(n * t, Y.shape[-1])
+
+
+def _train_recurrent(train_ds: EpisodeDataset, val_ds: EpisodeDataset, seed: int) -> Tuple[RecurrentPredictiveModel, Dict[str, Any]]:
+    model = RecurrentPredictiveModel(input_dim=37, hidden_dim=24, output_dim=1, seed=seed)
+    trainer = RecurrentTrainer(model=model, batch_size=8, epochs=150, early_stopping_patience=20, seed=seed)
+    history = trainer.fit(train_ds, val_data=val_ds)
+    return model, history
+
+
+def _train_stateless(X_train: np.ndarray, Y_train: np.ndarray, X_val: np.ndarray, Y_val: np.ndarray, seed: int) -> Tuple[PredictiveMLP, Dict[str, Any]]:
+    model = PredictiveMLP(input_dim=X_train.shape[1], hidden_dims=(32, 16), output_dim=1, hidden_activation="relu", seed=seed)
+    trainer = PredictiveTrainer(model=model, batch_size=32, epochs=150, early_stopping_patience=25, seed=seed)
+    history = trainer.fit((X_train, Y_train), val_data=(X_val, Y_val))
+    return model, history
+
+
+def _collect_train_val_test(seed: int, num_episodes: int = 80, steps_per_episode: int = 64) -> Tuple[EpisodeDataset, EpisodeDataset, EpisodeDataset]:
+    world_config = _load_phase2_world_config()
+    collector = TrajectoryCollector(world_config=world_config)
+
+    full_ds = collector.collect_episode_dataset(
+        num_episodes=num_episodes, steps_per_episode=steps_per_episode, interaction_prob=0.3, base_seed=seed,
+    )
+    train_ds, remainder_ds = full_ds.split(train_ratio=0.7, seed=seed)
+    val_ds, test_ds = remainder_ds.split(train_ratio=0.5, seed=seed + 1)
+    return train_ds, val_ds, test_ds
+
+
+def run_experiment_e001(seed: int = 42, num_episodes: int = 80, steps_per_episode: int = 64) -> Dict[str, Any]:
+    """CSP-P2-E001: Does a recurrent (memory) model beat a stateless model and trivial baselines
+    under partial observability, especially on steps where the relevant entity is unobservable?
     """
-    world_config = WorldConfig(
-        grid_width=5,
-        grid_height=5,
-        initial_agent_pos=(0, 0),
-        initial_entities=[
-            Entity(
-                entity_id=1,
-                entity_type=1,
-                position=(2, 2),
-                is_interactive=True,
-                is_blocking=False,
-                hidden_state_delta=10.0,
-                interaction_delay=delay,
-            )
-        ],
-        initial_internal_state=50.0,
-        step_penalty=1.0,
-        default_interaction_delay=delay,
-        seed=seed,
-    )
+    train_ds, val_ds, test_ds = _collect_train_val_test(seed, num_episodes, steps_per_episode)
 
-    # 1. Collect sequential datasets
-    train_seq_ds = collect_sequential_trajectories(
-        world_config=world_config,
-        num_episodes=num_train_episodes,
-        steps_per_episode=steps_per_episode,
-        interaction_prob=0.3,
-        seed=seed,
-    )
+    # Train recurrent model (has access to h_{t-1} -> can remember).
+    rnn_model, rnn_history = _train_recurrent(train_ds, val_ds, seed)
 
-    test_seq_ds = collect_sequential_trajectories(
-        world_config=world_config,
-        num_episodes=num_test_episodes,
-        steps_per_episode=steps_per_episode,
-        interaction_prob=0.3,
-        seed=seed + 99999,
-    )
+    # Train stateless Phase 1 architecture on the *same* per-step data (no memory).
+    X_train, Y_train = _flatten(*train_ds.to_numpy_arrays())
+    X_val, Y_val = _flatten(*val_ds.to_numpy_arrays())
+    X_test, Y_test = _flatten(*test_ds.to_numpy_arrays())
+    mlp_model, mlp_history = _train_stateless(X_train, Y_train, X_val, Y_val, seed)
 
-    X_train_seq, Y_train_seq = train_seq_ds.to_numpy_sequences()
-    X_test_seq, Y_test_seq = test_seq_ds.to_numpy_sequences()
+    # Evaluate both on held-out test episodes (whole-set metrics).
+    X_test_seq, Y_test_seq = test_ds.to_numpy_arrays()
+    rnn_pred_seq = rnn_model.forward_sequence(X_test_seq)
+    rnn_metrics = compute_all_metrics(rnn_pred_seq, Y_test_seq)
+    mlp_metrics = compute_all_metrics(mlp_model.forward(X_test), Y_test)
 
-    # 2. Train Model A — No-Memory Feed-Forward Baseline (PredictiveMLP)
-    train_flat_ds = train_seq_ds.to_flat_dataset()
-    test_flat_ds = test_seq_ds.to_flat_dataset()
-    X_train_flat, Y_train_flat = train_flat_ds.to_numpy_arrays()
-    X_test_flat, Y_test_flat = test_flat_ds.to_numpy_arrays()
+    # Trivial baselines on the same flattened test set.
+    persist = PersistencePredictor(default_value=0.0)
+    persist_metrics = compute_all_metrics(persist.predict(X_test), Y_test)
+    rand_pred = RandomPredictor(low=-1.0, high=10.0, seed=seed)
+    rand_metrics = compute_all_metrics(rand_pred.predict(X_test), Y_test)
+    reactive = ReactivePredictor(mean_value=float(np.mean(Y_train)))
+    reactive_metrics = compute_all_metrics(reactive.predict(X_test), Y_test)
 
-    model_a = PredictiveMLP(
-        input_dim=X_train_flat.shape[1],
-        hidden_dims=(32, 16),
-        output_dim=1,
-        hidden_activation="relu",
-        seed=seed,
-    )
-    trainer_a = PredictiveTrainer(
-        model=model_a,
-        batch_size=32,
-        epochs=150,
-        early_stopping_patience=30,
-        seed=seed,
-    )
-    history_a = trainer_a.fit((X_train_flat, Y_train_flat), val_data=(X_test_flat, Y_test_flat))
-
-    # 3. Train Model B — Memory Model (RecurrentPredictor with GRU)
-    model_b = RecurrentPredictor(
-        input_dim=X_train_seq.shape[2],
-        hidden_dim=32,
-        output_dim=1,
-        seed=seed,
-    )
-    trainer_b = SequentialTrainer(
-        model=model_b,
-        batch_size=8,
-        epochs=150,
-        early_stopping_patience=30,
-        seed=seed,
-    )
-    history_b = trainer_b.fit((X_train_seq, Y_train_seq), val_data=(X_test_seq, Y_test_seq))
-
-    # 4. Benchmark Models & Baselines on Held-Out Test Trajectories
+    # The scientifically important comparison: error restricted to steps where
+    # the entity is currently unobservable (memory is the *only* source of information).
     evaluator = ModelEvaluator(seed=seed)
-    benchmark = evaluator.benchmark_sequence_models(
-        memory_model=model_b,
-        no_memory_model=model_a,
-        X_test_seq=X_test_seq,
-        Y_test_seq=Y_test_seq,
-        Y_train_seq=Y_train_seq,
-        seed=seed,
-    )
+    rnn_retention = evaluator.evaluate_memory_retention(rnn_model, test_ds)
 
-    # 5. Internal Latent Representation Analysis
-    latent_states = model_b.get_latent_state(X_test_seq)  # (B, T, D_h)
-    latent_flat = latent_states.reshape(-1, model_b.hidden_dim)
-    Y_flat = Y_test_seq.reshape(-1, 1)
-
-    delayed_mask = (Y_flat.flatten() > 0.0)
-    normal_mask = ~delayed_mask
-    if np.sum(delayed_mask) > 0 and np.sum(normal_mask) > 0:
-        mean_delayed = np.mean(latent_flat[delayed_mask], axis=0)
-        mean_normal = np.mean(latent_flat[normal_mask], axis=0)
-        cos_sim = float(compute_cosine_similarity(mean_delayed, mean_normal))
-        euc_dist = float(np.linalg.norm(mean_delayed - mean_normal))
-    else:
-        cos_sim, euc_dist = 1.0, 0.0
-
-    rep_analysis = {
-        "latent_dimension": model_b.hidden_dim,
-        "inter_class_cosine_similarity": round(cos_sim, 4),
-        "inter_class_euclidean_distance": round(euc_dist, 4),
-        "distinct_memory_representations_formed": cos_sim < 0.95,
-    }
+    # Same breakdown for the stateless model (reshape its flattened predictions back into (N,T,1)).
+    n, t = X_test_seq.shape[0], X_test_seq.shape[1]
+    mlp_pred_seq = mlp_model.forward(X_test).reshape(n, t, 1)
+    mlp_sq_err = np.square(mlp_pred_seq - Y_test_seq)
+    breakdown = test_ds.retention_breakdown()
+    mlp_hidden_errors = [
+        float(mlp_sq_err[ei, tt, :].mean())
+        for ei, tt, s in zip(breakdown["episode_index"], breakdown["timestep"], breakdown["steps_since_observed"])
+        if s is not None and s > 0
+    ]
+    mlp_hidden_mse = round(float(np.mean(mlp_hidden_errors)), 6) if mlp_hidden_errors else None
 
     return {
         "experiment_id": "CSP-P2-E001",
-        "title": "Temporal Memory Benchmark",
-        "delay": delay,
+        "title": "Does Memory Improve Prediction Under Partial Observability?",
         "seed": seed,
-        "train_episodes": len(train_seq_ds),
-        "test_episodes": len(test_seq_ds),
-        "total_train_transitions": train_seq_ds.total_transitions,
-        "total_test_transitions": test_seq_ds.total_transitions,
-        "history_no_memory": history_a,
-        "history_memory": history_b,
-        "benchmark": benchmark,
-        "representation_analysis": rep_analysis,
-        "model_a_parameters": model_a.num_parameters,
-        "model_b_parameters": model_b.num_parameters,
+        "train_episodes": len(train_ds),
+        "val_episodes": len(val_ds),
+        "test_episodes": len(test_ds),
+        "recurrent_model": {
+            "overall_metrics": rnn_metrics,
+            "training_history": rnn_history,
+            "retention_breakdown": rnn_retention,
+            "num_parameters": rnn_model.num_parameters,
+        },
+        "stateless_model": {
+            "overall_metrics": mlp_metrics,
+            "training_history": mlp_history,
+            "hidden_step_mse": mlp_hidden_mse,
+            "num_parameters": mlp_model.num_parameters,
+        },
+        "baselines": {
+            "persistence": persist_metrics,
+            "random": rand_metrics,
+            "reactive": reactive_metrics,
+        },
+        "hidden_step_gap_recurrent_vs_stateless_pct": (
+            round(compute_baseline_gap(rnn_retention.get("hidden_step_mse") or 0.0, mlp_hidden_mse), 2)
+            if rnn_retention.get("hidden_step_mse") is not None and mlp_hidden_mse
+            else None
+        ),
+        "recurrent_beats_stateless_on_hidden_steps": (
+            rnn_retention.get("hidden_step_mse") is not None
+            and mlp_hidden_mse is not None
+            and rnn_retention["hidden_step_mse"] < mlp_hidden_mse
+        ),
+        "recurrent_beats_persistence_overall": rnn_metrics["mse"] < persist_metrics["mse"],
     }
 
 
-def run_experiment_p2_e002(
-    delay: int = 2,
-    seed: int = 42,
-) -> Dict[str, Any]:
-    """CSP-P2-E002: Memory vs No-Memory (Information-Insufficiency Isolation).
-
-    Evaluates the performance gap specifically partitioned on:
-    1. Information-Deficit Steps: Steps where delayed consequence arrives (t = t_int + d),
-       where current observation O_t contains NO immediate interaction cue.
-    2. Standard Non-Delayed Steps: Normal movement/interaction steps.
+def run_experiment_e002(seed: int = 42) -> Dict[str, Any]:
+    """CSP-P2-E002: For how long is information retained? Error vs steps-since-last-observed,
+    recurrent model vs stateless model, on a shared held-out set.
     """
-    e001_res = run_experiment_p2_e001(delay=delay, seed=seed)
+    train_ds, val_ds, test_ds = _collect_train_val_test(seed)
+    rnn_model, _ = _train_recurrent(train_ds, val_ds, seed)
 
-    world_config = WorldConfig(
-        grid_width=5,
-        grid_height=5,
-        initial_agent_pos=(0, 0),
-        initial_entities=[
-            Entity(
-                entity_id=1,
-                entity_type=1,
-                position=(2, 2),
-                is_interactive=True,
-                is_blocking=False,
-                hidden_state_delta=10.0,
-                interaction_delay=delay,
-            )
-        ],
-        initial_internal_state=50.0,
-        step_penalty=1.0,
-        default_interaction_delay=delay,
-        seed=seed,
-    )
+    X_train, Y_train = _flatten(*train_ds.to_numpy_arrays())
+    X_val, Y_val = _flatten(*val_ds.to_numpy_arrays())
+    mlp_model, _ = _train_stateless(X_train, Y_train, X_val, Y_val, seed)
 
-    test_seq_ds = collect_sequential_trajectories(
-        world_config=world_config,
-        num_episodes=20,
-        steps_per_episode=25,
-        interaction_prob=0.3,
-        seed=seed + 77777,
-    )
-    X_test_seq, Y_test_seq = test_seq_ds.to_numpy_sequences()
-    B, T, _ = X_test_seq.shape
+    evaluator = ModelEvaluator(seed=seed)
+    rnn_retention = evaluator.evaluate_memory_retention(rnn_model, test_ds)
 
-    # Train models
-    train_seq_ds = collect_sequential_trajectories(world_config=world_config, num_episodes=30, steps_per_episode=25, seed=seed)
-    X_train_seq, Y_train_seq = train_seq_ds.to_numpy_sequences()
-    X_train_flat, Y_train_flat = train_seq_ds.to_flat_dataset().to_numpy_arrays()
+    # Stateless per-bucket breakdown (same mechanics as in E001, factored out here for the curve).
+    X_test_seq, Y_test_seq = test_ds.to_numpy_arrays()
+    X_test_flat, _ = _flatten(X_test_seq, Y_test_seq)
+    n, t = X_test_seq.shape[0], X_test_seq.shape[1]
+    mlp_pred_seq = mlp_model.forward(X_test_flat).reshape(n, t, 1)
+    mlp_sq_err = np.square(mlp_pred_seq - Y_test_seq)
+    breakdown = test_ds.retention_breakdown()
 
-    model_a = PredictiveMLP(input_dim=37, hidden_dims=(32, 16), output_dim=1, seed=seed)
-    trainer_a = PredictiveTrainer(model=model_a, epochs=120, seed=seed)
-    trainer_a.fit((X_train_flat, Y_train_flat))
-
-    model_b = RecurrentPredictor(input_dim=37, hidden_dim=32, output_dim=1, seed=seed)
-    trainer_b = SequentialTrainer(model=model_b, epochs=120, seed=seed)
-    trainer_b.fit((X_train_seq, Y_train_seq))
-
-    # Evaluate predictions
-    y_pred_mem = model_b.forward(X_test_seq)  # (B, T, 1)
-    X_flat_test = X_test_seq.reshape(B * T, -1)
-    y_pred_no_mem = model_a.forward(X_flat_test).reshape(B, T, 1)
-
-    Y_flat = Y_test_seq.reshape(-1)
-    pred_mem_flat = y_pred_mem.reshape(-1)
-    pred_no_mem_flat = y_pred_no_mem.reshape(-1)
-
-    # Isolate delayed consequence arrival steps (Delta E > 0)
-    deficit_mask = (Y_flat > 0.0)
-    standard_mask = ~deficit_mask
-
-    # Metrics on information-deficit steps
-    mse_mem_deficit = float(np.mean((pred_mem_flat[deficit_mask] - Y_flat[deficit_mask]) ** 2)) if np.sum(deficit_mask) > 0 else 0.0
-    mse_no_mem_deficit = float(np.mean((pred_no_mem_flat[deficit_mask] - Y_flat[deficit_mask]) ** 2)) if np.sum(deficit_mask) > 0 else 0.0
-    gap_deficit_pct = compute_baseline_gap(mse_mem_deficit, mse_no_mem_deficit)
-
-    # Metrics on standard non-delayed steps
-    mse_mem_standard = float(np.mean((pred_mem_flat[standard_mask] - Y_flat[standard_mask]) ** 2)) if np.sum(standard_mask) > 0 else 0.0
-    mse_no_mem_standard = float(np.mean((pred_no_mem_flat[standard_mask] - Y_flat[standard_mask]) ** 2)) if np.sum(standard_mask) > 0 else 0.0
-    gap_standard_pct = compute_baseline_gap(mse_mem_standard, mse_no_mem_standard)
+    mlp_bucket_errors: Dict[str, List[float]] = {}
+    for ei, tt, s in zip(breakdown["episode_index"], breakdown["timestep"], breakdown["steps_since_observed"]):
+        if s is None or s == 0:
+            continue
+        key = str(min(s, 8)) + ("+" if s >= 8 else "")
+        mlp_bucket_errors.setdefault(key, []).append(float(mlp_sq_err[ei, tt, :].mean()))
+    mlp_bucket_summary = {
+        k: {"mean_mse": round(float(np.mean(v)), 6), "count": len(v)}
+        for k, v in sorted(mlp_bucket_errors.items(), key=lambda kv: int(kv[0].rstrip("+")))
+    }
 
     return {
         "experiment_id": "CSP-P2-E002",
-        "title": "Memory vs No-Memory (Information-Insufficiency Isolation)",
-        "delay": delay,
+        "title": "Retention Duration — Error vs Steps Since Entity Last Observed",
         "seed": seed,
-        "total_test_steps": len(Y_flat),
-        "information_deficit_steps_count": int(np.sum(deficit_mask)),
-        "standard_steps_count": int(np.sum(standard_mask)),
-        "deficit_steps": {
-            "memory_model_mse": round(mse_mem_deficit, 6),
-            "no_memory_model_mse": round(mse_no_mem_deficit, 6),
-            "error_reduction_pct": round(gap_deficit_pct, 2),
-            "memory_beats_no_memory": mse_mem_deficit < mse_no_mem_deficit,
-        },
-        "standard_steps": {
-            "memory_model_mse": round(mse_mem_standard, 6),
-            "no_memory_model_mse": round(mse_no_mem_standard, 6),
-            "error_reduction_pct": round(gap_standard_pct, 2),
-        },
-        "hypothesis_supported": mse_mem_deficit < (mse_no_mem_deficit * 0.3),  # >70% error reduction on deficit steps
+        "recurrent_breakdown": rnn_retention["steps_since_observed_breakdown"],
+        "stateless_breakdown": mlp_bucket_summary,
+        "recurrent_visible_step_mse": rnn_retention["visible_step_mse"],
+        "recurrent_hidden_step_mse": rnn_retention["hidden_step_mse"],
     }
 
 
-def run_experiment_p2_e003(
-    delays: List[int] = [0, 1, 2, 4, 8],
-    seed: int = 42,
-) -> Dict[str, Any]:
-    """CSP-P2-E003: Variable Delay Sweep.
-
-    Evaluates memory retention horizon and performance across variable delays d in [0, 1, 2, 4, 8].
+def run_experiment_e003(seeds: List[int] = [42, 101, 7, 2026, 555]) -> Dict[str, Any]:
+    """CSP-P2-E003: Reproducibility — does the recurrent model consistently beat the stateless
+    model on hidden-observability steps across independent seeds?
     """
-    delay_records = []
-
-    for d in delays:
-        res = run_experiment_p2_e001(delay=d, num_train_episodes=30, num_test_episodes=10, seed=seed + d * 17)
-        bench = res["benchmark"]
-        mem_mse = bench["memory_model"]["mse"]
-        no_mem_mse = bench["no_memory_model"]["mse"]
-        persist_mse = bench["persistence_baseline"]["mse"]
-        gap = bench["memory_vs_no_memory_gap_pct"]
-
-        delay_records.append({
-            "delay": d,
-            "memory_model_mse": round(mem_mse, 6),
-            "no_memory_model_mse": round(no_mem_mse, 6),
-            "persistence_baseline_mse": round(persist_mse, 6),
-            "memory_advantage_pct": round(gap, 2),
-            "beats_no_memory": mem_mse < no_mem_mse,
+    per_seed = []
+    for s in seeds:
+        res = run_experiment_e001(seed=s)
+        per_seed.append({
+            "seed": s,
+            "recurrent_hidden_mse": res["recurrent_model"]["retention_breakdown"].get("hidden_step_mse"),
+            "stateless_hidden_mse": res["stateless_model"]["hidden_step_mse"],
+            "recurrent_beats_stateless_on_hidden_steps": res["recurrent_beats_stateless_on_hidden_steps"],
         })
+
+    valid = [r for r in per_seed if r["recurrent_hidden_mse"] is not None and r["stateless_hidden_mse"] is not None]
+    rnn_mses = [r["recurrent_hidden_mse"] for r in valid]
+    mlp_mses = [r["stateless_hidden_mse"] for r in valid]
+    win_rate = 100.0 * sum(r["recurrent_beats_stateless_on_hidden_steps"] for r in valid) / len(valid) if valid else 0.0
 
     return {
         "experiment_id": "CSP-P2-E003",
-        "title": "Variable Delay Sweep",
-        "delays_evaluated": delays,
-        "records": delay_records,
-        "max_delay_evaluated": max(delays),
-        "min_delay_advantage_pct": min(r["memory_advantage_pct"] for r in delay_records if r["delay"] > 0),
-        "max_delay_advantage_pct": max(r["memory_advantage_pct"] for r in delay_records if r["delay"] > 0),
-    }
-
-
-def run_experiment_p2_e004(
-    train_delays: List[int] = [1, 2, 4],
-    test_delays: List[int] = [3, 6],
-    seed: int = 42,
-) -> Dict[str, Any]:
-    """CSP-P2-E004: Memory Generalization to Unseen Temporal Delays.
-
-    Trains memory model on mixed delays {1, 2, 4} and evaluates on out-of-distribution delays {3, 6}.
-    """
-    # 1. Collect mixed training dataset
-    combined_train_episodes = []
-    for d in train_delays:
-        cfg = WorldConfig(
-            grid_width=5, grid_height=5,
-            initial_entities=[Entity(entity_id=1, entity_type=1, position=(2, 2), hidden_state_delta=10.0, interaction_delay=d)],
-            initial_internal_state=50.0, default_interaction_delay=d, seed=seed + d * 31,
-        )
-        ds = collect_sequential_trajectories(cfg, num_episodes=12, steps_per_episode=25, seed=seed + d * 31)
-        combined_train_episodes.extend(ds.episodes)
-
-    train_seq_ds = SequentialExperienceDataset()
-    train_seq_ds.episodes = combined_train_episodes
-    X_train_seq, Y_train_seq = train_seq_ds.to_numpy_sequences()
-
-    # Train model
-    model = RecurrentPredictor(input_dim=37, hidden_dim=32, output_dim=1, seed=seed)
-    trainer = SequentialTrainer(model=model, epochs=150, seed=seed)
-    trainer.fit((X_train_seq, Y_train_seq))
-
-    # Evaluate on held-out unseen delays
-    unseen_results = {}
-    for d_test in test_delays:
-        cfg_test = WorldConfig(
-            grid_width=5, grid_height=5,
-            initial_entities=[Entity(entity_id=1, entity_type=1, position=(2, 2), hidden_state_delta=10.0, interaction_delay=d_test)],
-            initial_internal_state=50.0, default_interaction_delay=d_test, seed=seed + d_test * 101,
-        )
-        test_ds = collect_sequential_trajectories(cfg_test, num_episodes=10, steps_per_episode=25, seed=seed + d_test * 101)
-        X_test, Y_test = test_ds.to_numpy_sequences()
-
-        y_pred = model.forward(X_test)
-        metrics = compute_all_metrics(y_pred, Y_test)
-
-        # Baseline persistence
-        y_persist = np.zeros_like(Y_test)
-        p_metrics = compute_all_metrics(y_persist, Y_test)
-        gap = compute_baseline_gap(metrics["mse"], p_metrics["mse"])
-
-        unseen_results[f"delay_{d_test}"] = {
-            "delay": d_test,
-            "mse": round(metrics["mse"], 6),
-            "rmse": round(metrics["rmse"], 6),
-            "mae": round(metrics["mae"], 6),
-            "r2_score": round(metrics["r2_score"], 4),
-            "persistence_mse": round(p_metrics["mse"], 6),
-            "gap_vs_persistence_pct": round(gap, 2),
-            "generalization_successful": metrics["mse"] < p_metrics["mse"],
-        }
-
-    all_gen_success = all(v["generalization_successful"] for v in unseen_results.values())
-
-    return {
-        "experiment_id": "CSP-P2-E004",
-        "title": "Memory Generalization to Unseen Delays",
-        "train_delays": train_delays,
-        "test_delays": test_delays,
-        "unseen_delay_results": unseen_results,
-        "generalizes_to_all_unseen_delays": all_gen_success,
-    }
-
-
-def run_experiment_p2_e005(
-    seeds: List[int] = [1, 2, 3, 4, 5, 6, 7, 8],
-    delay: int = 2,
-) -> Dict[str, Any]:
-    """CSP-P2-E005: Reproducibility across 8 Independent Random Seeds."""
-    seed_records = []
-    mem_mses = []
-    no_mem_mses = []
-    gaps = []
-
-    for s in seeds:
-        res = run_experiment_p2_e001(delay=delay, num_train_episodes=25, num_test_episodes=10, seed=s)
-        bench = res["benchmark"]
-        m_mse = bench["memory_model"]["mse"]
-        nm_mse = bench["no_memory_model"]["mse"]
-        gap = bench["memory_vs_no_memory_gap_pct"]
-
-        mem_mses.append(m_mse)
-        no_mem_mses.append(nm_mse)
-        gaps.append(gap)
-
-        seed_records.append({
-            "seed": s,
-            "memory_model_mse": round(m_mse, 6),
-            "no_memory_model_mse": round(nm_mse, 6),
-            "advantage_gap_pct": round(gap, 2),
-            "memory_beats_no_memory": m_mse < nm_mse,
-        })
-
-    return {
-        "experiment_id": "CSP-P2-E005",
-        "title": "Reproducibility Across 8 Random Seeds",
-        "delay": delay,
-        "seeds_evaluated": seeds,
-        "seed_records": seed_records,
+        "title": "Reproducibility Across Seeds",
+        "seeds": seeds,
+        "per_seed_results": per_seed,
         "summary": {
-            "mean_memory_mse": round(float(np.mean(mem_mses)), 6),
-            "std_memory_mse": round(float(np.std(mem_mses)), 6),
-            "min_memory_mse": round(float(np.min(mem_mses)), 6),
-            "max_memory_mse": round(float(np.max(mem_mses)), 6),
-            "mean_no_memory_mse": round(float(np.mean(no_mem_mses)), 6),
-            "std_no_memory_mse": round(float(np.std(no_mem_mses)), 6),
-            "mean_advantage_gap_pct": round(float(np.mean(gaps)), 2),
-            "consistent_superiority": all(r["memory_beats_no_memory"] for r in seed_records),
+            "mean_recurrent_hidden_mse": round(float(np.mean(rnn_mses)), 6) if rnn_mses else None,
+            "std_recurrent_hidden_mse": round(float(np.std(rnn_mses)), 6) if rnn_mses else None,
+            "mean_stateless_hidden_mse": round(float(np.mean(mlp_mses)), 6) if mlp_mses else None,
+            "std_stateless_hidden_mse": round(float(np.std(mlp_mses)), 6) if mlp_mses else None,
+            "recurrent_win_rate_pct": round(win_rate, 1),
         },
     }
 
 
-def run_experiment_p2_e006(seed: int = 42) -> Dict[str, Any]:
-    """CSP-P2-E006: Comprehensive Semantic Firewall Audit for Phase 2.
-
-    Exhaustively scans all observations, memory state containers, model inputs,
-    training targets, and serialized structures for semantic leakage.
+def run_experiment_e004(seed: int = 42) -> Dict[str, Any]:
+    """CSP-P2-E004: Semantic firewall audit for the new flicker mechanism, plus a check of
+    whether the recurrent hidden state carries structure distinguishing "entity currently
+    tracked from memory" vs "no recent information" — i.e. does memory produce useful
+    internal state? (Section 29's fourth question.)
     """
-    audit_findings = []
+    world_config = _load_phase2_world_config()
 
-    # 1. Environment & Observation Audit
-    cfg = WorldConfig(
-        grid_width=5, grid_height=5,
-        initial_entities=[Entity(entity_id=1, entity_type=1, position=(2, 2), hidden_state_delta=10.0, interaction_delay=3)],
-        initial_internal_state=50.0, default_interaction_delay=3, seed=seed,
-    )
-    world = GridWorld(cfg)
+    # 1. Semantic firewall audit: the flicker rule itself, and its per-step consequence,
+    #    must never leak into the Observation the agent receives.
+    from environment.world import GridWorld
+    world = GridWorld(config=world_config)
     obs = world.reset(seed=seed)
+    leak_found = False
+    for _ in range(world_config.max_timesteps):
+        obs_dict = obs.to_dict()
+        for token in ("flicker_period", "flicker_visible_steps", "visible", "observable"):
+            if token in json.dumps(obs_dict):
+                leak_found = True
+        obs, _, done, _ = world.step("RIGHT" if world._timestep % 2 == 0 else "INTERACT")
+        if done:
+            break
 
-    try:
-        obs.assert_semantic_purity()
-        _check_semantic_purity_recursive(obs.to_dict())
-        audit_findings.append({"component": "Environment Observation at Reset", "status": "PASSED", "leaks": 0})
-    except Exception as e:
-        audit_findings.append({"component": "Environment Observation at Reset", "status": "FAILED", "error": str(e)})
+    audit = {
+        "tokens_scanned": list(FORBIDDEN_SEMANTIC_TOKENS) + ["flicker_period", "flicker_visible_steps", "visible", "observable"],
+        "leakage_found": leak_found,
+        "status": "PASSED (Zero leakage detected)" if not leak_found else "FAILED (Leakage detected)",
+    }
 
-    # Transition steps including interaction and delayed maturation
-    for step_i, act in enumerate([Action.RIGHT, Action.UP, Action.INTERACT, Action.NOOP, Action.NOOP, Action.NOOP]):
-        next_obs, delta, done, info = world.step(act)
-        try:
-            next_obs.assert_semantic_purity()
-            _check_semantic_purity_recursive(next_obs.to_dict())
-            _check_semantic_purity_recursive(info)
-        except Exception as e:
-            audit_findings.append({"component": f"Transition Step {step_i}", "status": "FAILED", "error": str(e)})
+    # 2. Does the recurrent hidden state encode "currently remembering the entity nearby"?
+    train_ds, val_ds, test_ds = _collect_train_val_test(seed)
+    rnn_model, _ = _train_recurrent(train_ds, val_ds, seed)
 
-    audit_findings.append({"component": "Delayed Transition Steps (6 steps)", "status": "PASSED", "leaks": 0})
+    X_test, Y_test = test_ds.to_numpy_arrays()
+    rnn_model.forward_sequence(X_test)  # populate caches
+    hidden_states = rnn_model.get_hidden_states()  # (N, T, hidden_dim)
 
-    # 2. Internal Memory Container Audit
-    mem = InternalMemory(hidden_dim=32)
-    mem.update([0.25] * 32)
-    try:
-        _check_semantic_purity_recursive(mem.to_dict())
-        audit_findings.append({"component": "InternalMemory Container & Serialization", "status": "PASSED", "leaks": 0})
-    except Exception as e:
-        audit_findings.append({"component": "InternalMemory Container", "status": "FAILED", "error": str(e)})
+    breakdown = test_ds.retention_breakdown()
+    recent_memory_states, stale_memory_states = [], []
+    for ei, tt, s in zip(breakdown["episode_index"], breakdown["timestep"], breakdown["steps_since_observed"]):
+        if s is None:
+            continue
+        (recent_memory_states if s <= 2 else stale_memory_states).append(hidden_states[ei, tt, :])
 
-    # 3. RecurrentPredictor Model State Audit
-    model = RecurrentPredictor(input_dim=37, hidden_dim=32, output_dim=1, seed=seed)
-    try:
-        _check_semantic_purity_recursive(model.to_dict())
-        audit_findings.append({"component": "RecurrentPredictor Model State & Parameters", "status": "PASSED", "leaks": 0})
-    except Exception as e:
-        audit_findings.append({"component": "RecurrentPredictor Model State", "status": "FAILED", "error": str(e)})
-
-    # 4. Trajectory Episode Datasets Audit
-    ds = collect_sequential_trajectories(cfg, num_episodes=5, steps_per_episode=10, seed=seed)
-    try:
-        for ep in ds.episodes:
-            _check_semantic_purity_recursive(ep.metadata)
-            for t in ep.transitions:
-                t.obs.assert_semantic_purity()
-                _check_semantic_purity_recursive(t.info)
-        audit_findings.append({"component": "Sequential Experience Datasets", "status": "PASSED", "leaks": 0})
-    except Exception as e:
-        audit_findings.append({"component": "Sequential Experience Datasets", "status": "FAILED", "error": str(e)})
-
-    all_passed = all(f["status"] == "PASSED" for f in audit_findings)
+    rep_result: Dict[str, Any]
+    if recent_memory_states and stale_memory_states:
+        mean_recent = np.mean(np.stack(recent_memory_states), axis=0)
+        mean_stale = np.mean(np.stack(stale_memory_states), axis=0)
+        cos_sim = compute_cosine_similarity(mean_recent, mean_stale)
+        rep_result = {
+            "recent_memory_sample_count": len(recent_memory_states),
+            "stale_memory_sample_count": len(stale_memory_states),
+            "recent_vs_stale_cosine_similarity": round(cos_sim, 4),
+            "euclidean_distance": round(float(np.linalg.norm(mean_recent - mean_stale)), 4),
+            "distinct_memory_states_formed": cos_sim < 0.95,
+        }
+    else:
+        rep_result = {"status": "insufficient_class_variance"}
 
     return {
-        "experiment_id": "CSP-P2-E006",
-        "title": "Semantic Firewall Audit & Representation Integrity",
-        "audit_findings": audit_findings,
-        "all_audits_passed": all_passed,
-        "forbidden_tokens_checked": sorted(list(FORBIDDEN_SEMANTIC_TOKENS)),
-        "firewall_integrity_verified": True,
+        "experiment_id": "CSP-P2-E004",
+        "title": "Semantic Firewall Audit & Internal Memory-State Structure",
+        "seed": seed,
+        "semantic_audit": audit,
+        "memory_representation_analysis": rep_result,
     }
+
+
+def run_all_phase2_experiments(output_dir: str = "logs") -> Dict[str, Any]:
+    """Execute all Phase 2 experiments sequentially and persist results."""
+    import os
+
+    print("Running CSP-P2-E001 (Does Memory Improve Prediction?)...")
+    e001 = run_experiment_e001()
+
+    print("Running CSP-P2-E002 (Retention Duration)...")
+    e002 = run_experiment_e002()
+
+    print("Running CSP-P2-E003 (Reproducibility Across Seeds)...")
+    e003 = run_experiment_e003()
+
+    print("Running CSP-P2-E004 (Semantic Audit & Memory Representation)...")
+    e004 = run_experiment_e004()
+
+    all_results = {
+        "phase": "Phase 2 — Memory & Persistence",
+        "experiments": {
+            "CSP-P2-E001": e001,
+            "CSP-P2-E002": e002,
+            "CSP-P2-E003": e003,
+            "CSP-P2-E004": e004,
+        },
+    }
+
+    os.makedirs(output_dir, exist_ok=True)
+    out_file = os.path.join(output_dir, "phase2_all_experiments_results.json")
+    with open(out_file, "w", encoding="utf-8") as f:
+        json.dump(all_results, f, indent=2)
+
+    print(f"\nAll Phase 2 experiments completed and saved to: {out_file}")
+    return all_results
+
+
+if __name__ == "__main__":
+    run_all_phase2_experiments()

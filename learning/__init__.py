@@ -5,25 +5,24 @@ from learning.dataset import (
     ExperienceDataset,
     encode_state_action,
     one_hot_encode_action,
+    encode_state_action_deepsets,
 )
 from learning.collector import TrajectoryCollector
 from learning.trainer import PredictiveTrainer
-from learning.sequential_dataset import (
-    TrajectoryEpisode,
-    SequentialExperienceDataset,
-    collect_sequential_trajectories,
-)
-from learning.sequential_trainer import SequentialTrainer
+from learning.sequence_dataset import Episode, EpisodeDataset
+from learning.recurrent_trainer import RecurrentTrainer
+from learning.deepsets_trainer import DeepSetsTrainer
 
 __all__ = [
     "Transition",
     "ExperienceDataset",
     "encode_state_action",
     "one_hot_encode_action",
+    "encode_state_action_deepsets",
     "TrajectoryCollector",
     "PredictiveTrainer",
-    "TrajectoryEpisode",
-    "SequentialExperienceDataset",
-    "collect_sequential_trajectories",
-    "SequentialTrainer",
+    "Episode",
+    "EpisodeDataset",
+    "RecurrentTrainer",
+    "DeepSetsTrainer",
 ]

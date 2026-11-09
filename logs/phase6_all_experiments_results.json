@@ -1,0 +1,199 @@
+{
+  "phase": "Phase 6 \u2014 Rule Change & Adaptation",
+  "experiments": {
+    "CSP-P6-E001": {
+      "experiment_id": "CSP-P6-E001",
+      "title": "Offline Baseline: Caspian's Existing Model Before Any Rule Change",
+      "seed": 42,
+      "num_parameters": 1761,
+      "epochs_run": 116,
+      "final_train_loss": 0.028299777461607986,
+      "val_metrics": {
+        "mse": 0.024215,
+        "rmse": 0.155611,
+        "mae": 0.024248,
+        "r2_score": 0.992393
+      }
+    },
+    "CSP-P6-E002": {
+      "experiment_id": "CSP-P6-E002",
+      "title": "Detection & Adaptation: Does Caspian Notice and Correct a Rule Change?",
+      "seed": 42,
+      "flip_type": 2,
+      "pre_steps": 3000,
+      "post_steps": 3000,
+      "offline_baseline_val_r2": 0.992393,
+      "num_flip_type_interaction_events": 81,
+      "insufficient_data": false,
+      "num_pre_events": 26,
+      "num_post_events": 55,
+      "mean_pre_error": 5.0978,
+      "std_pre_error": 10.985,
+      "detect_threshold": 38.0527,
+      "recover_threshold": 16.0827,
+      "detection_event_index": 0,
+      "adaptation_event_index": 20,
+      "events_to_detect": 0,
+      "events_from_detection_to_adapt": 20,
+      "events_to_fully_adapt": 20,
+      "peak_post_change_error": 322.0582,
+      "final_rolling_error": 2.1755,
+      "recovered_to_baseline_by_end": true,
+      "detection_and_adaptation_both_occurred": true
+    },
+    "CSP-P6-E002-STABILITY": {
+      "experiment_id": "CSP-P6-E002-STABILITY",
+      "title": "Stability Check: Does Detection & Adaptation Reproduce Across Seeds?",
+      "seeds": [
+        42,
+        101,
+        7,
+        2026,
+        555
+      ],
+      "per_seed_results": [
+        {
+          "seed": 42,
+          "num_post_events": 55,
+          "events_to_detect": 0,
+          "events_to_fully_adapt": 20,
+          "detection_and_adaptation_both_occurred": true,
+          "recovered_to_baseline_by_end": true
+        },
+        {
+          "seed": 101,
+          "num_post_events": 79,
+          "events_to_detect": 0,
+          "events_to_fully_adapt": 30,
+          "detection_and_adaptation_both_occurred": true,
+          "recovered_to_baseline_by_end": true
+        },
+        {
+          "seed": 7,
+          "num_post_events": 62,
+          "events_to_detect": 0,
+          "events_to_fully_adapt": 14,
+          "detection_and_adaptation_both_occurred": true,
+          "recovered_to_baseline_by_end": true
+        },
+        {
+          "seed": 2026,
+          "num_post_events": 54,
+          "events_to_detect": 0,
+          "events_to_fully_adapt": 9,
+          "detection_and_adaptation_both_occurred": true,
+          "recovered_to_baseline_by_end": true
+        },
+        {
+          "seed": 555,
+          "num_post_events": 45,
+          "events_to_detect": 0,
+          "events_to_fully_adapt": 13,
+          "detection_and_adaptation_both_occurred": true,
+          "recovered_to_baseline_by_end": true
+        }
+      ],
+      "detection_and_adaptation_both_occurred_rate_pct": 100.0,
+      "mean_events_to_detect": 0.0,
+      "mean_events_to_fully_adapt": 17.2,
+      "std_events_to_fully_adapt": 7.3
+    },
+    "CSP-P6-E003": {
+      "experiment_id": "CSP-P6-E003",
+      "title": "Catastrophic Forgetting: Does Adapting to the Rule Change Damage Unrelated Types?",
+      "seed": 42,
+      "flip_type": 2,
+      "unchanged_types_evaluated": [
+        1,
+        3,
+        4
+      ],
+      "per_type_results": {
+        "type_1": {
+          "mse_before_adaptation": 0.620459,
+          "mse_after_adaptation": 1.459367,
+          "mse_increase_pct": 135.21
+        },
+        "type_3": {
+          "mse_before_adaptation": 2.983726,
+          "mse_after_adaptation": 4.873291,
+          "mse_increase_pct": 63.33
+        },
+        "type_4": {
+          "mse_before_adaptation": 4.628871,
+          "mse_after_adaptation": 1.089149,
+          "mse_increase_pct": -76.47
+        }
+      },
+      "mean_mse_increase_pct_on_unchanged_types": 40.69,
+      "catastrophic_forgetting_occurred": false
+    },
+    "CSP-P6-E004": {
+      "experiment_id": "CSP-P6-E004",
+      "title": "Old-Model Persistence Control: The Frozen Checkpoint Must Still Be Wrong",
+      "seed": 42,
+      "flip_type": 2,
+      "frozen_pre_change_checkpoint_on_new_rule": {
+        "mse": 223.801759,
+        "rmse": 14.960005,
+        "mae": 13.501841,
+        "r2_score": -12.403596,
+        "mean_predicted_sign_matches_new_rule": 0.0
+      },
+      "online_adapted_model_on_new_rule": {
+        "mse": 4.014407,
+        "rmse": 2.003598,
+        "mae": 1.490831,
+        "r2_score": 0.759575,
+        "mean_predicted_sign_matches_new_rule": 0.6
+      },
+      "frozen_checkpoint_still_wrong_as_expected": true,
+      "adapted_model_now_correct": false,
+      "control_valid": false
+    },
+    "CSP-P6-E005": {
+      "experiment_id": "CSP-P6-E005",
+      "title": "Transfer: Is the Second Rule Change Detected/Adapted Faster Than the First?",
+      "seed": 42,
+      "first_flip_type": 2,
+      "second_flip_type": 4,
+      "first_change_measurement": {
+        "insufficient_data": false,
+        "num_pre_events": 26,
+        "num_post_events": 55,
+        "mean_pre_error": 5.0978,
+        "std_pre_error": 10.985,
+        "detect_threshold": 38.0527,
+        "recover_threshold": 16.0827,
+        "detection_event_index": 0,
+        "adaptation_event_index": 20,
+        "events_to_detect": 0,
+        "events_from_detection_to_adapt": 20,
+        "events_to_fully_adapt": 20,
+        "peak_post_change_error": 322.0582,
+        "final_rolling_error": 2.1755,
+        "recovered_to_baseline_by_end": true
+      },
+      "second_change_measurement": {
+        "insufficient_data": false,
+        "num_pre_events": 50,
+        "num_post_events": 28,
+        "mean_pre_error": 1.1888,
+        "std_pre_error": 2.3417,
+        "detect_threshold": 8.214,
+        "recover_threshold": 3.5305,
+        "detection_event_index": 0,
+        "adaptation_event_index": 14,
+        "events_to_detect": 0,
+        "events_from_detection_to_adapt": 14,
+        "events_to_fully_adapt": 14,
+        "peak_post_change_error": 322.3611,
+        "final_rolling_error": 1.2761,
+        "recovered_to_baseline_by_end": true
+      },
+      "detection_faster_second_time": false,
+      "adaptation_faster_second_time": true,
+      "transfer_evidence": "NONE_OR_MIXED"
+    }
+  }
+}

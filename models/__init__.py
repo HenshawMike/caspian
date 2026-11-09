@@ -12,7 +12,8 @@ from models.activations import (
 from models.layers import LinearLayer
 from models.optimizers import Optimizer, SGD, Adam, LossFunction, MSELoss, HuberLoss
 from models.mlp import PredictiveMLP
-from models.recurrent import GRULayer, RecurrentPredictor
+from models.rnn import RecurrentPredictiveModel
+from models.deepsets import DeepSetsPredictiveModel
 
 __all__ = [
     "Activation",
@@ -30,6 +31,6 @@ __all__ = [
     "MSELoss",
     "HuberLoss",
     "PredictiveMLP",
-    "GRULayer",
-    "RecurrentPredictor",
+    "RecurrentPredictiveModel",
+    "DeepSetsPredictiveModel",
 ]

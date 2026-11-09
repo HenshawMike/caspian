@@ -1,0 +1,414 @@
+{
+  "phase": "Phase 5 \u2014 Emergent Categories",
+  "experiments": {
+    "CSP-P5-E001": {
+      "experiment_id": "CSP-P5-E001",
+      "title": "Predictiveness: Does entity_type Carry Necessary Information?",
+      "seed": 42,
+      "full_model_metrics": {
+        "mse": 0.006478,
+        "rmse": 0.080486,
+        "mae": 0.014787,
+        "r2_score": 0.997781
+      },
+      "type_ablated_model_metrics": {
+        "mse": 1.17652,
+        "rmse": 1.084675,
+        "mae": 0.189158,
+        "r2_score": 0.596967
+      },
+      "mse_increase_pct_from_ablation": 18061.78,
+      "type_is_necessary": true
+    },
+    "CSP-P5-E002": {
+      "experiment_id": "CSP-P5-E002",
+      "title": "Generalization: Do Novel Entity-Type Codes Cluster by Function, Not by Code?",
+      "seed": 42,
+      "latent_space_similarities": {
+        "type1_vs_type3_novel_SAME_FUNC": 0.024,
+        "type2_vs_type4_novel_SAME_FUNC": 0.9929,
+        "type1_vs_type2_DIFF_FUNC_adjacent_code": 0.0226,
+        "type2_vs_type3_novel_DIFF_FUNC_adjacent_code": 0.9959,
+        "type3_novel_vs_type4_novel_DIFF_FUNC_adjacent_code": 0.9995,
+        "type1_vs_type4_novel_DIFF_FUNC": 0.0246
+      },
+      "raw_input_similarities": {
+        "type1_vs_type3_novel_SAME_FUNC": 0.9998,
+        "type2_vs_type4_novel_SAME_FUNC": 0.9997,
+        "type1_vs_type2_DIFF_FUNC_adjacent_code": 0.9998,
+        "type2_vs_type3_novel_DIFF_FUNC_adjacent_code": 0.9998,
+        "type3_novel_vs_type4_novel_DIFF_FUNC_adjacent_code": 0.9997,
+        "type1_vs_type4_novel_DIFF_FUNC": 0.9992
+      },
+      "latent_same_function_avg_similarity": 0.5084,
+      "latent_diff_function_avg_similarity": 0.5106,
+      "raw_same_function_avg_similarity": 0.9998,
+      "raw_diff_function_avg_similarity": 0.9996,
+      "functional_clustering_in_latent_space": false,
+      "raw_input_shows_no_functional_structure": true,
+      "behavioral_relevance_check": {
+        "novel_beneficial_predicted_positive_rate": 0.0,
+        "novel_harmful_predicted_negative_rate": 1.0
+      },
+      "training_history": {
+        "epochs_run": 101,
+        "final_train_loss": 0.01590707883180257
+      }
+    },
+    "CSP-P5-E003": {
+      "experiment_id": "CSP-P5-E003",
+      "title": "Stability Across Independent Training Runs",
+      "seeds": [
+        42,
+        101,
+        7,
+        2026,
+        555
+      ],
+      "per_seed_results": [
+        {
+          "seed": 42,
+          "latent_same_function_avg_similarity": 0.5084,
+          "latent_diff_function_avg_similarity": 0.5106,
+          "functional_clustering_in_latent_space": false
+        },
+        {
+          "seed": 101,
+          "latent_same_function_avg_similarity": 0.6912,
+          "latent_diff_function_avg_similarity": 0.7144,
+          "functional_clustering_in_latent_space": false
+        },
+        {
+          "seed": 7,
+          "latent_same_function_avg_similarity": 0.4888,
+          "latent_diff_function_avg_similarity": 0.5075,
+          "functional_clustering_in_latent_space": false
+        },
+        {
+          "seed": 2026,
+          "latent_same_function_avg_similarity": 0.4949,
+          "latent_diff_function_avg_similarity": 0.5297,
+          "functional_clustering_in_latent_space": false
+        },
+        {
+          "seed": 555,
+          "latent_same_function_avg_similarity": 0.4711,
+          "latent_diff_function_avg_similarity": 0.5155,
+          "functional_clustering_in_latent_space": false
+        }
+      ],
+      "clustering_reproduced_rate_pct": 0.0,
+      "mean_same_function_similarity": 0.5309,
+      "mean_diff_function_similarity": 0.5555
+    },
+    "CSP-P5-E004": {
+      "experiment_id": "CSP-P5-E004",
+      "title": "One-Hot Encoding Fix: Can the Network Discover Shared Function Across Trained Types?",
+      "seed": 42,
+      "raw_scalar_control": {
+        "cosine_similarities": {
+          "type1_vs_type3_SAME_FUNC": 0.977,
+          "type2_vs_type4_SAME_FUNC": 0.9294,
+          "type1_vs_type2_DIFF_FUNC": 0.1792,
+          "type2_vs_type3_DIFF_FUNC": 0.3506,
+          "type3_vs_type4_DIFF_FUNC": 0.1971,
+          "type1_vs_type4_DIFF_FUNC": 0.0057
+        },
+        "cosine_same_function_avg": 0.9532,
+        "cosine_diff_function_avg": 0.1832,
+        "euclidean_distances": {
+          "type1_vs_type3_SAME_FUNC": 0.0666,
+          "type2_vs_type4_SAME_FUNC": 0.2721,
+          "type1_vs_type2_DIFF_FUNC": 0.7408,
+          "type2_vs_type3_DIFF_FUNC": 0.6853,
+          "type3_vs_type4_DIFF_FUNC": 0.652,
+          "type1_vs_type4_DIFF_FUNC": 0.7113
+        },
+        "euclidean_same_function_avg": 0.1694,
+        "euclidean_diff_function_avg": 0.6974,
+        "euclidean_diff_to_same_ratio": 4.12,
+        "functional_clustering_euclidean": true
+      },
+      "onehot_fix": {
+        "cosine_similarities": {
+          "type1_vs_type3_SAME_FUNC": 0.9993,
+          "type2_vs_type4_SAME_FUNC": 0.9999,
+          "type1_vs_type2_DIFF_FUNC": 0.9847,
+          "type2_vs_type3_DIFF_FUNC": 0.9869,
+          "type3_vs_type4_DIFF_FUNC": 0.9867,
+          "type1_vs_type4_DIFF_FUNC": 0.9845
+        },
+        "cosine_same_function_avg": 0.9996,
+        "cosine_diff_function_avg": 0.9857,
+        "euclidean_distances": {
+          "type1_vs_type3_SAME_FUNC": 0.5134,
+          "type2_vs_type4_SAME_FUNC": 0.1068,
+          "type1_vs_type2_DIFF_FUNC": 1.3156,
+          "type2_vs_type3_DIFF_FUNC": 1.332,
+          "type3_vs_type4_DIFF_FUNC": 1.3068,
+          "type1_vs_type4_DIFF_FUNC": 1.3081
+        },
+        "euclidean_same_function_avg": 0.3101,
+        "euclidean_diff_function_avg": 1.3156,
+        "euclidean_diff_to_same_ratio": 4.24,
+        "functional_clustering_euclidean": true
+      },
+      "onehot_training_history": {
+        "epochs_run": 81,
+        "final_train_loss": 0.032440014220332845
+      }
+    },
+    "CSP-P5-E004-STABILITY": {
+      "experiment_id": "CSP-P5-E004-STABILITY",
+      "title": "Stability Check: Does E004's Functional Clustering Reproduce Across Seeds?",
+      "seeds": [
+        42,
+        101,
+        7,
+        2026,
+        555
+      ],
+      "per_seed_results": [
+        {
+          "seed": 42,
+          "raw_euclidean_diff_to_same_ratio": 4.12,
+          "onehot_euclidean_diff_to_same_ratio": 4.24,
+          "raw_clustering": true,
+          "onehot_clustering": true
+        },
+        {
+          "seed": 101,
+          "raw_euclidean_diff_to_same_ratio": 1.46,
+          "onehot_euclidean_diff_to_same_ratio": 2.0,
+          "raw_clustering": true,
+          "onehot_clustering": true
+        },
+        {
+          "seed": 7,
+          "raw_euclidean_diff_to_same_ratio": 1.63,
+          "onehot_euclidean_diff_to_same_ratio": 16.66,
+          "raw_clustering": true,
+          "onehot_clustering": true
+        },
+        {
+          "seed": 2026,
+          "raw_euclidean_diff_to_same_ratio": 1.44,
+          "onehot_euclidean_diff_to_same_ratio": 15.18,
+          "raw_clustering": true,
+          "onehot_clustering": true
+        },
+        {
+          "seed": 555,
+          "raw_euclidean_diff_to_same_ratio": 1.07,
+          "onehot_euclidean_diff_to_same_ratio": 98.35,
+          "raw_clustering": true,
+          "onehot_clustering": true
+        }
+      ],
+      "raw_scalar_clustering_reproduced_rate_pct": 100.0,
+      "onehot_clustering_reproduced_rate_pct": 100.0,
+      "mean_raw_diff_to_same_ratio": 1.94,
+      "mean_onehot_diff_to_same_ratio": 27.29
+    },
+    "CSP-P5-E005": {
+      "experiment_id": "CSP-P5-E005",
+      "title": "Compression: Is Function Represented More Compactly in the Latent Code Than in the Raw Input?",
+      "seed": 42,
+      "latent_space": {
+        "within_type_variance": 2.484307,
+        "between_type_variance": 0.028121,
+        "compression_ratio": 0.0113,
+        "nominal_dim": 16,
+        "participation_ratio": 1.41,
+        "relative_effective_dim": 0.0883
+      },
+      "raw_input_space": {
+        "within_type_variance": 5.386165,
+        "between_type_variance": 0.413863,
+        "compression_ratio": 0.0768,
+        "nominal_dim": 52,
+        "participation_ratio": 1.37,
+        "relative_effective_dim": 0.0264
+      },
+      "compression_ratio_improvement_factor": 0.15,
+      "latent_shows_greater_functional_compression": false,
+      "training_history": {
+        "epochs_run": 81,
+        "final_train_loss": 0.032440014220332845
+      }
+    },
+    "CSP-P5-E006": {
+      "experiment_id": "CSP-P5-E006",
+      "title": "Intervention Sensitivity: Does Changing the Causal Property Move the Representation?",
+      "seed": 42,
+      "baseline": {
+        "type2_distances": {
+          "to_beneficial_cluster_type1": 1.3156,
+          "to_beneficial_cluster_type3": 1.332,
+          "to_harmful_cluster_type4": 0.1068
+        },
+        "type2_closer_to_beneficial": false
+      },
+      "real_intervention_flip_hidden_state_delta": {
+        "type2_distances": {
+          "to_beneficial_cluster_type1": 0.035,
+          "to_beneficial_cluster_type3": 0.0169,
+          "to_harmful_cluster_type4": 0.9422
+        },
+        "type2_closer_to_beneficial": true
+      },
+      "cosmetic_control_rename_entity_id": {
+        "type2_distances": {
+          "to_beneficial_cluster_type1": 1.3156,
+          "to_beneficial_cluster_type3": 1.332,
+          "to_harmful_cluster_type4": 0.1068
+        },
+        "type2_closer_to_beneficial": false
+      },
+      "intervention_moved_representation": true,
+      "cosmetic_control_left_representation_unchanged": true,
+      "training_histories": {
+        "baseline_epochs_run": 81,
+        "intervention_epochs_run": 79,
+        "control_epochs_run": 81
+      }
+    },
+    "CSP-P5-E007": {
+      "experiment_id": "CSP-P5-E007",
+      "title": "True Zero-Shot Generalization via Property-Based (Continuous) Encoding",
+      "seed": 42,
+      "property_boundary_rule": "delta = +10 if property_0 >= 0.5 else -10 (never given to the model as a rule; must be discovered from interaction outcomes)",
+      "trained_types_property_0": {
+        "1": 0.9,
+        "2": 0.1,
+        "3": 0.7,
+        "4": 0.3
+      },
+      "trained_val_metrics": {
+        "mse": 0.018064,
+        "rmse": 0.134403,
+        "mae": 0.024613,
+        "r2_score": 0.994325
+      },
+      "trained_type_behavioral_accuracy": {
+        "1": 0.9857,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 1.0
+      },
+      "novel_type_results": {
+        "type5_prop0.6_interior_interpolation": {
+          "property_0": 0.6,
+          "true_delta_sign": "positive",
+          "predicted_sign_correct_rate": 0.6857,
+          "mean_prediction": 1.4584
+        },
+        "type6_prop0.55_near_boundary_hard": {
+          "property_0": 0.55,
+          "true_delta_sign": "positive",
+          "predicted_sign_correct_rate": 0.4286,
+          "mean_prediction": -0.9305
+        },
+        "type7_prop0.45_near_boundary_hard": {
+          "property_0": 0.45,
+          "true_delta_sign": "negative",
+          "predicted_sign_correct_rate": 0.8286,
+          "mean_prediction": -5.8924
+        },
+        "type8_prop0.95_extrapolation_beyond_trained_max": {
+          "property_0": 0.95,
+          "true_delta_sign": "positive",
+          "predicted_sign_correct_rate": 0.9857,
+          "mean_prediction": 2.918
+        },
+        "type9_prop0.05_extrapolation_beyond_trained_min": {
+          "property_0": 0.05,
+          "true_delta_sign": "negative",
+          "predicted_sign_correct_rate": 1.0,
+          "mean_prediction": -10.5753
+        }
+      },
+      "novel_type_overall_behavioral_accuracy": 0.7857,
+      "novel_type_clustering_check": {
+        "type5_prop0.6_interior_interpolation": {
+          "distance_to_beneficial_trained_cluster": 0.5646,
+          "distance_to_harmful_trained_cluster": 5.9075,
+          "landed_in_correct_functional_cluster": true
+        },
+        "type6_prop0.55_near_boundary_hard": {
+          "distance_to_beneficial_trained_cluster": 1.5985,
+          "distance_to_harmful_trained_cluster": 4.8712,
+          "landed_in_correct_functional_cluster": true
+        },
+        "type7_prop0.45_near_boundary_hard": {
+          "distance_to_beneficial_trained_cluster": 4.6988,
+          "distance_to_harmful_trained_cluster": 1.8335,
+          "landed_in_correct_functional_cluster": true
+        },
+        "type8_prop0.95_extrapolation_beyond_trained_max": {
+          "distance_to_beneficial_trained_cluster": 0.1837,
+          "distance_to_harmful_trained_cluster": 6.3474,
+          "landed_in_correct_functional_cluster": true
+        },
+        "type9_prop0.05_extrapolation_beyond_trained_min": {
+          "distance_to_beneficial_trained_cluster": 6.45,
+          "distance_to_harmful_trained_cluster": 0.2948,
+          "landed_in_correct_functional_cluster": true
+        }
+      },
+      "novel_type_clustering_accuracy": 1.0,
+      "true_zero_shot_generalization_achieved": false,
+      "training_history": {
+        "epochs_run": 94,
+        "final_train_loss": 0.014965475490703126
+      }
+    },
+    "CSP-P5-E007-STABILITY": {
+      "experiment_id": "CSP-P5-E007-STABILITY",
+      "title": "Stability Check: Does E007's Property-Based Zero-Shot Result Reproduce Across Seeds?",
+      "seeds": [
+        42,
+        101,
+        7,
+        2026,
+        555
+      ],
+      "per_seed_results": [
+        {
+          "seed": 42,
+          "novel_type_overall_behavioral_accuracy": 0.7857,
+          "novel_type_clustering_accuracy": 1.0,
+          "true_zero_shot_generalization_achieved": false
+        },
+        {
+          "seed": 101,
+          "novel_type_overall_behavioral_accuracy": 0.8821,
+          "novel_type_clustering_accuracy": 1.0,
+          "true_zero_shot_generalization_achieved": true
+        },
+        {
+          "seed": 7,
+          "novel_type_overall_behavioral_accuracy": 0.7933,
+          "novel_type_clustering_accuracy": 1.0,
+          "true_zero_shot_generalization_achieved": false
+        },
+        {
+          "seed": 2026,
+          "novel_type_overall_behavioral_accuracy": 0.9349,
+          "novel_type_clustering_accuracy": 1.0,
+          "true_zero_shot_generalization_achieved": true
+        },
+        {
+          "seed": 555,
+          "novel_type_overall_behavioral_accuracy": 0.8034,
+          "novel_type_clustering_accuracy": 1.0,
+          "true_zero_shot_generalization_achieved": true
+        }
+      ],
+      "mean_novel_behavioral_accuracy": 0.8399,
+      "std_novel_behavioral_accuracy": 0.0587,
+      "mean_novel_clustering_accuracy": 1.0,
+      "achieved_rate_pct": 60.0
+    }
+  }
+}

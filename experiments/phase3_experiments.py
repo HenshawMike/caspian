@@ -1,471 +1,251 @@
-"""Phase 3 Experiments: Generalization for Project Caspian.
+"""Experimental Suite for Project Caspian (Phase 3 — Generalization).
 
-This module implements Phase 3 (Generalization) experimental protocols:
-  - CSP-P3-E001: Spatial Position Generalization (Unseen Entity & Agent Positions)
-  - CSP-P3-E002: World Layout & Dimension Generalization (5x5 -> 7x7, 10x10 Grids)
-  - CSP-P3-E003: Multi-Entity & Novel Property Combination Generalization
-  - CSP-P3-E004: Multi-Seed Reproducibility & Statistical Evaluation (8 Seeds)
-  - CSP-P3-E005: Boundary Isolation, Semantic Firewall Audit & Phase 3 Criteria Assessment
+Addresses Section 30 of the Development Plan: does Caspian learn a reusable
+relationship, or does it memorize the specific training configuration?
 
-Model Architectures:
-  - RecurrentPredictor (GRU, hidden_dim=32): 6,753 parameters.
-  - PredictiveMLP (capacity-matched baseline, hidden_dims=(173,)): 6,748 parameters.
-
-All Agent-Driven Development Rules & Semantic Firewall constraints are strictly maintained.
+- CSP-P3-E001: Position generalization — train on one subset of grid cells,
+  evaluate on a disjoint held-out subset never seen during training.
+- CSP-P3-E002: Layout generalization — train on a 5x5 grid, evaluate on an
+  unseen 7x7 grid.
+- CSP-P3-E003: Entity-appearance generalization — train with exactly one
+  entity of one type, evaluate on (a) two entities present simultaneously and
+  (b) a single entity of a never-seen entity_type code.
 """
 
+import json
 import sys
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any
 import numpy as np
-from scipy import stats
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from environment.world import GridWorld, WorldConfig
-from environment.entities import Entity
-from environment.actions import Action
-from environment.observations import FORBIDDEN_SEMANTIC_TOKENS, _check_semantic_purity_recursive
+from environment.world import WorldConfig
 from models.mlp import PredictiveMLP
-from models.recurrent import RecurrentPredictor
-from models.optimizers import EventWeightedMSELoss, MSELoss
+from models.deepsets import DeepSetsPredictiveModel
+from learning.collector import TrajectoryCollector
 from learning.trainer import PredictiveTrainer
-from learning.sequential_dataset import (
-    SequentialExperienceDataset,
-    TrajectoryEpisode,
-    collect_sequential_trajectories,
-    collect_balanced_sequential_trajectories,
-)
-from learning.sequential_trainer import SequentialTrainer
-from evaluation.baselines import FeedForwardBaseline, PersistencePredictor
-from evaluation.metrics import compute_baseline_gap
+from learning.deepsets_trainer import DeepSetsTrainer
+from evaluation.metrics import compute_all_metrics
+from evaluation.baselines import PersistencePredictor, RandomPredictor, ReactivePredictor
+
+CONFIG_DIR = Path(__file__).parent.parent / "configs"
 
 
-def _make_custom_world_config(
-    width: int = 5,
-    height: int = 5,
-    agent_pos: Tuple[int, int] = (0, 0),
-    entities: Optional[List[Entity]] = None,
-    delay: int = 2,
-    seed: int = 42,
-) -> WorldConfig:
-    """Helper to construct flexible GridWorld configurations."""
-    if entities is None:
-        entities = [
-            Entity(
-                entity_id=1,
-                entity_type=1,
-                position=(2, 2),
-                is_interactive=True,
-                is_blocking=False,
-                hidden_state_delta=10.0,
-                interaction_delay=delay,
-            )
-        ]
-    return WorldConfig(
-        grid_width=width,
-        grid_height=height,
-        initial_agent_pos=agent_pos,
-        initial_entities=entities,
-        initial_internal_state=50.0,
-        step_penalty=1.0,
-        default_interaction_delay=delay,
-        seed=seed,
-    )
+def _load_world(name: str) -> WorldConfig:
+    with open(CONFIG_DIR / name, "r", encoding="utf-8") as f:
+        return WorldConfig.from_dict(json.load(f))
 
 
-# ---------------------------------------------------------------------------
-# CSP-P3-E001: Spatial Position Generalization
-# ---------------------------------------------------------------------------
+def _train_mlp(world_config: WorldConfig, seed: int, num_steps: int = 4000):
+    collector = TrajectoryCollector(world_config=world_config)
+    dataset = collector.collect_exploratory_dataset(num_steps=num_steps, interaction_prob=0.3, seed=seed)
+    train_ds, val_ds = dataset.split(train_ratio=0.8, seed=seed)
 
-def run_experiment_p3_e001(seed: int = 42, delay: int = 2) -> Dict[str, Any]:
-    """CSP-P3-E001: Evaluate spatial position generalization on 5 held-out unseen positions."""
-    train_cfg = _make_custom_world_config(width=5, height=5, agent_pos=(0, 0), delay=delay, seed=seed)
-    train_ds, _ = collect_balanced_sequential_trajectories(
-        world_config=train_cfg,
-        num_episodes=30,
-        steps_per_episode=25,
-        interaction_prob=0.30,
-        min_interactions_per_episode=2,
-        seed=seed,
-    )
+    X_train, Y_train = train_ds.to_numpy_arrays()
+    X_val, Y_val = val_ds.to_numpy_arrays()
 
-    X_tr, Y_tr = train_ds.to_numpy_sequences()
-    B_tr, T_tr, D_in = X_tr.shape
-    X_tr_flat = X_tr.reshape(B_tr * T_tr, D_in)
-    Y_tr_flat = Y_tr.reshape(B_tr * T_tr, 1)
+    model = PredictiveMLP(input_dim=X_train.shape[1], hidden_dims=(32, 16), output_dim=1, hidden_activation="relu", seed=seed)
+    trainer = PredictiveTrainer(model=model, batch_size=32, epochs=150, early_stopping_patience=25, seed=seed)
+    history = trainer.fit((X_train, Y_train), val_data=(X_val, Y_val))
+    return model, history, (X_val, Y_val)
 
-    loss_fn = EventWeightedMSELoss(w_event=3.0)
 
-    # Train GRU
-    model_gru = RecurrentPredictor(input_dim=D_in, hidden_dim=32, output_dim=1, seed=seed)
-    trainer_gru = SequentialTrainer(model=model_gru, loss_fn=loss_fn, batch_size=8, epochs=150, early_stopping_patience=30, seed=seed)
-    trainer_gru.fit((X_tr, Y_tr), val_data=(X_tr, Y_tr))
+def _eval_on_world(model: PredictiveMLP, world_config: WorldConfig, seed: int, num_steps: int = 1000) -> Dict[str, Any]:
+    collector = TrajectoryCollector(world_config=world_config)
+    dataset = collector.collect_exploratory_dataset(num_steps=num_steps, interaction_prob=0.3, seed=seed + 9000)
+    X, Y = dataset.to_numpy_arrays()
+    return compute_all_metrics(model.forward(X), Y), (X, Y)
 
-    # Train Matched MLP
-    model_mlp = PredictiveMLP(input_dim=D_in, hidden_dims=(173,), output_dim=1, seed=seed)
-    trainer_mlp = PredictiveTrainer(model=model_mlp, loss_fn=loss_fn, batch_size=32, epochs=150, early_stopping_patience=30, seed=seed)
-    trainer_mlp.fit((X_tr_flat, Y_tr_flat), val_data=(X_tr_flat, Y_tr_flat))
 
-    # Test Positions
-    unseen_positions = [(4, 4), (1, 3), (0, 4), (3, 1), (4, 0)]
-    position_results = []
+def _baseline_metrics(Y_train: np.ndarray, X: np.ndarray, Y: np.ndarray) -> Dict[str, Any]:
+    persist = PersistencePredictor(default_value=0.0)
+    rand = RandomPredictor(low=-1.0, high=10.0, seed=0)
+    reactive = ReactivePredictor(mean_value=float(np.mean(Y_train)))
+    return {
+        "persistence": compute_all_metrics(persist.predict(X), Y),
+        "random": compute_all_metrics(rand.predict(X), Y),
+        "reactive": compute_all_metrics(reactive.predict(X), Y),
+    }
 
-    for idx, (ex, ey) in enumerate(unseen_positions):
-        test_entity = Entity(
-            entity_id=1,
-            entity_type=1,
-            position=(ex, ey),
-            is_interactive=True,
-            is_blocking=False,
-            hidden_state_delta=10.0,
-            interaction_delay=delay,
-        )
-        test_cfg = _make_custom_world_config(width=5, height=5, agent_pos=(0, 0), entities=[test_entity], delay=delay, seed=seed + 100 + idx)
-        test_ds, _ = collect_balanced_sequential_trajectories(
-            test_cfg, num_episodes=10, steps_per_episode=25, interaction_prob=0.30, min_interactions_per_episode=2, seed=seed + 100 + idx
-        )
 
-        X_te, Y_te = test_ds.to_numpy_sequences()
-        y_gru = model_gru.forward(X_te).reshape(-1)
-        mlp_ff = FeedForwardBaseline(model_mlp)
-        y_mlp = mlp_ff.predict(X_te).reshape(-1)
-        Y_true = Y_te.reshape(-1)
+def run_experiment_e001(seed: int = 42) -> Dict[str, Any]:
+    """CSP-P3-E001: Position generalization — held-out grid cells never used in training."""
+    train_world = _load_world("phase3_world_train_positions.json")
+    test_world = _load_world("phase3_world_test_positions.json")
 
-        mse_gru = float(np.mean((y_gru - Y_true) ** 2))
-        mse_mlp = float(np.mean((y_mlp - Y_true) ** 2))
-        gap = compute_baseline_gap(mse_gru, mse_mlp)
+    model, history, (X_val, Y_val) = _train_mlp(train_world, seed)
+    id_metrics = compute_all_metrics(model.forward(X_val), Y_val)  # in-distribution (held-out steps, same cell set)
 
-        position_results.append({
-            "entity_position": (ex, ey),
-            "gru_mse": round(mse_gru, 6),
-            "matched_mlp_mse": round(mse_mlp, 6),
-            "advantage_gap_pct": round(gap, 2),
-            "gru_beats_mlp": mse_gru < mse_mlp,
-        })
+    ood_metrics, (X_ood, Y_ood) = _eval_on_world(model, test_world, seed)
+    baselines = _baseline_metrics(Y_val, X_ood, Y_ood)
 
-    all_passed = all(r["gru_beats_mlp"] for r in position_results)
-    mean_gap = float(np.mean([r["advantage_gap_pct"] for r in position_results]))
+    gen_gap_pct = round(100.0 * (ood_metrics["mse"] - id_metrics["mse"]) / (id_metrics["mse"] + 1e-10), 2)
 
     return {
         "experiment_id": "CSP-P3-E001",
-        "title": "Spatial Position Generalization (5 Unseen Entity Positions)",
+        "title": "Position Generalization",
         "seed": seed,
-        "positions_evaluated": position_results,
-        "mean_advantage_gap_pct": round(mean_gap, 2),
-        "all_positions_passed": all_passed,
-        "status": "PASS" if all_passed else "FAIL",
+        "train_cells": len(train_world.allowed_entity_positions),
+        "test_cells": len(test_world.allowed_entity_positions),
+        "in_distribution_metrics": id_metrics,
+        "held_out_position_metrics": ood_metrics,
+        "baselines_on_held_out_positions": baselines,
+        "generalization_gap_pct": gen_gap_pct,
+        "generalizes_beyond_trivial_baseline": ood_metrics["mse"] < baselines["persistence"]["mse"],
+        "training_history": {"epochs_run": history["epochs_run"], "final_train_loss": history["final_train_loss"]},
     }
 
 
-# ---------------------------------------------------------------------------
-# CSP-P3-E002: Layout & World Dimension Generalization
-# ---------------------------------------------------------------------------
+def run_experiment_e002(seed: int = 42) -> Dict[str, Any]:
+    """CSP-P3-E002: Layout generalization — train on a 5x5 grid, test on an unseen 7x7 grid."""
+    train_world = _load_world("phase3_world_train_layout.json")
+    test_world = _load_world("phase3_world_test_layout.json")
 
-def run_experiment_p3_e002(seed: int = 42, delay: int = 2) -> Dict[str, Any]:
-    """CSP-P3-E002: Evaluate layout and grid dimension generalization (5x5 -> 7x7, 10x10)."""
-    # Train on 5x5 Grid
-    train_cfg = _make_custom_world_config(width=5, height=5, agent_pos=(0, 0), delay=delay, seed=seed)
-    train_ds, _ = collect_balanced_sequential_trajectories(
-        world_config=train_cfg,
-        num_episodes=30,
-        steps_per_episode=25,
-        interaction_prob=0.30,
-        min_interactions_per_episode=2,
-        seed=seed,
-    )
+    model, history, (X_val, Y_val) = _train_mlp(train_world, seed)
+    id_metrics = compute_all_metrics(model.forward(X_val), Y_val)
 
-    X_tr, Y_tr = train_ds.to_numpy_sequences()
-    B_tr, T_tr, D_in = X_tr.shape
-    X_tr_flat = X_tr.reshape(B_tr * T_tr, D_in)
-    Y_tr_flat = Y_tr.reshape(B_tr * T_tr, 1)
+    ood_metrics, (X_ood, Y_ood) = _eval_on_world(model, test_world, seed)
+    baselines = _baseline_metrics(Y_val, X_ood, Y_ood)
 
-    loss_fn = EventWeightedMSELoss(w_event=3.0)
-
-    model_gru = RecurrentPredictor(input_dim=D_in, hidden_dim=32, output_dim=1, seed=seed)
-    trainer_gru = SequentialTrainer(model=model_gru, loss_fn=loss_fn, batch_size=8, epochs=150, early_stopping_patience=30, seed=seed)
-    trainer_gru.fit((X_tr, Y_tr), val_data=(X_tr, Y_tr))
-
-    model_mlp = PredictiveMLP(input_dim=D_in, hidden_dims=(173,), output_dim=1, seed=seed)
-    trainer_mlp = PredictiveTrainer(model=model_mlp, loss_fn=loss_fn, batch_size=32, epochs=150, early_stopping_patience=30, seed=seed)
-    trainer_mlp.fit((X_tr_flat, Y_tr_flat), val_data=(X_tr_flat, Y_tr_flat))
-
-    layout_results = []
-    target_layouts = [(7, 7, (3, 3)), (10, 10, (5, 5))]
-
-    for idx, (w, h, (ex, ey)) in enumerate(target_layouts):
-        test_entity = Entity(
-            entity_id=1,
-            entity_type=1,
-            position=(ex, ey),
-            is_interactive=True,
-            is_blocking=False,
-            hidden_state_delta=10.0,
-            interaction_delay=delay,
-        )
-        test_cfg = _make_custom_world_config(width=w, height=h, agent_pos=(0, 0), entities=[test_entity], delay=delay, seed=seed + 200 + idx * 50)
-        test_ds, _ = collect_balanced_sequential_trajectories(
-            test_cfg, num_episodes=10, steps_per_episode=25, interaction_prob=0.30, min_interactions_per_episode=2, seed=seed + 200 + idx * 50
-        )
-
-        X_te, Y_te = test_ds.to_numpy_sequences()
-        y_gru = model_gru.forward(X_te).reshape(-1)
-        mlp_ff = FeedForwardBaseline(model_mlp)
-        y_mlp = mlp_ff.predict(X_te).reshape(-1)
-        Y_true = Y_te.reshape(-1)
-
-        mse_gru = float(np.mean((y_gru - Y_true) ** 2))
-        mse_mlp = float(np.mean((y_mlp - Y_true) ** 2))
-        gap = compute_baseline_gap(mse_gru, mse_mlp)
-
-        layout_results.append({
-            "grid_dimensions": f"{w}x{h}",
-            "entity_position": (ex, ey),
-            "gru_mse": round(mse_gru, 6),
-            "matched_mlp_mse": round(mse_mlp, 6),
-            "advantage_gap_pct": round(gap, 2),
-            "gru_beats_mlp": mse_gru < mse_mlp,
-        })
-
-    all_passed = all(r["gru_beats_mlp"] for r in layout_results)
+    gen_gap_pct = round(100.0 * (ood_metrics["mse"] - id_metrics["mse"]) / (id_metrics["mse"] + 1e-10), 2)
 
     return {
         "experiment_id": "CSP-P3-E002",
-        "title": "World Layout & Grid Dimension Generalization (5x5 -> 7x7, 10x10)",
+        "title": "Layout Generalization (5x5 -> 7x7 grid)",
         "seed": seed,
-        "layouts_evaluated": layout_results,
-        "all_layouts_passed": all_passed,
-        "status": "PASS" if all_passed else "FAIL",
+        "train_grid": f"{train_world.grid_width}x{train_world.grid_height}",
+        "test_grid": f"{test_world.grid_width}x{test_world.grid_height}",
+        "in_distribution_metrics": id_metrics,
+        "unseen_layout_metrics": ood_metrics,
+        "baselines_on_unseen_layout": baselines,
+        "generalization_gap_pct": gen_gap_pct,
+        "generalizes_beyond_trivial_baseline": ood_metrics["mse"] < baselines["persistence"]["mse"],
+        "training_history": {"epochs_run": history["epochs_run"], "final_train_loss": history["final_train_loss"]},
     }
 
 
-# ---------------------------------------------------------------------------
-# CSP-P3-E003: Multi-Entity & Novel Property Combination Generalization
-# ---------------------------------------------------------------------------
+def _train_deepsets(world_config: WorldConfig, seed: int, num_steps: int = 4000):
+    collector = TrajectoryCollector(world_config=world_config)
+    dataset = collector.collect_exploratory_dataset(num_steps=num_steps, interaction_prob=0.3, seed=seed)
+    train_ds, val_ds = dataset.split(train_ratio=0.8, seed=seed)
 
-def run_experiment_p3_e003(seed: int = 42) -> Dict[str, Any]:
-    """CSP-P3-E003: Evaluate multi-entity environments with distinct interaction delays."""
-    entities = [
-        Entity(
-            entity_id=1,
-            entity_type=1,
-            position=(1, 1),
-            is_interactive=True,
-            is_blocking=False,
-            hidden_state_delta=10.0,
-            interaction_delay=1,
-        ),
-        Entity(
-            entity_id=2,
-            entity_type=1,
-            position=(3, 3),
-            is_interactive=True,
-            is_blocking=False,
-            hidden_state_delta=10.0,
-            interaction_delay=3,
-        ),
-    ]
+    train_data = train_ds.to_deepsets_arrays()
+    val_data = val_ds.to_deepsets_arrays()
 
-    cfg = _make_custom_world_config(width=5, height=5, agent_pos=(0, 0), entities=entities, seed=seed)
-    train_ds, _ = collect_balanced_sequential_trajectories(
-        world_config=cfg,
-        num_episodes=30,
-        steps_per_episode=25,
-        interaction_prob=0.30,
-        min_interactions_per_episode=2,
-        seed=seed,
+    model = DeepSetsPredictiveModel(
+        entity_feature_dim=4, entity_hidden_dim=16, global_feature_dim=train_data[2].shape[1],
+        head_hidden_dim=24, output_dim=1, max_entities=5, seed=seed,
     )
-    test_ds, _ = collect_balanced_sequential_trajectories(
-        cfg, num_episodes=10, steps_per_episode=25, interaction_prob=0.30, min_interactions_per_episode=2, seed=seed + 999
-    )
+    trainer = DeepSetsTrainer(model=model, batch_size=32, epochs=150, early_stopping_patience=25, seed=seed)
+    history = trainer.fit(train_data, val_data=val_data)
+    return model, history, val_data
 
-    X_tr, Y_tr = train_ds.to_numpy_sequences()
-    X_te, Y_te = test_ds.to_numpy_sequences()
 
-    B_tr, T_tr, D_in = X_tr.shape
-    X_tr_flat = X_tr.reshape(B_tr * T_tr, D_in)
-    Y_tr_flat = Y_tr.reshape(B_tr * T_tr, 1)
+def _eval_deepsets_on_world(model: DeepSetsPredictiveModel, world_config: WorldConfig, seed: int, num_steps: int = 1000):
+    collector = TrajectoryCollector(world_config=world_config)
+    dataset = collector.collect_exploratory_dataset(num_steps=num_steps, interaction_prob=0.3, seed=seed + 9000)
+    EF, PM, GF, Y = dataset.to_deepsets_arrays()
+    return compute_all_metrics(model.forward(EF, PM, GF), Y), (EF, PM, GF, Y)
 
-    loss_fn = EventWeightedMSELoss(w_event=3.0)
 
-    model_gru = RecurrentPredictor(input_dim=D_in, hidden_dim=32, output_dim=1, seed=seed)
-    trainer_gru = SequentialTrainer(model=model_gru, loss_fn=loss_fn, batch_size=8, epochs=150, early_stopping_patience=30, seed=seed)
-    trainer_gru.fit((X_tr, Y_tr), val_data=(X_te, Y_te))
+def run_experiment_e003(seed: int = 42) -> Dict[str, Any]:
+    """CSP-P3-E003: Entity-appearance generalization — unseen entity count and unseen entity_type.
 
-    model_mlp = PredictiveMLP(input_dim=D_in, hidden_dims=(173,), output_dim=1, seed=seed)
-    trainer_mlp = PredictiveTrainer(model=model_mlp, loss_fn=loss_fn, batch_size=32, epochs=150, early_stopping_patience=30, seed=seed)
-    trainer_mlp.fit((X_tr_flat, Y_tr_flat), val_data=(X_te.reshape(-1, D_in), Y_te.reshape(-1, 1)))
+    Compares two architectures head-to-head: the fixed-slot stateless MLP (which
+    assigns each entity to a specific input position) against a permutation-invariant
+    DeepSets model (which pools over entities as an unordered set, robust to count).
+    """
+    train_world = _load_world("phase3_world_train_entity.json")
+    multi_world = _load_world("phase3_world_test_multi_entity.json")
+    newtype_world = _load_world("phase3_world_test_new_entity_type.json")
 
-    y_gru = model_gru.forward(X_te).reshape(-1)
-    mlp_ff = FeedForwardBaseline(model_mlp)
-    y_mlp = mlp_ff.predict(X_te).reshape(-1)
-    Y_true = Y_te.reshape(-1)
+    # --- Fixed-slot MLP (baseline architecture) ---
+    mlp_model, mlp_history, (X_val, Y_val) = _train_mlp(train_world, seed)
+    mlp_id_metrics = compute_all_metrics(mlp_model.forward(X_val), Y_val)
+    mlp_multi_metrics, (X_multi, Y_multi) = _eval_on_world(mlp_model, multi_world, seed)
+    mlp_newtype_metrics, (X_new, Y_new) = _eval_on_world(mlp_model, newtype_world, seed)
+    baselines_multi = _baseline_metrics(Y_val, X_multi, Y_multi)
+    baselines_newtype = _baseline_metrics(Y_val, X_new, Y_new)
 
-    mse_gru = float(np.mean((y_gru - Y_true) ** 2))
-    mse_mlp = float(np.mean((y_mlp - Y_true) ** 2))
-    gap = compute_baseline_gap(mse_gru, mse_mlp)
+    # --- Permutation-invariant DeepSets model ---
+    # 10,000 collection steps (vs. 4,000 for the MLP): the DeepSets model's entity
+    # encoder sees only 4 raw features per entity (no dilution from 33 other input
+    # dims like the flat MLP has), so it needs more data to properly regularize the
+    # weight on entity_type -- which is constant across all training episodes and
+    # therefore gets near-zero training signal either way. Max-pooling (not mean-
+    # pooling) is what actually solved the multi-entity generalization gap: see
+    # DeepSetsPredictiveModel's docstring/comments for why.
+    ds_model, ds_history, ds_val_data = _train_deepsets(train_world, seed, num_steps=10000)
+    ds_id_metrics = compute_all_metrics(ds_model.forward(*ds_val_data[:3]), ds_val_data[3])
+    ds_multi_metrics, _ = _eval_deepsets_on_world(ds_model, multi_world, seed)
+    ds_newtype_metrics, _ = _eval_deepsets_on_world(ds_model, newtype_world, seed)
+
+    def gap_pct(ood_mse, id_mse):
+        return round(100.0 * (ood_mse - id_mse) / (id_mse + 1e-10), 2)
 
     return {
         "experiment_id": "CSP-P3-E003",
-        "title": "Multi-Entity Concurrent Consequence Tracking",
+        "title": "Entity-Appearance Generalization (novel count / novel type code)",
         "seed": seed,
-        "num_entities": len(entities),
-        "entity_delays": [e.interaction_delay for e in entities],
-        "gru_mse": round(mse_gru, 6),
-        "matched_mlp_mse": round(mse_mlp, 6),
-        "advantage_gap_pct": round(gap, 2),
-        "gru_beats_mlp": mse_gru < mse_mlp,
-        "status": "PASS" if mse_gru < mse_mlp else "FAIL",
+        "fixed_slot_mlp": {
+            "in_distribution_metrics": mlp_id_metrics,
+            "two_entities_simultaneous_metrics": mlp_multi_metrics,
+            "novel_entity_type_metrics": mlp_newtype_metrics,
+            "generalization_gap_pct_multi_entity": gap_pct(mlp_multi_metrics["mse"], mlp_id_metrics["mse"]),
+            "generalization_gap_pct_novel_type": gap_pct(mlp_newtype_metrics["mse"], mlp_id_metrics["mse"]),
+        },
+        "permutation_invariant_deepsets": {
+            "in_distribution_metrics": ds_id_metrics,
+            "two_entities_simultaneous_metrics": ds_multi_metrics,
+            "novel_entity_type_metrics": ds_newtype_metrics,
+            "generalization_gap_pct_multi_entity": gap_pct(ds_multi_metrics["mse"], ds_id_metrics["mse"]),
+            "generalization_gap_pct_novel_type": gap_pct(ds_newtype_metrics["mse"], ds_id_metrics["mse"]),
+        },
+        "baselines_two_entities": baselines_multi,
+        "baselines_novel_entity_type": baselines_newtype,
+        "deepsets_beats_mlp_on_multi_entity": ds_multi_metrics["mse"] < mlp_multi_metrics["mse"],
+        "deepsets_beats_mlp_on_novel_type": ds_newtype_metrics["mse"] < mlp_newtype_metrics["mse"],
+        "multi_entity_mse_reduction_pct": round(
+            100.0 * (mlp_multi_metrics["mse"] - ds_multi_metrics["mse"]) / (mlp_multi_metrics["mse"] + 1e-10), 2
+        ),
+        "handles_multi_entity_beyond_baseline": ds_multi_metrics["mse"] < baselines_multi["persistence"]["mse"],
+        "handles_novel_type_beyond_baseline": ds_newtype_metrics["mse"] < baselines_newtype["persistence"]["mse"],
+        "mlp_training_history": {"epochs_run": mlp_history["epochs_run"], "final_train_loss": mlp_history["final_train_loss"]},
+        "deepsets_training_history": {"epochs_run": ds_history["epochs_run"], "final_train_loss": ds_history["final_train_loss"]},
     }
 
 
-# ---------------------------------------------------------------------------
-# CSP-P3-E004: Multi-Seed Reproducibility & Statistical Evaluation
-# ---------------------------------------------------------------------------
+def run_all_phase3_experiments(output_dir: str = "logs") -> Dict[str, Any]:
+    """Execute all Phase 3 experiments sequentially and persist results."""
+    import os
 
-def run_experiment_p3_e004(seeds: List[int] = [1, 2, 3, 4, 5, 6, 7, 8], delay: int = 2) -> Dict[str, Any]:
-    """CSP-P3-E004: Evaluate Phase 3 generalization benchmark across 8 independent random seeds."""
-    seed_runs = []
-    for s in seeds:
-        res1 = run_experiment_p3_e001(seed=s, delay=delay)
-        res2 = run_experiment_p3_e002(seed=s, delay=delay)
-        res3 = run_experiment_p3_e003(seed=s)
+    print("Running CSP-P3-E001 (Position Generalization)...")
+    e001 = run_experiment_e001()
 
-        mean_gap = float(np.mean([res1["mean_advantage_gap_pct"], res2["layouts_evaluated"][0]["advantage_gap_pct"], res3["advantage_gap_pct"]]))
-        seed_runs.append({
-            "seed": s,
-            "e001_mean_gap_pct": res1["mean_advantage_gap_pct"],
-            "e002_layout_gap_pct": res2["layouts_evaluated"][0]["advantage_gap_pct"],
-            "e003_multientity_gap_pct": res3["advantage_gap_pct"],
-            "combined_mean_gap_pct": round(mean_gap, 2),
-            "all_sub_experiments_passed": res1["all_positions_passed"] and res2["all_layouts_passed"] and res3["gru_beats_mlp"],
-        })
+    print("Running CSP-P3-E002 (Layout Generalization)...")
+    e002 = run_experiment_e002()
 
-    gaps = [r["combined_mean_gap_pct"] for r in seed_runs]
-    wins = sum(1 for r in seed_runs if r["all_sub_experiments_passed"])
+    print("Running CSP-P3-E003 (Entity-Appearance Generalization)...")
+    e003 = run_experiment_e003()
 
-    return {
-        "experiment_id": "CSP-P3-E004",
-        "title": "Multi-Seed Reproducibility & Statistical Evaluation (8 Seeds)",
-        "seeds": seeds,
-        "per_seed_results": seed_runs,
-        "summary": {
-            "mean_combined_gap_pct": round(float(np.mean(gaps)), 2),
-            "std_combined_gap_pct": round(float(np.std(gaps)), 2),
-            "win_rate": f"{wins}/{len(seeds)}",
-            "consistent_superiority": wins == len(seeds),
+    all_results = {
+        "phase": "Phase 3 — Generalization",
+        "experiments": {
+            "CSP-P3-E001": e001,
+            "CSP-P3-E002": e002,
+            "CSP-P3-E003": e003,
         },
-        "status": "PASS" if wins == len(seeds) else "FAIL",
     }
 
+    os.makedirs(output_dir, exist_ok=True)
+    out_file = os.path.join(output_dir, "phase3_all_experiments_results.json")
+    with open(out_file, "w", encoding="utf-8") as f:
+        json.dump(all_results, f, indent=2)
 
-# ---------------------------------------------------------------------------
-# CSP-P3-E005: Boundary Isolation, Semantic Firewall & Criteria Assessment
-# ---------------------------------------------------------------------------
+    print(f"\nAll Phase 3 experiments completed and saved to: {out_file}")
+    return all_results
 
-def run_experiment_p3_e005(
-    e001_res: Optional[Dict[str, Any]] = None,
-    e002_res: Optional[Dict[str, Any]] = None,
-    e003_res: Optional[Dict[str, Any]] = None,
-    e004_res: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
-    """CSP-P3-E005: Safety Audits and Final Phase 3 Acceptance Reconciliation Table."""
-    if e001_res is None:
-        e001_res = run_experiment_p3_e001(seed=42)
-    if e002_res is None:
-        e002_res = run_experiment_p3_e002(seed=42)
-    if e003_res is None:
-        e003_res = run_experiment_p3_e003(seed=42)
-    if e004_res is None:
-        e004_res = run_experiment_p3_e004(seeds=[1, 2, 3, 4, 5, 6, 7, 8])
 
-    # 1. Episode Boundary Isolation Audit
-    cfg = _make_custom_world_config(width=5, height=5, agent_pos=(0, 0), delay=2, seed=42)
-    world = GridWorld(config=cfg)
-    world.reset(seed=100)
-    for act in [Action.RIGHT, Action.RIGHT, Action.UP, Action.UP]:
-        world.step(act)
-    for _ in range(3):
-        world.step(Action.INTERACT)
-    pending_before = len(world._pending_events)
-    world.reset(seed=200)
-    pending_after = len(world._pending_events)
-    isolation_passed = (pending_before > 0 and pending_after == 0)
-
-    # 2. Semantic Firewall Audit
-    audit_passed = True
-    audit_steps = 0
-    ds, _ = collect_balanced_sequential_trajectories(cfg, num_episodes=5, steps_per_episode=20, seed=42)
-    for ep in ds.episodes:
-        for t in ep.transitions:
-            audit_steps += 1
-            try:
-                _check_semantic_purity_recursive(t.obs.to_dict())
-            except Exception:
-                audit_passed = False
-
-    # Criteria Table
-    c1_pass = e001_res["all_positions_passed"]
-    c2_pass = e002_res["all_layouts_passed"]
-    c3_pass = e003_res["gru_beats_mlp"]
-    c4_pass = e004_res["summary"]["consistent_superiority"]
-    c5_pass = isolation_passed
-    c6_pass = audit_passed
-
-    criteria_table = [
-        {
-            "criterion_id": 1,
-            "title": "Spatial Position Generalization",
-            "requirement": "Memory model generalizes predictions across 5 unseen entity positions without retraining.",
-            "result": f"Mean gap: {e001_res['mean_advantage_gap_pct']}%, all 5 positions passed: {c1_pass}",
-            "status": "PASS" if c1_pass else "FAIL",
-        },
-        {
-            "criterion_id": 2,
-            "title": "World Layout & Dimension Scaling",
-            "requirement": "Zero-shot generalization from 5x5 grid to 7x7 and 10x10 layouts.",
-            "result": f"All layouts passed: {c2_pass}",
-            "status": "PASS" if c2_pass else "FAIL",
-        },
-        {
-            "criterion_id": 3,
-            "title": "Multi-Entity Tracking",
-            "requirement": "Tracks concurrent delayed consequences across multiple entities.",
-            "result": f"Multi-entity gap: {e003_res['advantage_gap_pct']}%, passed: {c3_pass}",
-            "status": "PASS" if c3_pass else "FAIL",
-        },
-        {
-            "criterion_id": 4,
-            "title": "8-Seed Generalization Reproducibility",
-            "requirement": "Consistent superiority across 8 independent random seeds.",
-            "result": f"Win rate: {e004_res['summary']['win_rate']}, consistent: {c4_pass}",
-            "status": "PASS" if c4_pass else "FAIL",
-        },
-        {
-            "criterion_id": 5,
-            "title": "Episode Boundary Memory Isolation",
-            "requirement": "Zero cross-episode memory or queue state contamination.",
-            "result": f"100% state reset on reset(): {isolation_passed}",
-            "status": "PASS" if isolation_passed else "FAIL",
-        },
-        {
-            "criterion_id": 6,
-            "title": "Semantic Firewall Compliance",
-            "requirement": "Zero forbidden semantic tokens across all observations and state vectors.",
-            "result": f"0 violations across {audit_steps} audited transitions: {audit_passed}",
-            "status": "PASS" if audit_passed else "FAIL",
-        },
-    ]
-
-    total_pass = sum(1 for c in criteria_table if c["status"] == "PASS")
-    total_criteria = len(criteria_table)
-    overall_conclusion = "SUPPORTED — Phase 3 Generalization Fully Validated" if total_pass == total_criteria else "PARTIALLY SUPPORTED"
-
-    return {
-        "experiment_id": "CSP-P3-E005",
-        "title": "Phase 3 Final Acceptance Criteria Assessment & Safety Audit",
-        "total_criteria": total_criteria,
-        "criteria_passed": total_pass,
-        "scientific_conclusion": overall_conclusion,
-        "criteria_table": criteria_table,
-    }
+if __name__ == "__main__":
+    run_all_phase3_experiments()
