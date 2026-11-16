@@ -2,3 +2,5 @@
 # logs/
 # checkpoints/
 .venv/
+__pycache__/
+*.py[cod]
