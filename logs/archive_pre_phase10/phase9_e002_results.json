@@ -1,0 +1,382 @@
+{
+  "experiment_id": "CSP-P9-E002",
+  "title": "Data-Limited or Capacity-Limited? Complex Worlds With Ample Data",
+  "seeds": [
+    42,
+    101,
+    7
+  ],
+  "sizes": {
+    "tiny": [
+      4
+    ],
+    "small": [
+      8
+    ],
+    "medium": [
+      32,
+      16
+    ],
+    "xlarge": [
+      128,
+      64
+    ]
+  },
+  "plan": [
+    [
+      "C2",
+      32000
+    ],
+    [
+      "C3",
+      32000
+    ],
+    [
+      "C3",
+      96000
+    ]
+  ],
+  "cells": {
+    "C2|32000|tiny": {
+      "level": "C2",
+      "data_steps": 32000,
+      "size": "tiny",
+      "params": 157,
+      "in_dist_r2_mean": 0.5028,
+      "in_dist_r2_std": 0.0126,
+      "unseen_pos_r2_mean": 0.0927,
+      "unseen_pos_r2_std": 0.0713,
+      "gap_mean": 0.4101,
+      "per_seed": [
+        {
+          "seed": 42,
+          "in_dist_r2": 0.4868,
+          "unseen_pos_r2": 0.1336
+        },
+        {
+          "seed": 101,
+          "in_dist_r2": 0.504,
+          "unseen_pos_r2": -0.0076
+        },
+        {
+          "seed": 7,
+          "in_dist_r2": 0.5175,
+          "unseen_pos_r2": 0.1521
+        }
+      ]
+    },
+    "C2|32000|small": {
+      "level": "C2",
+      "data_steps": 32000,
+      "size": "small",
+      "params": 313,
+      "in_dist_r2_mean": 0.8587,
+      "in_dist_r2_std": 0.0202,
+      "unseen_pos_r2_mean": 0.6347,
+      "unseen_pos_r2_std": 0.011,
+      "gap_mean": 0.2239,
+      "per_seed": [
+        {
+          "seed": 42,
+          "in_dist_r2": 0.8306,
+          "unseen_pos_r2": 0.6413
+        },
+        {
+          "seed": 101,
+          "in_dist_r2": 0.8679,
+          "unseen_pos_r2": 0.6436
+        },
+        {
+          "seed": 7,
+          "in_dist_r2": 0.8775,
+          "unseen_pos_r2": 0.6193
+        }
+      ]
+    },
+    "C2|32000|medium": {
+      "level": "C2",
+      "data_steps": 32000,
+      "size": "medium",
+      "params": 1761,
+      "in_dist_r2_mean": 0.9362,
+      "in_dist_r2_std": 0.0455,
+      "unseen_pos_r2_mean": 0.639,
+      "unseen_pos_r2_std": 0.0896,
+      "gap_mean": 0.2972,
+      "per_seed": [
+        {
+          "seed": 42,
+          "in_dist_r2": 0.874,
+          "unseen_pos_r2": 0.6703
+        },
+        {
+          "seed": 101,
+          "in_dist_r2": 0.9813,
+          "unseen_pos_r2": 0.7297
+        },
+        {
+          "seed": 7,
+          "in_dist_r2": 0.9534,
+          "unseen_pos_r2": 0.5171
+        }
+      ]
+    },
+    "C2|32000|xlarge": {
+      "level": "C2",
+      "data_steps": 32000,
+      "size": "xlarge",
+      "params": 13185,
+      "in_dist_r2_mean": 0.9582,
+      "in_dist_r2_std": 0.026,
+      "unseen_pos_r2_mean": 0.797,
+      "unseen_pos_r2_std": 0.0824,
+      "gap_mean": 0.1612,
+      "per_seed": [
+        {
+          "seed": 42,
+          "in_dist_r2": 0.9222,
+          "unseen_pos_r2": 0.8486
+        },
+        {
+          "seed": 101,
+          "in_dist_r2": 0.9701,
+          "unseen_pos_r2": 0.6808
+        },
+        {
+          "seed": 7,
+          "in_dist_r2": 0.9824,
+          "unseen_pos_r2": 0.8617
+        }
+      ]
+    },
+    "C3|32000|tiny": {
+      "level": "C3",
+      "data_steps": 32000,
+      "size": "tiny",
+      "params": 157,
+      "in_dist_r2_mean": 0.4608,
+      "in_dist_r2_std": 0.0526,
+      "unseen_pos_r2_mean": -0.1795,
+      "unseen_pos_r2_std": 0.5822,
+      "gap_mean": 0.6403,
+      "per_seed": [
+        {
+          "seed": 42,
+          "in_dist_r2": 0.442,
+          "unseen_pos_r2": 0.1678
+        },
+        {
+          "seed": 101,
+          "in_dist_r2": 0.5326,
+          "unseen_pos_r2": 0.2934
+        },
+        {
+          "seed": 7,
+          "in_dist_r2": 0.4079,
+          "unseen_pos_r2": -0.9997
+        }
+      ]
+    },
+    "C3|32000|small": {
+      "level": "C3",
+      "data_steps": 32000,
+      "size": "small",
+      "params": 313,
+      "in_dist_r2_mean": 0.5237,
+      "in_dist_r2_std": 0.0485,
+      "unseen_pos_r2_mean": -0.5363,
+      "unseen_pos_r2_std": 1.0509,
+      "gap_mean": 1.06,
+      "per_seed": [
+        {
+          "seed": 42,
+          "in_dist_r2": 0.5668,
+          "unseen_pos_r2": 0.1467
+        },
+        {
+          "seed": 101,
+          "in_dist_r2": 0.5485,
+          "unseen_pos_r2": 0.2654
+        },
+        {
+          "seed": 7,
+          "in_dist_r2": 0.4559,
+          "unseen_pos_r2": -2.0209
+        }
+      ]
+    },
+    "C3|32000|medium": {
+      "level": "C3",
+      "data_steps": 32000,
+      "size": "medium",
+      "params": 1761,
+      "in_dist_r2_mean": 0.5062,
+      "in_dist_r2_std": 0.1013,
+      "unseen_pos_r2_mean": 0.1488,
+      "unseen_pos_r2_std": 0.1103,
+      "gap_mean": 0.3574,
+      "per_seed": [
+        {
+          "seed": 42,
+          "in_dist_r2": 0.4925,
+          "unseen_pos_r2": 0.2423
+        },
+        {
+          "seed": 101,
+          "in_dist_r2": 0.6366,
+          "unseen_pos_r2": -0.0061
+        },
+        {
+          "seed": 7,
+          "in_dist_r2": 0.3895,
+          "unseen_pos_r2": 0.2101
+        }
+      ]
+    },
+    "C3|32000|xlarge": {
+      "level": "C3",
+      "data_steps": 32000,
+      "size": "xlarge",
+      "params": 13185,
+      "in_dist_r2_mean": 0.4472,
+      "in_dist_r2_std": 0.067,
+      "unseen_pos_r2_mean": 0.0941,
+      "unseen_pos_r2_std": 0.1871,
+      "gap_mean": 0.3531,
+      "per_seed": [
+        {
+          "seed": 42,
+          "in_dist_r2": 0.4674,
+          "unseen_pos_r2": -0.1159
+        },
+        {
+          "seed": 101,
+          "in_dist_r2": 0.5173,
+          "unseen_pos_r2": 0.0598
+        },
+        {
+          "seed": 7,
+          "in_dist_r2": 0.357,
+          "unseen_pos_r2": 0.3385
+        }
+      ]
+    },
+    "C3|96000|tiny": {
+      "level": "C3",
+      "data_steps": 96000,
+      "size": "tiny",
+      "params": 157,
+      "in_dist_r2_mean": 0.5055,
+      "in_dist_r2_std": 0.039,
+      "unseen_pos_r2_mean": 0.2277,
+      "unseen_pos_r2_std": 0.1512,
+      "gap_mean": 0.2778,
+      "per_seed": [
+        {
+          "seed": 42,
+          "in_dist_r2": 0.5145,
+          "unseen_pos_r2": 0.2747
+        },
+        {
+          "seed": 101,
+          "in_dist_r2": 0.5482,
+          "unseen_pos_r2": 0.0235
+        },
+        {
+          "seed": 7,
+          "in_dist_r2": 0.4539,
+          "unseen_pos_r2": 0.3849
+        }
+      ]
+    },
+    "C3|96000|small": {
+      "level": "C3",
+      "data_steps": 96000,
+      "size": "small",
+      "params": 313,
+      "in_dist_r2_mean": 0.5896,
+      "in_dist_r2_std": 0.0079,
+      "unseen_pos_r2_mean": 0.4139,
+      "unseen_pos_r2_std": 0.1572,
+      "gap_mean": 0.1756,
+      "per_seed": [
+        {
+          "seed": 42,
+          "in_dist_r2": 0.5793,
+          "unseen_pos_r2": 0.2227
+        },
+        {
+          "seed": 101,
+          "in_dist_r2": 0.5984,
+          "unseen_pos_r2": 0.4114
+        },
+        {
+          "seed": 7,
+          "in_dist_r2": 0.591,
+          "unseen_pos_r2": 0.6077
+        }
+      ]
+    },
+    "C3|96000|medium": {
+      "level": "C3",
+      "data_steps": 96000,
+      "size": "medium",
+      "params": 1761,
+      "in_dist_r2_mean": 0.7845,
+      "in_dist_r2_std": 0.0558,
+      "unseen_pos_r2_mean": 0.3877,
+      "unseen_pos_r2_std": 0.1448,
+      "gap_mean": 0.3967,
+      "per_seed": [
+        {
+          "seed": 42,
+          "in_dist_r2": 0.8451,
+          "unseen_pos_r2": 0.1898
+        },
+        {
+          "seed": 101,
+          "in_dist_r2": 0.7979,
+          "unseen_pos_r2": 0.4411
+        },
+        {
+          "seed": 7,
+          "in_dist_r2": 0.7104,
+          "unseen_pos_r2": 0.5323
+        }
+      ]
+    },
+    "C3|96000|xlarge": {
+      "level": "C3",
+      "data_steps": 96000,
+      "size": "xlarge",
+      "params": 13185,
+      "in_dist_r2_mean": 0.8262,
+      "in_dist_r2_std": 0.0273,
+      "unseen_pos_r2_mean": 0.0126,
+      "unseen_pos_r2_std": 0.744,
+      "gap_mean": 0.8136,
+      "per_seed": [
+        {
+          "seed": 42,
+          "in_dist_r2": 0.7951,
+          "unseen_pos_r2": -1.0393
+        },
+        {
+          "seed": 101,
+          "in_dist_r2": 0.8219,
+          "unseen_pos_r2": 0.5196
+        },
+        {
+          "seed": 7,
+          "in_dist_r2": 0.8616,
+          "unseen_pos_r2": 0.5576
+        }
+      ]
+    }
+  },
+  "preregistered_checks": {
+    "H6_met": true,
+    "H7_met": false,
+    "H8_met": true
+  }
+}

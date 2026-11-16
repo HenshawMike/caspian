@@ -1,0 +1,197 @@
+{
+  "phase": "Phase 3 \u2014 Generalization",
+  "experiments": {
+    "CSP-P3-E001": {
+      "experiment_id": "CSP-P3-E001",
+      "title": "Position Generalization",
+      "seed": 42,
+      "train_cells": 12,
+      "test_cells": 12,
+      "in_distribution_metrics": {
+        "mse": 0.354197,
+        "rmse": 0.595144,
+        "mae": 0.197515,
+        "r2_score": 0.664224
+      },
+      "held_out_position_metrics": {
+        "mse": 0.887432,
+        "rmse": 0.942036,
+        "mae": 0.314857,
+        "r2_score": 0.523517
+      },
+      "baselines_on_held_out_positions": {
+        "persistence": {
+          "mse": 2.416,
+          "rmse": 1.554349,
+          "mae": 1.15,
+          "r2_score": -0.297206
+        },
+        "random": {
+          "mse": 40.841629,
+          "rmse": 6.390746,
+          "mae": 5.576669,
+          "r2_score": -20.928815
+        },
+        "reactive": {
+          "mse": 1.874509,
+          "rmse": 1.369127,
+          "mae": 0.386748,
+          "r2_score": -0.006467
+        }
+      },
+      "generalization_gap_pct": 150.55,
+      "generalizes_beyond_trivial_baseline": true,
+      "training_history": {
+        "epochs_run": 115,
+        "final_train_loss": 0.6972292317574456
+      }
+    },
+    "CSP-P3-E002": {
+      "experiment_id": "CSP-P3-E002",
+      "title": "Layout Generalization (5x5 -> 7x7 grid)",
+      "seed": 42,
+      "train_grid": "5x5",
+      "test_grid": "7x7",
+      "in_distribution_metrics": {
+        "mse": 0.307533,
+        "rmse": 0.554557,
+        "mae": 0.112242,
+        "r2_score": 0.782011
+      },
+      "unseen_layout_metrics": {
+        "mse": 0.39528,
+        "rmse": 0.628713,
+        "mae": 0.100108,
+        "r2_score": 0.472341
+      },
+      "baselines_on_unseen_layout": {
+        "persistence": {
+          "mse": 1.543,
+          "rmse": 1.242176,
+          "mae": 1.063,
+          "r2_score": -1.059753
+        },
+        "random": {
+          "mse": 41.81145,
+          "rmse": 6.466177,
+          "mae": 5.661906,
+          "r2_score": -54.814162
+        },
+        "reactive": {
+          "mse": 0.754895,
+          "rmse": 0.868847,
+          "mae": 0.28549,
+          "r2_score": -0.00771
+        }
+      },
+      "generalization_gap_pct": 28.53,
+      "generalizes_beyond_trivial_baseline": true,
+      "training_history": {
+        "epochs_run": 127,
+        "final_train_loss": 1.145770220584665
+      }
+    },
+    "CSP-P3-E003": {
+      "experiment_id": "CSP-P3-E003",
+      "title": "Entity-Appearance Generalization (novel count / novel type code)",
+      "seed": 42,
+      "fixed_slot_mlp": {
+        "in_distribution_metrics": {
+          "mse": 0.307533,
+          "rmse": 0.554557,
+          "mae": 0.112242,
+          "r2_score": 0.782011
+        },
+        "two_entities_simultaneous_metrics": {
+          "mse": 0.897857,
+          "rmse": 0.947553,
+          "mae": 0.198805,
+          "r2_score": 0.491425
+        },
+        "novel_entity_type_metrics": {
+          "mse": 0.429908,
+          "rmse": 0.655673,
+          "mae": 0.111155,
+          "r2_score": 0.558143
+        },
+        "generalization_gap_pct_multi_entity": 191.95,
+        "generalization_gap_pct_novel_type": 39.79
+      },
+      "permutation_invariant_deepsets": {
+        "in_distribution_metrics": {
+          "mse": 0.328162,
+          "rmse": 0.572854,
+          "mae": 0.119396,
+          "r2_score": 0.744811
+        },
+        "two_entities_simultaneous_metrics": {
+          "mse": 0.481264,
+          "rmse": 0.693732,
+          "mae": 0.177171,
+          "r2_score": 0.727396
+        },
+        "novel_entity_type_metrics": {
+          "mse": 0.270015,
+          "rmse": 0.51963,
+          "mae": 0.102493,
+          "r2_score": 0.72248
+        },
+        "generalization_gap_pct_multi_entity": 46.65,
+        "generalization_gap_pct_novel_type": -17.72
+      },
+      "baselines_two_entities": {
+        "persistence": {
+          "mse": 2.316,
+          "rmse": 1.521841,
+          "mae": 1.15,
+          "r2_score": -0.311857
+        },
+        "random": {
+          "mse": 40.962596,
+          "rmse": 6.400203,
+          "mae": 5.582755,
+          "r2_score": -22.202538
+        },
+        "reactive": {
+          "mse": 1.770765,
+          "rmse": 1.330701,
+          "mae": 0.42302,
+          "r2_score": -0.003019
+        }
+      },
+      "baselines_novel_entity_type": {
+        "persistence": {
+          "mse": 1.716,
+          "rmse": 1.309962,
+          "mae": 1.08,
+          "r2_score": -0.763697
+        },
+        "random": {
+          "mse": 41.663838,
+          "rmse": 6.454753,
+          "mae": 5.647926,
+          "r2_score": -41.821914
+        },
+        "reactive": {
+          "mse": 0.975165,
+          "rmse": 0.987504,
+          "mae": 0.31227,
+          "r2_score": -0.00227
+        }
+      },
+      "deepsets_beats_mlp_on_multi_entity": true,
+      "deepsets_beats_mlp_on_novel_type": true,
+      "multi_entity_mse_reduction_pct": 46.4,
+      "handles_multi_entity_beyond_baseline": true,
+      "handles_novel_type_beyond_baseline": true,
+      "mlp_training_history": {
+        "epochs_run": 127,
+        "final_train_loss": 1.145770220584665
+      },
+      "deepsets_training_history": {
+        "epochs_run": 150,
+        "final_train_loss": 0.35060758974414097
+      }
+    }
+  }
+}

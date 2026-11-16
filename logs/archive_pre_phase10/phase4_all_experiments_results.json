@@ -1,0 +1,148 @@
+{
+  "phase": "Phase 4 \u2014 World Model",
+  "experiments": {
+    "CSP-P4-E001": {
+      "experiment_id": "CSP-P4-E001",
+      "title": "Single-Step Full-State World Model",
+      "seed": 42,
+      "entities_verified_static": true,
+      "overall_metrics": {
+        "world_model": {
+          "mse": 0.076649,
+          "rmse": 0.276855,
+          "mae": 0.13803,
+          "r2_score": 0.94086
+        },
+        "naive_physics_baseline": {
+          "mse": 1.145,
+          "rmse": 1.070047,
+          "mae": 0.161111,
+          "r2_score": 0.11655
+        }
+      },
+      "position_delta_mse": {
+        "world_model": 0.04491254358525112,
+        "naive_physics_baseline": 0.07041666666666667
+      },
+      "internal_state_delta_mse": {
+        "world_model": 0.1401206196151707,
+        "naive_physics_baseline": 3.2941666666666665
+      },
+      "beats_naive_physics_overall": true,
+      "beats_naive_physics_on_position": true,
+      "beats_naive_physics_on_state": true,
+      "training_history": {
+        "epochs_run": 75,
+        "final_train_loss": 0.8782942766122568
+      }
+    },
+    "CSP-P4-E002": {
+      "experiment_id": "CSP-P4-E002",
+      "title": "Multi-Step Open-Loop Rollout Fidelity",
+      "seed": 42,
+      "num_trajectories": 40,
+      "horizon": 15,
+      "horizon_curve": {
+        "1": {
+          "mean_position_error": 0.0,
+          "mean_state_error": 0.1891,
+          "exact_position_match_rate": 1.0
+        },
+        "2": {
+          "mean_position_error": 0.025,
+          "mean_state_error": 0.2935,
+          "exact_position_match_rate": 0.975
+        },
+        "3": {
+          "mean_position_error": 0.075,
+          "mean_state_error": 0.4028,
+          "exact_position_match_rate": 0.925
+        },
+        "4": {
+          "mean_position_error": 0.15,
+          "mean_state_error": 0.4759,
+          "exact_position_match_rate": 0.85
+        },
+        "5": {
+          "mean_position_error": 0.15,
+          "mean_state_error": 0.5537,
+          "exact_position_match_rate": 0.85
+        },
+        "6": {
+          "mean_position_error": 0.15,
+          "mean_state_error": 0.6051,
+          "exact_position_match_rate": 0.85
+        },
+        "7": {
+          "mean_position_error": 0.225,
+          "mean_state_error": 0.8317,
+          "exact_position_match_rate": 0.8
+        },
+        "8": {
+          "mean_position_error": 0.325,
+          "mean_state_error": 1.1133,
+          "exact_position_match_rate": 0.7
+        },
+        "9": {
+          "mean_position_error": 0.375,
+          "mean_state_error": 1.5954,
+          "exact_position_match_rate": 0.7
+        },
+        "10": {
+          "mean_position_error": 0.475,
+          "mean_state_error": 1.5482,
+          "exact_position_match_rate": 0.65
+        },
+        "11": {
+          "mean_position_error": 0.575,
+          "mean_state_error": 1.6142,
+          "exact_position_match_rate": 0.55
+        },
+        "12": {
+          "mean_position_error": 0.675,
+          "mean_state_error": 1.8493,
+          "exact_position_match_rate": 0.55
+        },
+        "13": {
+          "mean_position_error": 0.675,
+          "mean_state_error": 2.4196,
+          "exact_position_match_rate": 0.525
+        },
+        "14": {
+          "mean_position_error": 0.75,
+          "mean_state_error": 2.6455,
+          "exact_position_match_rate": 0.45
+        },
+        "15": {
+          "mean_position_error": 0.85,
+          "mean_state_error": 3.1796,
+          "exact_position_match_rate": 0.375
+        }
+      },
+      "position_error_at_h1": 0.0,
+      "position_error_at_final_h": 0.85,
+      "state_error_at_h1": 0.1891,
+      "state_error_at_final_h": 3.1796
+    },
+    "CSP-P4-E003": {
+      "experiment_id": "CSP-P4-E003",
+      "title": "Does World-Model Planning Outperform Reactive Action Selection?",
+      "seed": 42,
+      "num_episodes": 20,
+      "episode_steps": 40,
+      "planning_horizon": 2,
+      "mean_final_internal_state": {
+        "random_policy": 71.55,
+        "reactive_single_step": 60.0,
+        "mpc_planning": 100.0
+      },
+      "std_final_internal_state": {
+        "random_policy": 11.859,
+        "reactive_single_step": 0.0,
+        "mpc_planning": 0.0
+      },
+      "planning_beats_reactive": true,
+      "planning_beats_random": true
+    }
+  }
+}

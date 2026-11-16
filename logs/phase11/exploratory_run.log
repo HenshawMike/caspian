@@ -1,0 +1,13 @@
+W1 seed 9001 lo {'mlp_small': 0.07006, 'mlp_large': 0.09426, 'factorised': 0.10143, 'additive': 1e-05, 'additive_mlp': 0.09915}
+W1 seed 9001 hi {'mlp_small': 0.04648, 'mlp_large': 0.03835, 'factorised': 0.05063, 'additive': 0.00029, 'additive_mlp': 0.08915}
+W1 seed 9002 lo {'mlp_small': 0.08259, 'mlp_large': 0.15787, 'factorised': 0.02615, 'additive': 3e-05, 'additive_mlp': 0.04034}
+W1 seed 9002 hi {'mlp_small': 0.07353, 'mlp_large': 0.03831, 'factorised': 0.15471, 'additive': 1e-05, 'additive_mlp': 0.03014}
+W1 seed 9003 lo {'mlp_small': 0.11883, 'mlp_large': 0.14962, 'factorised': 0.12907, 'additive': 0.0, 'additive_mlp': 0.16182}
+W1 seed 9003 hi {'mlp_small': 0.12937, 'mlp_large': 0.08606, 'factorised': 0.09054, 'additive': 0.0, 'additive_mlp': 0.06123}
+W2 seed 9001 lo {'mlp_small': 0.04032, 'mlp_large': 0.02044, 'factorised': 0.07792, 'additive': 8e-05, 'additive_mlp': 0.05939}
+W2 seed 9001 hi {'mlp_small': 0.02409, 'mlp_large': 0.02081, 'factorised': 0.04948, 'additive': 0.00058, 'additive_mlp': 0.01216}
+W2 seed 9002 lo {'mlp_small': 0.0611, 'mlp_large': 0.02328, 'factorised': 0.03407, 'additive': 2e-05, 'additive_mlp': 0.01026}
+W2 seed 9002 hi {'mlp_small': 0.01052, 'mlp_large': 0.00628, 'factorised': 0.04652, 'additive': 3e-05, 'additive_mlp': 0.00017}
+W2 seed 9003 lo {'mlp_small': 0.04704, 'mlp_large': 0.02937, 'factorised': 0.04321, 'additive': 5e-05, 'additive_mlp': 0.12854}
+W2 seed 9003 hi {'mlp_small': 0.02979, 'mlp_large': 0.00997, 'factorised': 0.0414, 'additive': 0.00058, 'additive_mlp': 0.03885}
+done 85.33761787414551

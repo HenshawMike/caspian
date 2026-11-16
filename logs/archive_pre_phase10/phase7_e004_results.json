@@ -1,0 +1,218 @@
+{
+  "experiment_id": "CSP-P7-E004",
+  "title": "Autonomous Uncertainty-Driven Intervention Selection vs Baselines (equal budget)",
+  "seeds": [
+    42,
+    101,
+    7,
+    2026,
+    555
+  ],
+  "budget": 2400,
+  "arms": [
+    "confounded",
+    "random",
+    "roundrobin",
+    "count",
+    "uncertainty"
+  ],
+  "per_seed": [
+    {
+      "seed": 42,
+      "confounded": {
+        "swapped_r2": -21.778,
+        "matched_r2": -0.0911,
+        "sites_covered": 2,
+        "swapped_sites_chosen": 0
+      },
+      "random": {
+        "swapped_r2": 0.7895,
+        "matched_r2": 0.8855,
+        "sites_covered": 6,
+        "swapped_sites_chosen": 4
+      },
+      "roundrobin": {
+        "swapped_r2": 0.9401,
+        "matched_r2": 0.9147,
+        "sites_covered": 8,
+        "swapped_sites_chosen": 3
+      },
+      "count": {
+        "swapped_r2": 0.7928,
+        "matched_r2": 0.9051,
+        "sites_covered": 8,
+        "swapped_sites_chosen": 3
+      },
+      "uncertainty": {
+        "swapped_r2": 0.9294,
+        "matched_r2": 0.9662,
+        "sites_covered": 5,
+        "swapped_sites_chosen": 3
+      }
+    },
+    {
+      "seed": 101,
+      "confounded": {
+        "swapped_r2": -22.6824,
+        "matched_r2": -0.4261,
+        "sites_covered": 2,
+        "swapped_sites_chosen": 0
+      },
+      "random": {
+        "swapped_r2": 0.9019,
+        "matched_r2": 0.9554,
+        "sites_covered": 5,
+        "swapped_sites_chosen": 1
+      },
+      "roundrobin": {
+        "swapped_r2": 0.9448,
+        "matched_r2": 0.9518,
+        "sites_covered": 8,
+        "swapped_sites_chosen": 3
+      },
+      "count": {
+        "swapped_r2": 0.9761,
+        "matched_r2": 0.9833,
+        "sites_covered": 8,
+        "swapped_sites_chosen": 3
+      },
+      "uncertainty": {
+        "swapped_r2": 0.7039,
+        "matched_r2": 0.8055,
+        "sites_covered": 4,
+        "swapped_sites_chosen": 1
+      }
+    },
+    {
+      "seed": 7,
+      "confounded": {
+        "swapped_r2": -18.1688,
+        "matched_r2": 0.0122,
+        "sites_covered": 2,
+        "swapped_sites_chosen": 0
+      },
+      "random": {
+        "swapped_r2": 0.8457,
+        "matched_r2": 0.7865,
+        "sites_covered": 6,
+        "swapped_sites_chosen": 2
+      },
+      "roundrobin": {
+        "swapped_r2": 0.8763,
+        "matched_r2": 0.8181,
+        "sites_covered": 8,
+        "swapped_sites_chosen": 3
+      },
+      "count": {
+        "swapped_r2": 0.9904,
+        "matched_r2": 0.984,
+        "sites_covered": 8,
+        "swapped_sites_chosen": 3
+      },
+      "uncertainty": {
+        "swapped_r2": -2.3582,
+        "matched_r2": 0.5137,
+        "sites_covered": 4,
+        "swapped_sites_chosen": 0
+      }
+    },
+    {
+      "seed": 2026,
+      "confounded": {
+        "swapped_r2": -17.286,
+        "matched_r2": -0.1129,
+        "sites_covered": 2,
+        "swapped_sites_chosen": 0
+      },
+      "random": {
+        "swapped_r2": 0.7063,
+        "matched_r2": 0.8999,
+        "sites_covered": 6,
+        "swapped_sites_chosen": 3
+      },
+      "roundrobin": {
+        "swapped_r2": 0.7072,
+        "matched_r2": 0.832,
+        "sites_covered": 8,
+        "swapped_sites_chosen": 3
+      },
+      "count": {
+        "swapped_r2": 0.8065,
+        "matched_r2": 0.7842,
+        "sites_covered": 8,
+        "swapped_sites_chosen": 3
+      },
+      "uncertainty": {
+        "swapped_r2": 0.8226,
+        "matched_r2": 0.8199,
+        "sites_covered": 5,
+        "swapped_sites_chosen": 1
+      }
+    },
+    {
+      "seed": 555,
+      "confounded": {
+        "swapped_r2": -19.2621,
+        "matched_r2": 0.277,
+        "sites_covered": 2,
+        "swapped_sites_chosen": 0
+      },
+      "random": {
+        "swapped_r2": 0.9081,
+        "matched_r2": 0.8288,
+        "sites_covered": 5,
+        "swapped_sites_chosen": 4
+      },
+      "roundrobin": {
+        "swapped_r2": 0.9054,
+        "matched_r2": 0.935,
+        "sites_covered": 8,
+        "swapped_sites_chosen": 3
+      },
+      "count": {
+        "swapped_r2": 0.9599,
+        "matched_r2": 0.9417,
+        "sites_covered": 8,
+        "swapped_sites_chosen": 3
+      },
+      "uncertainty": {
+        "swapped_r2": 0.8766,
+        "matched_r2": 0.9307,
+        "sites_covered": 5,
+        "swapped_sites_chosen": 1
+      }
+    }
+  ],
+  "summary": {
+    "confounded": {
+      "swapped_r2_mean": -19.8355,
+      "swapped_r2_std": 2.0729,
+      "matched_r2_mean": -0.0682,
+      "seeds_swapped_r2_above_0.9": 0
+    },
+    "random": {
+      "swapped_r2_mean": 0.8303,
+      "swapped_r2_std": 0.0754,
+      "matched_r2_mean": 0.8712,
+      "seeds_swapped_r2_above_0.9": 2
+    },
+    "roundrobin": {
+      "swapped_r2_mean": 0.8748,
+      "swapped_r2_std": 0.0874,
+      "matched_r2_mean": 0.8903,
+      "seeds_swapped_r2_above_0.9": 3
+    },
+    "count": {
+      "swapped_r2_mean": 0.9051,
+      "swapped_r2_std": 0.0868,
+      "matched_r2_mean": 0.9197,
+      "seeds_swapped_r2_above_0.9": 3
+    },
+    "uncertainty": {
+      "swapped_r2_mean": 0.1949,
+      "swapped_r2_std": 1.2787,
+      "matched_r2_mean": 0.8072,
+      "seeds_swapped_r2_above_0.9": 1
+    }
+  }
+}

@@ -1,0 +1,169 @@
+{
+  "experiment_id": "CSP-P7-E005-R2",
+  "broad_world": "phase7_world_broad_consistent.json",
+  "title": "Strengthened Uncertainty Signal and Mixed Broad Exploration (follow-up to E004)",
+  "seeds": [
+    42,
+    101,
+    7,
+    2026,
+    555
+  ],
+  "budget": 2400,
+  "arms": [
+    "count_mix",
+    "uncertainty_disc_mix",
+    "uncertainty_v2_mix"
+  ],
+  "per_seed": [
+    {
+      "seed": 42,
+      "count_mix": {
+        "swapped_r2": 0.8639,
+        "matched_r2": 0.712,
+        "swapped_all_transitions_r2": 0.9471,
+        "sites_covered": 6,
+        "max_site_share": 0.2
+      },
+      "uncertainty_disc_mix": {
+        "swapped_r2": 0.8551,
+        "matched_r2": 0.9543,
+        "swapped_all_transitions_r2": 0.9116,
+        "sites_covered": 4,
+        "max_site_share": 0.25
+      },
+      "uncertainty_v2_mix": {
+        "swapped_r2": 0.8951,
+        "matched_r2": 0.9417,
+        "swapped_all_transitions_r2": 0.9823,
+        "sites_covered": 4,
+        "max_site_share": 0.375
+      }
+    },
+    {
+      "seed": 101,
+      "count_mix": {
+        "swapped_r2": 0.6596,
+        "matched_r2": 0.8306,
+        "swapped_all_transitions_r2": 0.8738,
+        "sites_covered": 6,
+        "max_site_share": 0.2
+      },
+      "uncertainty_disc_mix": {
+        "swapped_r2": 0.8342,
+        "matched_r2": 0.9446,
+        "swapped_all_transitions_r2": 0.8957,
+        "sites_covered": 6,
+        "max_site_share": 0.25
+      },
+      "uncertainty_v2_mix": {
+        "swapped_r2": 0.8994,
+        "matched_r2": 0.9692,
+        "swapped_all_transitions_r2": 0.9848,
+        "sites_covered": 5,
+        "max_site_share": 0.375
+      }
+    },
+    {
+      "seed": 7,
+      "count_mix": {
+        "swapped_r2": 0.9478,
+        "matched_r2": 0.9192,
+        "swapped_all_transitions_r2": 0.9899,
+        "sites_covered": 6,
+        "max_site_share": 0.2
+      },
+      "uncertainty_disc_mix": {
+        "swapped_r2": 0.9534,
+        "matched_r2": 0.9491,
+        "swapped_all_transitions_r2": 0.9755,
+        "sites_covered": 5,
+        "max_site_share": 0.375
+      },
+      "uncertainty_v2_mix": {
+        "swapped_r2": 0.6357,
+        "matched_r2": 0.9085,
+        "swapped_all_transitions_r2": 0.9092,
+        "sites_covered": 3,
+        "max_site_share": 0.5
+      }
+    },
+    {
+      "seed": 2026,
+      "count_mix": {
+        "swapped_r2": 0.903,
+        "matched_r2": 0.82,
+        "swapped_all_transitions_r2": 0.9673,
+        "sites_covered": 6,
+        "max_site_share": 0.2
+      },
+      "uncertainty_disc_mix": {
+        "swapped_r2": 0.7601,
+        "matched_r2": 0.7529,
+        "swapped_all_transitions_r2": 0.8216,
+        "sites_covered": 6,
+        "max_site_share": 0.25
+      },
+      "uncertainty_v2_mix": {
+        "swapped_r2": 0.3716,
+        "matched_r2": 0.5804,
+        "swapped_all_transitions_r2": 0.7924,
+        "sites_covered": 4,
+        "max_site_share": 0.375
+      }
+    },
+    {
+      "seed": 555,
+      "count_mix": {
+        "swapped_r2": 0.8506,
+        "matched_r2": 0.7854,
+        "swapped_all_transitions_r2": 0.847,
+        "sites_covered": 6,
+        "max_site_share": 0.2
+      },
+      "uncertainty_disc_mix": {
+        "swapped_r2": 0.8601,
+        "matched_r2": 0.9105,
+        "swapped_all_transitions_r2": 0.9339,
+        "sites_covered": 5,
+        "max_site_share": 0.375
+      },
+      "uncertainty_v2_mix": {
+        "swapped_r2": 0.675,
+        "matched_r2": 0.8408,
+        "swapped_all_transitions_r2": 0.8744,
+        "sites_covered": 3,
+        "max_site_share": 0.375
+      }
+    }
+  ],
+  "summary": {
+    "count_mix": {
+      "swapped_r2_mean": 0.845,
+      "swapped_r2_std": 0.0987,
+      "swapped_r2_min": 0.6596,
+      "matched_r2_mean": 0.8134,
+      "swapped_all_transitions_r2_mean": 0.925,
+      "mean_sites_covered": 6.0,
+      "seeds_swapped_r2_above_0.9": 2
+    },
+    "uncertainty_disc_mix": {
+      "swapped_r2_mean": 0.8526,
+      "swapped_r2_std": 0.0618,
+      "swapped_r2_min": 0.7601,
+      "matched_r2_mean": 0.9023,
+      "swapped_all_transitions_r2_mean": 0.9077,
+      "mean_sites_covered": 5.2,
+      "seeds_swapped_r2_above_0.9": 1
+    },
+    "uncertainty_v2_mix": {
+      "swapped_r2_mean": 0.6954,
+      "swapped_r2_std": 0.1951,
+      "swapped_r2_min": 0.3716,
+      "matched_r2_mean": 0.8481,
+      "swapped_all_transitions_r2_mean": 0.9086,
+      "mean_sites_covered": 3.8,
+      "seeds_swapped_r2_above_0.9": 0
+    }
+  }
+}

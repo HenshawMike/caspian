@@ -2085,7 +2085,7 @@ def generate_p9_docx_report(all_results: Dict[str, Any], output_path: str) -> st
          "complexity (about 313 parameters for 2 types and 1 entity, between 313 and 1761 for 4 types and 3 entities, more than 13,000 for 8 types "
          "and 5 entities within 96000 steps); (c) beyond what a world requires, more capacity is wasted and, at moderate data, can worsen "
          "generalization to unseen positions; (d) generalization to unseen positions lags in-distribution accuracy at every complexity level and "
-         "closes slowly with data. The pre-registered hypotheses went 3 of 6 met (H2 weakly, H3 nominally in E001; H6 and H8 in E002), with H1 and "
+         "closes slowly with data. The pre-registered hypotheses went 4 of 6 met (H2 weakly, H3 nominally in E001; H6 and H8 in E002), with H1 and "
          "H7 failed and reported. Limits: only a plain MLP with fixed, untuned training (larger models may need different learning rates, so "
          "'size does not help at C3 with little data' may partly be an optimization effect); the type code is an opaque scalar, which makes "
          "type count a hard tabulation problem (Phase 5's property channel would likely change the capacity curve); passive data; "
@@ -2095,3 +2095,335 @@ def generate_p9_docx_report(all_results: Dict[str, Any], output_path: str) -> st
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     doc.save(output_path)
     return os.path.abspath(output_path)
+
+
+def generate_p10_docx_report(e001, e002, output_path: str) -> str:
+    """Phase 10 report: recovery, mechanism measurement (E001), compositional generalization (E002)."""
+    doc = docx.Document()
+    for sec in doc.sections:
+        sec.top_margin = Inches(0.8); sec.bottom_margin = Inches(0.8)
+        sec.left_margin = Inches(0.8); sec.right_margin = Inches(0.8)
+    PRIMARY = RGBColor(24, 43, 73); SECONDARY = RGBColor(70, 80, 95)
+
+    def h1(t):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(14)
+        r = p.add_run(t); r.font.size = Pt(15); r.font.bold = True; r.font.color.rgb = PRIMARY
+
+    def body(t, size=10, bold=False):
+        p = doc.add_paragraph(); r = p.add_run(t); r.font.size = Pt(size); r.font.bold = bold
+
+    def table(headers, rows):
+        t = doc.add_table(rows=1 + len(rows), cols=len(headers)); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for j, h in enumerate(headers):
+            c = t.rows[0].cells[j]; r = c.paragraphs[0].add_run(h); r.font.bold = True; r.font.size = Pt(9)
+            r.font.color.rgb = RGBColor(255, 255, 255); _set_cell_background(c, "182B49"); _set_cell_margins(c)
+        for i, row in enumerate(rows):
+            for j, v in enumerate(row):
+                c = t.rows[i + 1].cells[j]; r = c.paragraphs[0].add_run(str(v)); r.font.size = Pt(9)
+                _set_cell_background(c, "FAFAFA" if i % 2 == 0 else "F0F4F8"); _set_cell_margins(c)
+        doc.add_paragraph()
+
+    p = doc.add_paragraph(); r = p.add_run("PROJECT CASPIAN"); r.font.size = Pt(24); r.font.bold = True; r.font.color.rgb = PRIMARY
+    p = doc.add_paragraph(); r = p.add_run("Phase 10 Report: Ontology Discovery and Compositional Generalization"); r.font.size = Pt(14); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    h1("Summary")
+    s2 = e002["summary"]
+    body("Stage 10.0 (code recovery) and 10.1 (mechanism measurement) met their goals. Stage 10.2-10.4 (compositional worlds) gave a mostly negative result: "
+         "three of four pre-registered criteria were not met (C1, C2, C3); only the leakage check (C4) passed. No novelty claim is made.")
+    body("Main findings: (1) Held-out-combination accuracy of a plain MLP is far from the structure oracle (additive linear on channels reaches R2 1.0 while the MLP reaches 0.65-0.83 at best). "
+         "(2) Data balance, not agency, explains most of the benefit of intervention-style data; choosing interventions adds little beyond uniform coverage once budget is 2000+ steps. "
+         "(3) One-factor-at-a-time intervention did NOT reliably beat natural passive data. (4) The negative control is flawed and must be redesigned before any claim about composition.")
+
+    h1("1. Stage 10.0 Code Recovery and Integrity")
+    body("Phase 1-9 code was recovered from archives, inventoried, and the baseline test suite (88 tests) passed. Phase 7 results reproduced bit-for-bit under fixed seeds. "
+         "Added: safe_io (no silent log overwrite), requirements.txt, version control, checkpoints and raw logs for Phase 10, and a known-issues register (16 entries). See docs/phase10/.")
+
+    h1("2. CSP-P10-E001 Mechanism Measurement (10 seeds, 2 conditions)")
+    body("Probe accuracy and variance decomposition are evidence about information present in a representation, not proof the model uses it. "
+         "Reproduction gate against logged Phase 7 values passed 10/10 after one invalid first run (config mismatch on the noise3 passive anchor), which is kept in logs.")
+    rows = []
+    for cond, v in e001["CSP-P10-E001"]["summary"].items():
+        e = v["eta2_means"]
+        rows.append([cond, "passive", e["passive"]["type"], e["passive"]["region"], v["swapped_r2_means"]["passive"]])
+        rows.append([cond, "active", e["active"]["type"], e["active"]["region"], v["swapped_r2_means"]["active"]])
+    table(["condition", "data", "eta2 type", "eta2 region", "swapped-position R2"], rows)
+    body("Pre-registered M1-M3 were met in both conditions: actively collected models devote hidden-layer variance to type rather than region and transfer to swapped positions (R2 0.99 vs 0.40-0.48 passive). "
+         "Caveat: linear probes decode type and region from untrained networks and raw input at 0.96-1.0, so probe accuracy alone is weak evidence; the eta2 and behavioural (swap) measures carry the result.")
+
+    h1("3. CSP-P10-E002 Compositional World")
+    body("Design (pre-registered in commit 02be40c before any run): three hidden binary properties A, B, C with additive outcome 6A-4B+2C, observed through neutral numeric channels; "
+         "training combinations 000, 111, 100, 010, 001; held-out 110, 101, 011; four equal-budget arms; budgets 1000/2000/4000/8000; 10 seeds; 320 trainings; plus an 'interaction' variant adding 5AB.")
+    rows = []
+    for b, v in s2["per_budget"].items():
+        rows.append([b] + [f"{v[a]['heldout_r2_mean']:.3f} ± {v[a]['heldout_r2_std']:.2f}" for a in ("passive_natural", "passive_uniform", "coverage_count", "one_factor")]
+                    + [f"{v['baselines_heldout_r2_mean_by_arm']['coverage_count']['nearest_combo_memorization']:.2f}"])
+    table(["budget", "passive_natural", "passive_uniform", "coverage_count", "one_factor", "memorization baseline"], rows)
+    body("Held-out R2 (mean ± sd over 10 seeds). Additive-linear structure oracle: 1.0 for intervention arms at all budgets; 0.86 for passive_natural at 1000-2000, 1.0 from 4000.", size=9)
+    table(["criterion", "result", "detail"], [
+        ["C1 intervention beats passive_natural by >=0.10 in >=8/10 seeds at >=2 budgets (pre-chosen arm: one_factor)", "NOT MET",
+         "one_factor gap was +0.15 (1000), +0.16 (2000) but only 7/10 seeds favoured it; +0.00 (4000); +0.08 (8000)."],
+        ["C2 uniform vs coverage_count within 0.05 at every budget", "NOT MET (narrowly)",
+         "Differences: -0.11 (1000), -0.02, -0.01, -0.003. Fails only at the smallest budget; agency helps early, balance explains the rest."],
+        ["C3 negative control: no arm reaches R2 0.5 in interaction world", "NOT MET, UNINFORMATIVE",
+         "Control flawed: training combo 111 exposes the A*B term, so the interaction is partly identifiable. Reported, not hidden."],
+        ["C4 no leakage of held-out combinations", "MET", "Zero held-out property vectors or codes in any training set (all 320 runs)."],
+    ])
+    body("Interpretation. The MLP does not extrapolate to unseen combinations the way the structure oracle does, even with ample data (in-distribution R2 ~0.99-1.0, held-out 0.65-0.83). "
+         "It beats nearest-combination memorization (about 0.54) at 2000+ budgets, so it is learning something beyond lookup, but not reliably the additive rule. "
+         "Held-out R2 for passive_natural and coverage_count dips between 4000 and 8000, which may reflect overfitting to training combinations; this was not tested.")
+    body("Unexpected: the arm not registered as primary (coverage_count) was consistently best or tied. This is reported descriptively; no post-hoc hypothesis change is made.")
+
+    h1("4. Literature Comparison (preliminary, Stage 10.5 incomplete)")
+    body("Compositional generalization is well studied (e.g. SCAN-style benchmarks, disentanglement and object-centric learning, causal representation learning with interventions). "
+         "Interventional data aiding identifiability is an established theoretical idea. Nothing here yet distinguishes Caspian from those lines. "
+         "A systematic review and comparison is required before any novelty claim; none is made.")
+
+    h1("5. Limitations and Open Items")
+    body("Single small synthetic world family; one architecture; no ablations on inductive bias; no adaptation-after-new-combinations experiment; no probes on compositional models; "
+         "no replication in a second world; the Phase 9 unseen-position gap remains confounded (known issue 2); flawed negative control (known issue 12).")
+
+    h1("6. Proposed Follow-ups")
+    body("(a) Redesign the negative control so the interaction is unidentifiable from the training set. (b) Test inductive-bias variants (per-property encoders, linear head) to see whether the gap to the oracle is architectural. "
+         "(c) Pre-register a learner-state-dependent intervention policy to test agency beyond balance. (d) Run the systematic literature review. (e) Replicate in a second world.")
+    doc.save(output_path)
+    return output_path
+
+
+def generate_p11_docx_report(an: Dict[str, Any], output_path: str) -> str:
+    """Phase 11 report from logs/phase11/confirmatory_analysis.json (registered analysis)."""
+    doc = docx.Document()
+    for sec in doc.sections:
+        sec.top_margin = Inches(0.8); sec.bottom_margin = Inches(0.8); sec.left_margin = Inches(0.8); sec.right_margin = Inches(0.8)
+    PRIMARY = RGBColor(24, 43, 73); SECONDARY = RGBColor(70, 80, 95)
+
+    def h1(t):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(14)
+        r = p.add_run(t); r.font.size = Pt(15); r.font.bold = True; r.font.color.rgb = PRIMARY
+
+    def h2(t):
+        p = doc.add_paragraph(); r = p.add_run(t); r.font.size = Pt(12); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    def body(t, size=10, bold=False):
+        p = doc.add_paragraph(); r = p.add_run(t); r.font.size = Pt(size); r.font.bold = bold
+
+    def table(headers, rows):
+        t = doc.add_table(rows=1 + len(rows), cols=len(headers)); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for j, h in enumerate(headers):
+            c = t.rows[0].cells[j]; r = c.paragraphs[0].add_run(h); r.font.bold = True; r.font.size = Pt(9)
+            r.font.color.rgb = RGBColor(255, 255, 255); _set_cell_background(c, "182B49"); _set_cell_margins(c)
+        for i, row in enumerate(rows):
+            for j, v in enumerate(row):
+                c = t.rows[i + 1].cells[j]; r = c.paragraphs[0].add_run(str(v)); r.font.size = Pt(9)
+                _set_cell_background(c, "FAFAFA" if i % 2 == 0 else "F0F4F8"); _set_cell_margins(c)
+        doc.add_paragraph()
+
+    d, T, ad, mech = an["descriptives"], an["tests"], an["adaptation"], an["mechanism_hi"]
+    archs = ["mlp_small", "mlp_large", "factorised", "additive_mlp", "additive"]
+    f = lambda x, n=3: f"{x:.{n}f}"
+
+    p = doc.add_paragraph(); r = p.add_run("PROJECT CASPIAN"); r.font.size = Pt(24); r.font.bold = True; r.font.color.rgb = PRIMARY
+    p = doc.add_paragraph(); r = p.add_run("Phase 11 Report: Architectural Inductive Bias and Compositional Generalisation"); r.font.size = Pt(14); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    h1("Summary")
+    body("Question: can a system learn reusable property representations and compose them for combinations it never saw? Answer from these experiments: only when compositional (additive) structure is built into the architecture. "
+         "That demonstrates the value of an imposed inductive bias. It is not ontology discovery, and none is claimed. Standard MLPs, with 3.5x more parameters or with per-property encoders, did not reliably compose.")
+    body("Registered outcomes: H1 supported, H2 unsupported (capacity not shown to explain the gap, but not ruled out), H3 supported at the high data level only, H4 supported (the negative control is valid), "
+         "H5 not met as registered (direction replicates, magnitude floor), H6 partly refuted (the strictly additive model's predicted adaptation failure did not occur), H7 supported, H8 descriptive. No novelty claim is made.")
+
+    h1("1. Design (pre-registered, commit 94a9efc)")
+    body("Worlds. W1: binary properties A,B,C; Y = 6A-4B+2C; training 000,100,010,001,101,011; held out 110,111 (A and B never co-occur in training, so the +5AB interaction is unidentifiable). "
+         "W2: independently built (different channel order, 3-level properties, a distractor channel, a quadratic term, a threshold interaction; 14 training / 4 held-out combinations). Both worlds were run in an additive and an interaction variant that share identical training data (unit-tested).")
+    body("Models receive only property channels. Training: Adam lr 0.01, 200 epochs, batch 32, identical for all, untuned. 10 seeds, two data levels (lo / hi). Metric: held-out nRMSE (RMSE / outcome range), lower is better. "
+         "Support test: mean paired improvement >= margin, bootstrap 95% CI lower bound > 0, and >= 8 of 10 seeds above margin.")
+    table(["architecture", "params (3 ch)", "assumption"], [
+        ["mlp_small", "673", "none"], ["mlp_large", "2369", "none, capacity control"], ["factorised", "921", "separate encoder per channel; head can model interactions"],
+        ["additive_mlp", "665", "encoders summed, MLP head"], ["additive", "513", "strictly additive across properties (imposed)"], ["oracle", "n/a", "analytical formula, upper bound"]])
+
+    h1("2. Observed results: held-out prediction")
+    for w, lab in (("W1", "W1 (additive variant)"), ("W2", "W2 (additive variant)")):
+        h2(f"{lab}: held-out nRMSE, mean (sd) over 10 seeds")
+        rows = []
+        for a in archs:
+            rows.append([a, f"{f(d[f'{w}|lo|{a}|additive']['mean'])} ({f(d[f'{w}|lo|{a}|additive']['sd'])})", f"{f(d[f'{w}|hi|{a}|additive']['mean'])} ({f(d[f'{w}|hi|{a}|additive']['sd'])})",
+                         f"{f(d[f'{w}|hi|{a}|interaction']['mean'])}"])
+        rows.append(["memorisation baseline", f(d[f"{w}|lo|baseline:memorisation|additive"]["mean"]), f(d[f"{w}|hi|baseline:memorisation|additive"]["mean"]), f(d[f"{w}|hi|baseline:memorisation|interaction"]["mean"])])
+        rows.append(["oracle", "0.000", "0.000", f(d[f"{w}|hi|baseline:oracle_additive_formula|interaction"]["mean"])])
+        table(["model", "lo data", "hi data", "hi data, INTERACTION world"], rows)
+    body("Reading the last column: in the interaction world the interaction is unidentifiable from training data, so an additive predictor, including the oracle formula, errs by the size of the missing term. "
+         "The additive architecture reproduces the oracle's error (W1 0.418 vs 0.417), as it must. No model predicts the interaction: errors are 0.37-0.54 in W1 (factorised is slightly below the oracle's 0.417, within its seed noise, sd 0.08), so the control works (H4).", size=9)
+    body(f"Phase 10 pipeline (full 37-dim input, {an['A1_phase10_pipeline_W1_hi']['n_params']} parameters) on the new W1 split: held-out nRMSE {f(an['A1_phase10_pipeline_W1_hi']['nrmse_additive_mean'])} "
+         f"(sd {f(an['A1_phase10_pipeline_W1_hi']['sd'])}), similar to mlp_small.")
+    body("Notable: in W1, nearest-combination memorisation (0.083) beats mlp_small (0.183) and mlp_large (0.115) and is level with the factorised and additive_mlp models (about 0.075-0.079). Only the strictly additive model beats it. In W2, MLPs (0.014-0.038) beat memorisation (0.182).")
+
+    h1("3. Statistical interpretation: registered tests")
+    rows = []
+    for k in ("H1_hi", "H1_lo", "H2_hi", "H3_hi", "H3_lo", "H5_hi", "H5_lo", "H7a_hi", "H7b_hi"):
+        t = T[k]
+        rows.append([k, f"{t['candidate']} vs {t['baseline']}", f"{t['mean_diff']:.4f}", f"[{t['ci95'][0]:.3f}, {t['ci95'][1]:.3f}]", f"{t['d_z']:.2f}", f"{t['seeds_meeting_threshold']}/10", "MET" if t["met"] else "not met"])
+    table(["test", "comparison", "mean diff", "95% CI", "d_z", "seeds >= margin", "result"], rows)
+    h4 = T["H4"]
+    body(f"H4 (negative control): additive architecture error in W1 interaction world >= 0.25 in {h4['seeds_ge_0.25']}/10 seeds; leakage rows across all runs: {an['leak_rows_total']}. MET.")
+    body("H2: mlp_large improved on mlp_small by 0.068 (CI -0.005 to 0.145, 6/10 seeds). This is not significant under the registered rule, but it is also not zero; capacity may account for part of the gap. "
+         "The additive model beats mlp_large too (0.001 vs 0.115, unregistered descriptive comparison), so capacity does not explain the whole gap. "
+         "H5: in W2 the additive model is better than mlp_small with CI above zero at both data levels, but mlp_small is already at 0.019, so the registered 0.02 margin was nearly the whole error; the criterion failed on seed count (6/10). Reported as not met, not reinterpreted.", size=9.5)
+
+    h1("4. Adaptation after new observations (Stage 11.3)")
+    body("Setting: interaction variant, 20 observations of one revealed held-out combination, 30 epochs, with replay of 100 stored training rows. Gain = reduction in nRMSE; the 'unrevealed' columns refer to held-out combinations not shown.")
+    rows = []
+    for w in ("W1", "W2"):
+        for a in ("mlp_small", "factorised", "additive_mlp", "additive"):
+            g = ad[f"{w}|{a}|interaction|replay|n20"]; nr = ad[f"{w}|{a}|interaction|no_replay|n20"]
+            rows.append([w, a, f(g["initial_unrevealed_nrmse"]), f(g["revealed_gain_mean"]), f(g["unrevealed_gain_mean"]), f"[{g['unrevealed_gain_ci95'][0]:.3f}, {g['unrevealed_gain_ci95'][1]:.3f}]",
+                         f(g["train_combo_error_increase_mean"], 4), f(nr["train_combo_error_increase_mean"], 3)])
+    table(["world", "model", "initial unrevealed", "revealed gain", "unrevealed gain", "95% CI", "train-combo error rise (replay)", "(no replay)"], rows)
+    body("Findings. (1) H6 met for mlp_small and additive_mlp (gain 0.36 and 0.34): one revealed combination reduces error on the unrevealed one, which is rule-like transfer of the new interaction rather than memorising the revealed example. "
+         "(2) H6's prediction for the strictly additive model was WRONG: it also gained 0.23 on the unrevealed combination, which a strictly additive model cannot do by learning the interaction. "
+         "It does so by distorting main effects, and the cost shows up as a training-combination error rise of 0.09 under replay, against about 0.004 for the MLP. Gain on the unrevealed combination therefore must be read together with forgetting. "
+         "(3) Without replay, error on training combinations rose by 0.04-0.23 for every model (catastrophic forgetting); replay largely removed it for MLP-type models. "
+         "(4) In the additive world, revealing a held-out combination barely helped the models that were already accurate.")
+
+    h1("5. Mechanism measures (Stage 11.5), hi data")
+    rows = []
+    for w in ("W1", "W2"):
+        for a in archs:
+            m = mech[f"{w}|{a}"]
+            rows.append([w, a, f(m["flip_seen_mae"]), f(m["flip_unseen_mae"]), f(m["effect_std_across_contexts"]), f(m["probe_cross_combo_r2"], 2), "" if m["distractor_sensitivity"] is None else f(m["distractor_sensitivity"], 4)])
+    table(["world", "model", "flip error (seen pairs)", "flip error (unseen pairs)", "effect sd across contexts", "cross-combo probe R2", "distractor sensitivity"], rows)
+    body("Counterfactual flip: change one property by one level, compare the predicted effect with the true effect. Every model is accurate on seen pairs. On unseen pairs the additive model is near-perfect and the MLPs are off by roughly 0.8-1.9 outcome units in W1, "
+         "meaning the learned effect of a property is not context-independent in MLPs (effect sd across contexts 0.43-0.90 versus 0.0 for additive). "
+         "Encoded versus used: for factorised and additive_mlp, a linear probe fitted on training combinations recovers held-out outcomes from the latent perfectly (R2 1.0), yet the models' own heads predict those outcomes worse. "
+         "The information is present in the representation but the head does not use it compositionally. mlp_small's latent fails the probe (R2 -5.1). "
+         "In W2, the additive model ignores the distractor channel exactly; mlp_small and mlp_large show small sensitivity (0.016 and 0.012), factorised none and additive_mlp 0.003; the registered distractor test (margin 0.005) was met at both levels. "
+         "Linear CKA between architectures was high (0.87-0.99) in W1, so similarity analysis does not discriminate them; the factorised model's latent is the outlier in W2 (CKA about 0.5).", size=9.5)
+
+    h1("6. Theoretical interpretation")
+    body("Compositional generalisation here is a property of the architecture's function class. Summed per-property effects extrapolate to unseen combinations because the architecture cannot represent anything else. "
+         "Separating the channels (factorised) helped modestly at high data (H3) but not robustly, because the head can still learn arbitrary combination tables that fit training combinations equally well; training data cannot tell the head to prefer the additive solution. "
+         "The experiments therefore support the claim that inductive bias, not capacity or data volume alone, determines which of the training-consistent solutions is selected. "
+         "Whether a system could discover the additive structure without it being built in remains untested.")
+
+    h1("7. Unsupported or refuted")
+    body("H2 (as a conclusive statement about capacity) is unsupported. H3 is not robust at the low data level. H5 failed as registered. H6's prediction of failure for the strictly additive model was refuted. "
+         "No claim of independent discovery, causal use, or novelty is supported.")
+
+    h1("8. Limitations")
+    body("Two worlds, both additive across properties by construction, which gives the additive architecture a favourable setting; no world with a genuinely non-additive rule that the training data identifies. Architectures take property channels only, a simplification of the Phase 10 input. "
+         "W1 has only two held-out combinations, so per-combination statistics are thin. One untuned optimiser setting (a weaker model may be under-trained). Evaluation uses passive collection from interaction events only. "
+         "Probes and CKA measure what is encoded, not what is used; the flip and adaptation tests carry the behavioural evidence. Registration was written after the code and a smoke run existed, before any confirmatory data. "
+         "Literature comparison is still outstanding (Stage 10.5 item), so no novelty claim. Not done: an architecture that must discover which combination rule to use (additive versus interactive) from data.")
+
+    h1("9. Next steps")
+    body("(1) A world whose rule is non-additive but identified by training data, to test whether the additive bias hurts and whether a learned gating of additive versus interactive structure can be selected from data. "
+         "(2) An optimiser sensitivity check for all architectures. (3) Systematic literature comparison (compositional generalisation, causal representation learning, object-centric learning). (4) A third world with different structure for replication.")
+    doc.save(output_path)
+    return output_path
+
+
+def generate_p12_docx_report(an: Dict[str, Any], output_path: str) -> str:
+    """Phase 12 report from logs/phase12/confirmatory_analysis.json."""
+    doc = docx.Document()
+    for sec in doc.sections:
+        sec.top_margin = Inches(0.8); sec.bottom_margin = Inches(0.8); sec.left_margin = Inches(0.8); sec.right_margin = Inches(0.8)
+    PRIMARY = RGBColor(24, 43, 73); SECONDARY = RGBColor(70, 80, 95)
+
+    def h1(t):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(14)
+        r = p.add_run(t); r.font.size = Pt(15); r.font.bold = True; r.font.color.rgb = PRIMARY
+
+    def h2(t):
+        p = doc.add_paragraph(); r = p.add_run(t); r.font.size = Pt(12); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    def body(t, size=10):
+        p = doc.add_paragraph(); r = p.add_run(t); r.font.size = Pt(size)
+
+    def table(headers, rows):
+        t = doc.add_table(rows=1 + len(rows), cols=len(headers)); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for j, h in enumerate(headers):
+            c = t.rows[0].cells[j]; r = c.paragraphs[0].add_run(h); r.font.bold = True; r.font.size = Pt(9)
+            r.font.color.rgb = RGBColor(255, 255, 255); _set_cell_background(c, "182B49"); _set_cell_margins(c)
+        for i, row in enumerate(rows):
+            for j, v in enumerate(row):
+                c = t.rows[i + 1].cells[j]; r = c.paragraphs[0].add_run(str(v)); r.font.size = Pt(9)
+                _set_cell_background(c, "FAFAFA" if i % 2 == 0 else "F0F4F8"); _set_cell_margins(c)
+        doc.add_paragraph()
+
+    w3, T, sens = an["w3"], an["tests"], an["sensitivity"]
+    archs = ["mlp_small", "mlp_large", "factorised", "additive_mlp", "additive", "additive_residual"]
+    f = lambda x, n=3: f"{x:.{n}f}"
+
+    p = doc.add_paragraph(); r = p.add_run("PROJECT CASPIAN"); r.font.size = Pt(24); r.font.bold = True; r.font.color.rgb = PRIMARY
+    p = doc.add_paragraph(); r = p.add_run("Phase 12 Report: A Non-Additive World and Optimiser Sensitivity"); r.font.size = Pt(14); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    h1("Summary")
+    body("Two open items from Phase 11 were tested under a registration committed before the confirmatory runs (commit 294303b; seeds 11-20, disjoint from Phase 11). "
+         "(1) In a world whose rule has an interaction that IS visible in training, the strictly additive architecture fails to fit the training data, as predicted, but its held-out error is no worse than a plain MLP's, so the registered 'additive bias hurts' hypothesis (P12-H1) was NOT met. "
+         "A model that adds a factorised residual to the additive model (additive_residual) was clearly best in that world and kept its advantage over plain MLPs in the additive world. "
+         "(2) The Phase 11 architecture ranking survived a grid of learning rates and training lengths, and tuning did not rescue the plain MLP. A capacity effect of about 0.07 nRMSE for the larger MLP recurred but missed the registered seed rule. "
+         "No novelty claim is made; additive_residual is an engineered structure, not something discovered.")
+
+    h1("1. Design")
+    body("W3: binary properties A, B, C; Y = 6A - 4B + 2C + 5AB. Training combinations 000,100,010,110,001,111 (AB visible); held out 101 and 011. Training, optimiser (Adam lr 0.01, 200 epochs unless stated), metric (held-out nRMSE, range 13) and test T as in Phase 11. "
+         "New architecture additive_residual: an additive model plus a concat-factorised residual model, outputs summed (1434 parameters; gradient-checked). "
+         "Sensitivity: worlds W1 and W2 (hi data), six architectures, lr in {0.003, 0.01, 0.03} x epochs in {200, 400}, 10 seeds, 720 trainings. 0 leakage rows and 0 exclusions across all runs.")
+
+    h1("2. Observed results: W3 held-out nRMSE (mean, sd over 10 seeds)")
+    rows = []
+    for a in archs:
+        rows.append([a, w3[f"hi|{a}"]["n_params"], f"{f(w3[f'lo|{a}']['heldout_mean'])} ({f(w3[f'lo|{a}']['heldout_sd'])})", f"{f(w3[f'hi|{a}']['heldout_mean'])} ({f(w3[f'hi|{a}']['heldout_sd'])})", f(w3[f"hi|{a}"]["indist_mean"], 4)])
+    rows.append(["memorisation baseline", "", f(w3["lo|baseline:memorisation"]["heldout_mean"]), f(w3["hi|baseline:memorisation"]["heldout_mean"]), ""])
+    rows.append(["additive fit to training data", "", f(w3["lo|baseline:additive_fit"]["heldout_mean"]), f(w3["hi|baseline:additive_fit"]["heldout_mean"]), ""])
+    table(["model", "params", "lo data", "hi data", "in-dist nRMSE (hi)"], rows)
+    body("The strictly additive model cannot fit the training combinations (in-dist 0.08, about 0.2 held-out), which confirms the world is not additive in a way training reveals. "
+         "Every model that can represent interactions fits the training data (in-dist about 0).", size=9.5)
+
+    h1("3. Registered tests")
+    def row(name, desc, t):
+        return [name, desc, f"{t['mean_diff']:.4f}", f"[{t['ci95'][0]:.3f}, {t['ci95'][1]:.3f}]", f"{t['d_z']:.2f}", f"{t['seeds_meeting_threshold']}/10", "MET" if t["met"] else "not met"]
+    h1_ = T["P12-H1"]
+    rows = [["P12-H1", "mlp_small better than additive (W3 held-out, margin 0.02), plus additive in-dist >= 0.05 in >= 9/10 seeds",
+             f"{h1_['T']['mean_diff']:.4f}", f"[{h1_['T']['ci95'][0]:.3f}, {h1_['T']['ci95'][1]:.3f}]", f"{h1_['T']['d_z']:.2f}", f"{h1_['T']['seeds_meeting_threshold']}/10 (in-dist part: {h1_['indist_ge_0.05_seeds']}/10)", "NOT MET"],
+            row("P12-H2a", "additive_residual vs additive, W3", T["P12-H2a_W3_residual_vs_additive"]),
+            row("P12-H2b", "additive_residual vs mlp_small, W1 (default config)", T["P12-H2b_W1_residual_vs_mlp_small_default_config"]),
+            row("P12-H3", "mlp_small vs memorisation baseline, W3", T["P12-H3_mlp_small_vs_memorisation_W3"]),
+            row("P12-H5", "additive vs mlp_small, W1, each at its in-dist-selected config", T["P12-H5_W1_selected_additive_vs_mlp_small"]),
+            row("P12-H6", "mlp_large vs mlp_small, W1, selected configs", T["P12-H6_W1_selected_mlp_large_vs_mlp_small"]),
+            row("extra (W2, margin 0)", "additive vs mlp_small, W2, selected configs", T["extra_W2_selected_additive_vs_mlp_small"])]
+    table(["test", "comparison", "mean diff", "95% CI", "d_z", "seeds >= margin", "result"], rows)
+    h4 = T["P12-H4"]
+    body(f"P12-H4: additive beat mlp_small in all {h4['n_configs']} (world x configuration) cells: MET.")
+    body("Reading P12-H1: the additive model's inability to fit training data did not translate into a worse held-out score than the plain MLP (0.192 vs 0.179). The MLP's held-out error is itself large and variable (sd 0.08); "
+         "in W3 the held-out combinations need the C effect to add to A or B without the AB term, and the MLP has no preference for that solution. "
+         "So the data does not show the additive bias to be harmful here; it shows plain MLPs are unreliable too. This is a null result, reported as such.", size=9.5)
+    body("Reading P12-H6: the larger MLP gained 0.069 nRMSE (CI 0.008 to 0.136) but only 7/10 seeds cleared the 0.02 margin, so the registered criterion fails. "
+         "Together with Phase 11 (gain 0.068, CI including 0) the consistent estimate is a modest capacity effect of about 0.07, much smaller than the 0.16 gain from structure. This is an interpretation across two experiments, not a registered result.", size=9.5)
+
+    h1("4. Optimiser sensitivity")
+    rows = []
+    for w in ("W1", "W2"):
+        for k, v in sens["H4_grid"].items():
+            if k.startswith(w):
+                rows.append([k.replace("|", ", "), f(v["additive"], 4), f(v["mlp_small"], 4), f(v["diff"], 4)])
+    table(["world, config", "additive", "mlp_small", "difference"], rows)
+    rows = []
+    for k, v in sens["selected"].items():
+        rows.append([k.replace("|", " / "), v["lr"], v["epochs"], f(v["indist"], 4), f"{f(v['heldout_mean'])} ({f(v['heldout_sd'])})"])
+    body("Configuration selected per architecture by lowest mean in-distribution nRMSE (never held-out data):", size=9.5)
+    table(["world / model", "lr", "epochs", "in-dist nRMSE", "held-out nRMSE (sd)"], rows)
+    body("Results: the Phase 11 ordering held in every configuration. Tuning shifted plain-MLP error but did not close the gap (W1: mlp_small 0.159 at its selected config vs additive 0.0001). "
+         "The additive model was not always best-tuned: lr 0.03 with 400 epochs raised its W1 error to 0.0085, still far below the MLP. "
+         "Caveat: the grid is small (6 configurations); other optimiser changes (batch size, weight decay, schedules) were not tried.", size=9.5)
+
+    h1("5. Interpretation")
+    body("Statistical: P12-H2, H3, H4 and H5 met; P12-H1 and H6 not met. Theoretical: what matters is whether the function class contains the right structure AND is not forced to exclude part of it. "
+         "The strictly additive model excludes interactions; the plain MLP includes everything but prefers nothing; the additive-plus-residual model includes both and, because the additive part is available, can express the rule with fewer unconstrained degrees of freedom. "
+         "That is an engineered inductive bias, so the usefulness of the bias, not discovery, is what is demonstrated.")
+    body("Caveat on additive_residual: its design followed the Phase 11 results (so it is not an independent prediction), it has 1434 parameters (more than mlp_small's 673, fewer than mlp_large's 2369), and mlp_large did worse than it (W3 hi 0.131 vs 0.037), so extra parameters alone do not explain its advantage.")
+
+    h1("6. Limitations")
+    body("W3 has only two held-out combinations and high seed variance for the MLPs. All worlds are small, synthetic, and have known property channels given to the model. "
+         "The residual architecture was chosen after seeing Phase 11. The tuning grid is small. Interpretability measures (probes, flips) were not repeated in Phase 12. Literature comparison is still outstanding.")
+    h1("7. Next steps")
+    body("(1) A world where some pairs interact and others do not, to see whether additive_residual keeps its advantage when the residual is sparse. "
+         "(2) Property-discovery test: remove the pre-separated channels. (3) Matched-start re-measure of the Phase 9 gap (issue 2). (4) Systematic literature review before any claim of novelty.")
+    doc.save(output_path)
+    return output_path

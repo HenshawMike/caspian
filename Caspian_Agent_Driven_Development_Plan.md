@@ -1,445 +1,536 @@
-# CASPIAN — Agent-Driven Development & Experimental Research Plan
+Understood. I'll give you the **actual Markdown content directly in the chat**, not generate it with code or create a separate file.
 
-**Project:** Caspian  
-**Research direction:** Artificial Ontological Intelligence *(working research label)*  
-**Development method:** Agent-Driven Development  
-**Initial environment:** Small isolated artificial 2D world  
-**Initial agent:** Small neural agent; no LLM required initially  
-**Primary objective:** Investigate whether an artificial agent can develop useful internal representations of an environment from perception, action, feedback, memory, and prediction without being explicitly given human semantic categories.
+The document below combines all three sources into one master document. It preserves the original research philosophy, Agent-Driven Development method, mathematical foundations, experimental history through Phase 12, and the roadmap through Phase 20. I've also kept the distinction between demonstrated results and future research targets.
 
----
+You can copy the Markdown into a file named:
 
-## 1. Important Document Architecture
+`CASPIAN_MASTER_RESEARCH_AND_DEVELOPMENT_PLAN.md`
 
-This project uses **two different documentation layers**.
+# **PROJECT CASPIAN**
 
-### Layer A — This Markdown file
+# **Consolidated Master Research, Agent-Driven Development and Experimental Roadmap — Phases 0–20**
 
-This is the **living project specification and Agent-Driven Development plan**.
+**Project:** Caspian\
+**Research direction:** Artificial Ontological Intelligence (AOI) — working research label\
+**Development method:** Agent-Driven Development\
+**Initial environment:** Small, isolated artificial 2D world\
+**Initial agent:** Small neural agent; no LLM required initially\
+**Research scope:** Phase 0–20\
+**Document status:** Living research and development specification\
+**Last consolidated:** 16 November 2026
 
-It defines:
+# **PART I — PROJECT FOUNDATION**
 
-- what Caspian is
-- what we are trying to discover
-- the research questions
-- mathematical foundations
-- project architecture
-- development phases
-- agent-development rules
-- experiment requirements
-- acceptance criteria
-- documentation requirements
-- safety and reproducibility requirements
-- what must happen before moving to the next phase
-
-This file is **not the experiment report**.
-
-It should be updated when the project specification, architecture, phase requirements, or research plan changes.
-
-### Layer B — DOCX Experiment Reports
-
-After **every meaningful experiment**, a separate `.docx` report must be generated.
-
-The DOCX is the permanent scientific record of what actually happened.
-
-Each experiment report must document:
-
-- what was attempted
-- why it was attempted
-- exact code/configuration used
-- environment
-- model
-- mathematics
-- parameters
-- training procedure
-- random seeds
-- commands executed
-- results
-- graphs/tables
-- failures
-- unexpected behavior
-- observations
-- errors
-- debugging
-- changes made during the experiment
-- interpretation
-- alternative explanations
-- limitations
-- conclusions
-- whether the hypothesis survived
-- whether the next experiment is justified
-
-**Rule:**
-
-> The Markdown plan describes what we intend to do.  
-> The DOCX experiment report records what actually happened.
-
-Never rewrite an experiment report to make the experiment look cleaner than it was.
-
----
-
-# 2. Research Vision
+## **1. Research Vision**
 
 Caspian is an attempt to investigate a question deeper than conventional language-model scaling.
 
-Most AI systems receive representations that humans have already designed:
+Most contemporary AI systems are trained using representations, categories, labels, relationships, and information that humans have already defined.
 
-- objects
-- labels
-- classes
-- words
-- categories
-- rewards
-- tasks
-- environments
-- goals.
+These systems learn from large quantities of human-generated information and structured data. Their learning is therefore influenced by the representations and assumptions already present in their training environments.
 
-Caspian begins with a much smaller assumption.
+Caspian explores a different direction.
 
-We want to create an artificial world in which the agent can perceive and interact with things without being directly told what those things *mean*.
+We want to create an artificial environment in which an agent can perceive and interact with things without being directly told what those things mean.
 
-The long-term question is:
+The agent should encounter environmental regularities through observation, interaction, feedback, memory, and prediction.
 
-> **Can an artificial agent construct useful internal representations of an environment when human semantic categories are not explicitly provided?**
+The researcher may understand the environment's underlying rules. However, the agent should not automatically receive those rules or their human semantic interpretations.
+
+The central research question is:
+
+> Can an artificial agent construct useful internal representations of an environment through perception, action, feedback, memory, and prediction without being explicitly given human semantic categories?
 
 A more ambitious version is:
 
-> **Can an artificial intelligence develop useful categories or ontology from perception-action feedback?**
+> Can an artificial learning system discover useful properties, relationships, and structures of an environment through its own interaction with that environment?
 
-This project does **not** assume that success would imply consciousness.
+This project does not assume that success would imply consciousness.
 
-Intelligence, representation, adaptation, agency, self-modeling, and subjective experience are separate questions.
+Intelligence, representation, adaptation, agency, self-modelling, and subjective experience are separate research questions.
 
----
+The project must establish its claims experimentally.
 
-# 3. North Star
+## **2. Research North Star**
 
-> **Do not begin by trying to make Caspian intelligent. Begin by creating a world in which intelligence can be measured.**
+> Do not begin by trying to make Caspian intelligent. Begin by creating a world in which intelligence can be measured.
 
-The first milestone should therefore be deliberately small.
+The first milestone should be deliberately small.
 
 Caspian should demonstrate that it can learn a meaningful environmental relationship from interaction without being given the human semantic label for that relationship.
 
 Everything beyond that must be earned through experimental evidence.
 
----
+## **3. Core Research Objectives**
 
-# 4. Core Research Question
+Caspian investigates whether an artificial learner can:
 
-## Primary question
+1. Observe an environment without receiving a complete human-defined description of its underlying properties.
+2. Learn predictive relationships from observations and actions.
+3. Maintain useful internal state across time.
+4. Develop representations that preserve environmental regularities.
+5. Discover useful properties without being explicitly given property labels.
+6. Identify relationships and interactions between environmental properties.
+7. Learn from controlled interventions.
+8. Generalise learned structures to unfamiliar environments.
+9. Retain and update knowledge through continued experience.
+10. Predict future environmental states.
+11. Evaluate alternative actions and their consequences.
+12. Use learned environmental models to support planning.
+13. Demonstrate measurable utility in a bounded real-world application.
 
-> Can a small artificial agent learn a useful representation of an environmental regularity through perception, action, feedback, memory, and prediction when the human semantic interpretation of that regularity is not directly supplied?
+These are research objectives, not capabilities that Caspian has already demonstrated.
 
-## Phase 1 version
+## **4. The Central Research Distinction**
 
-> Can Caspian learn that an unknown interaction reliably changes a measurable state variable?
+There are two fundamentally different learning situations.
+
+**Human-defined learning**
+
+The system receives information that already communicates the meaning or intended function of something.
 
 For example:
+
+- This object is food.
+- This object is dangerous.
+- This object increases energy.
+- This object is a resource.
+- This action is beneficial.
+
+**Environmental learning**
+
+The system observes an entity, interacts with it, and observes the resulting changes.
+
+For example:
+
+- An unknown entity exists.
+- The agent moves toward it.
+- The agent interacts with it.
+- A measurable internal state changes.
+- The agent encounters the same entity again.
+- The agent learns to predict the consequence of interacting with it.
+
+The research interest is in the second situation.
+
+We want to investigate whether useful internal structure can emerge from experience without explicitly supplying the human interpretation.
+
+## **5. The Initial Research Example**
 
 An unknown entity `X` exists in the environment.
 
 Caspian can:
 
-- see `X`
-- move toward or away from `X`
-- interact with `X`
-- observe changes in its internal state.
+- observe `X`;
+- move toward or away from `X`;
+- interact with `X`;
+- observe changes in its internal state;
+- remember previous interactions;
+- predict what may happen after another interaction.
 
-The researcher may know that interacting with `X` increases energy.
+The researcher may know that interacting with `X` increases an internal energy variable.
 
-Caspian should **not** receive:
+However, the agent should not receive labels such as:
 
-```text
+```
 food
 beneficial
 energy_source
 reward_object
-relative_direction
-shape_code
-collision
-interaction_result
-energy
-previous_action
+useful
+dangerous
+resource
+target
 ```
 
-The difference is fundamental.
+The intended learning relationship is:
 
-We want the agent to learn:
+\\[ \text{Observation} \rightarrow \text{Interaction} \rightarrow \text{State Transition} \rightarrow \text{Prediction} \\]
 
-$$ \text{observation} \rightarrow \text{interaction} \rightarrow \text{state transition} $$
+Not:
 
-rather than:
+\\[ \text{Human Label} \rightarrow \text{Known Meaning} \\]
 
-$$ \text{human label} \rightarrow \text{known meaning} $$
+The environment's internal implementation may contain information that the agent must not observe. The observation interface must strictly control what information reaches the model.
 
----
+# **PART II — RESEARCH PRINCIPLES**
 
-# 10. Semantic Firewall
+## **6. Foundational Principles**
+
+These principles govern every phase of Caspian.
+
+### **6.1 Evidence before complexity**
+
+Do not introduce more complex architectures merely because they appear more sophisticated.
+
+Every increase in complexity must answer a research question.
+
+### **6.2 Measure everything**
+
+Every meaningful capability must have measurable criteria.
+
+Avoid relying on impressions such as:
+
+- the agent seems smarter;
+- the representation looks meaningful;
+- the model appears to understand;
+- the architecture looks promising.
+
+Replace these with measurable experiments.
+
+### **6.3 Challenge your own results**
+
+A successful experiment is not the end of an investigation.
+
+Ask:
+
+- Could the result be caused by data leakage?
+- Could the model be memorising?
+- Is the baseline too weak?
+- Could the environment make the task trivial?
+- Does the model actually use the representation?
+- Does the result survive different random seeds?
+- Does the result survive a different environment?
+- Could another architecture achieve the same result more simply?
+
+### **6.4 Earn complexity**
+
+Do not scale the system prematurely.
+
+The project should move from simple environments to more complex environments only when the existing research question has been adequately tested.
+
+### **6.5 Preserve negative findings**
+
+Failed experiments are scientific results.
+
+Do not remove failed hypotheses, unsuccessful runs, unexpected behaviour, or inconvenient measurements from the research record.
+
+### **6.6 Separate engineering success from scientific success**
+
+Code can work perfectly while the scientific hypothesis fails.
+
+A model can train successfully and still fail to generalise.
+
+A model can achieve low training loss without discovering the structure we intended to investigate.
+
+### **6.7 Reproducibility**
+
+Important results must survive independent random seeds and controlled repetitions.
+
+A result from one successful run is preliminary evidence, not sufficient confirmation.
+
+### **6.8 The experiment must speak**
+
+The researcher must not force the interpretation of results.
+
+If an experiment contradicts the hypothesis, preserve that contradiction and investigate it.
+
+> Do not optimize for completing phases. Optimize for discovering what is true about the learning system.
+
+## **7. Semantic Firewall**
 
 The project must maintain a semantic firewall.
 
 The researcher can know the meaning of environmental variables.
 
-The agent should receive only the information specified by the experiment.
+The agent should receive only the information explicitly permitted by the experiment.
 
-Before every experiment, perform a semantic-leakage audit.
+Before every experiment, conduct a semantic-leakage audit.
 
 Ask:
 
-- Did we explicitly name the object's function?
-- Did we encode its usefulness?
-- Did we encode its danger?
-- Did we encode the expected outcome?
-- Did we provide a reward that directly reveals the intended category?
-- Did the observation contain information that makes the answer trivial?
-- Did the training data contain labels that should not exist?
-- Did the architecture accidentally expose hidden environment state?
+1. Did we explicitly name the object's function?
+2. Did we encode its usefulness?
+3. Did we encode its danger?
+4. Did we encode the expected outcome?
+5. Did we provide a reward that directly reveals the intended category?
+6. Does the observation make the answer trivial?
+7. Does the training data contain labels that should not exist?
+8. Does the architecture expose hidden environmental state?
+9. Does the numerical encoding accidentally reveal ordering or meaning?
+10. Can the agent infer the intended answer directly from the data-generation process?
 
 Any leakage must be documented.
 
----
+### **7.1 Environment ground truth versus agent observation**
 
-# 11. Mathematical Foundations
+Maintain a strict separation between:
 
-The project should be built from mathematical primitives rather than unexplained frameworks.
+- **Environment ground truth:** Everything that exists internally in the simulated world.
+- **Agent observation:** The information actually provided to the agent.
+- **Researcher interpretation:** The human explanation of environmental behaviour.
+- **Learned representation:** The information encoded by the model through learning.
 
-## 11.1 Linear Algebra
+These are not interchangeable.
 
-Neural computation fundamentally involves vectors and matrices.
+### **7.2 Hidden-state protection**
 
-A basic transformation:
+Variables such as:
 
-$$ z=Wx+b $$
+```
+hidden_state_delta
+entity_function
+is_beneficial
+is_dangerous
+expected_outcome
+semantic_category
+```
+
+must not be exposed to the agent unless the experiment explicitly investigates their use.
+
+Even apparently neutral fields such as entity type codes, interaction flags, or numerical identifiers must be audited for accidental information leakage.
+
+The firewall must be tested, not merely described.
+
+# **PART III — MATHEMATICAL FOUNDATIONS**
+
+## **8. Mathematical Framework**
+
+Caspian should be developed from mathematical primitives rather than unexplained frameworks.
+
+### **8.1 Environment**
+
+Let the environment state at time \\(t\\) be:
+
+\\[ E_t \\]
+
+The environment evolves according to:
+
+\\[ E\_{t+1}=T(E_t,A_t) \\]
 
 where:
 
-- \(x\) = input vector
-- \(W\) = weight matrix
-- \(b\) = bias
-- \(z\) = transformed representation.
+- \\(E_t\\) is the current environment state;
+- \\(A_t\\) is the agent's action;
+- \\(T\\) is the environment transition function.
 
-An activation function produces:
+### **8.2 Observation**
 
-$$ h=\sigma(z) $$
+The agent does not necessarily observe the complete environment state.
 
-This creates a learned representation.
+Its observation is:
 
-## 11.2 Probability
+\\[ O_t=G(E_t) \\]
 
-If Caspian predicts actions or future states, predictions can be represented probabilistically.
+where \\(G\\) is the observation function.
 
-For example:
+This distinction is important because the agent should learn from its available information rather than receive the complete environmental implementation.
 
-$$ P(O_{t+1}|S_t,A_t) $$
+### **8.3 Internal state**
 
-means:
+The agent maintains an internal state:
 
-the probability of the next observation given the current internal state and action.
+\\[ S_t=F\_\theta(S\_{t-1},O_t,A\_{t-1}) \\]
 
-For actions:
+where:
 
-$$ P(A_t|S_t) $$
+- \\(S_t\\) is the internal state;
+- \\(F\_\theta\\) is the learned state-transition function;
+- \\(\theta\\) represents model parameters;
+- \\(O_t\\) is the current observation;
+- \\(A\_{t-1}\\) is the previous action.
 
-represents the policy.
+This allows the model to incorporate historical information.
 
-## 11.3 Calculus
+### **8.4 Policy**
 
-Learning requires measuring how the loss changes as parameters change.
+The agent selects actions according to:
 
-The gradient:
+\\[ P(A_t\mid S_t) \\]
 
-$$ \nabla_\theta L $$
+This represents the probability of selecting an action given the current internal state.
 
-tells us the direction in parameter space associated with increasing loss.
+### **8.5 Prediction**
 
-Gradient descent moves approximately in the opposite direction:
+The model predicts future observations:
 
-$$ \theta'=\theta-\eta\nabla_\theta L $$
+\\[ \hat O\_{t+1}=M\_\theta(S_t,A_t) \\]
 
-## 11.4 Optimization
+The objective is to investigate whether the model can learn useful environmental dynamics from experience.
 
-Training is an optimization problem.
+### **8.6 Predictive loss**
 
-We seek:
+A basic prediction loss can be defined as:
 
-$$ \theta^*=\arg\min_\theta L(\theta) $$
+\\[ L\_{\text{pred}}= \frac{1}{n} \sum\_{i=1}^{n} \left\\| O\_{t+1}^{(i)}-\hat O\_{t+1}^{(i)} \right\\|^2 \\]
 
-The system searches for parameters that produce better predictions or behavior.
+The selected loss must match the prediction target.
 
-## 11.5 Information Theory
+### **8.7 Optimization**
 
-Prediction error can also be understood as information mismatch.
+Training seeks parameters that minimise the selected objective:
 
-For probabilistic predictions, cross-entropy is:
+\\[ \theta^\*=\arg\min\_\theta L(\theta) \\]
 
-$$ H(p,q) = -\sum_xp(x)\log q(x) $$
+A gradient-descent update is:
 
-This becomes important later when Caspian predicts discrete outcomes.
+\\[ \theta'=\theta-\eta\nabla\_\theta L \\]
 
-## 11.6 Statistics
+where \\(\eta\\) is the learning rate.
 
-We must distinguish:
+### **8.8 Probability**
 
-Caspian learned something
+For probabilistic prediction:
 
-from:
+\\[ P(O\_{t+1}\mid S_t,A_t) \\]
 
-Caspian happened to perform well once.
+For action selection:
 
-Therefore experiments require:
+\\[ P(A_t\mid S_t) \\]
 
-- multiple seeds
-- held-out evaluation
-- repeated trials
-- confidence intervals where appropriate
-- baseline comparisons
-- variance reporting.
+### **8.9 Information theory**
 
----
+For probabilistic predictions, cross-entropy can be used:
 
-# 12. Representation
+\\[ H(p,q)=-\sum_x p(x)\log q(x) \\]
 
-The most important scientific object may not be the action.
+### **8.10 Statistics**
 
-It may be the internal representation.
+Every major experiment should use:
+
+- multiple random seeds;
+- held-out evaluation;
+- repeated trials;
+- appropriate confidence intervals;
+- baseline comparisons;
+- variance reporting;
+- controlled data splits.
+
+The purpose is to distinguish actual learning from chance performance.
+
+## **9. Representation Learning**
+
+The internal representation may be one of the most important scientific objects in Caspian.
 
 Suppose:
 
-$$ S_t=f_\theta(O_{\leq t},A_{<t}) $$
+\\[ S_t=f\_\theta(O\_{\leq t},A\_{\<t}) \\]
 
-Then \(S_t\) represents information the agent has accumulated about its situation.
+The system accumulates information about its environment through observations and actions.
 
-We want to investigate whether similar environmental conditions create useful structure in \(S_t\).
+We want to investigate whether similar environmental conditions produce useful and consistent structures in the internal state.
 
-Possible analysis:
+Possible analyses include:
 
-- hidden-state clustering
-- representation similarity
-- linear probes
-- nearest-neighbor structure
-- dimensionality reduction
-- predictive information
-- temporal consistency.
+- hidden-state clustering;
+- representation similarity;
+- linear probes;
+- nearest-neighbour structure;
+- dimensionality reduction;
+- predictive information;
+- temporal consistency;
+- intervention sensitivity.
 
-Important:
+However, these analyses require careful interpretation.
 
 A cluster is not automatically a concept.
 
-A representation can correlate with an environmental variable without proving that the agent has developed a human-like concept of that variable.
+A probe decoding environmental information does not prove that the model's prediction head uses that information.
 
----
+A representation correlating with an environmental property does not prove that the system has developed a human-like concept of that property.
 
-# 13. Baselines
+Whenever possible, evaluate representations through actual prediction and behaviour.
 
-Every important experiment needs baselines.
+## **10. Baselines**
+
+Every important experiment requires appropriate baselines.
 
 Initial baselines:
 
-**Random baseline**
+| Baseline        | Description                                                               |
+| --------------- | ------------------------------------------------------------------------- |
+| Random          | Selects actions randomly                                                  |
+| Persistence     | Predicts that the next state remains similar to the current state         |
+| Reactive        | Uses only the current observation                                         |
+| Learned Caspian | Uses learned internal state and experience                                |
+| Oracle          | Uses privileged information where appropriate as an upper-bound reference |
 
-Chooses actions randomly.
+Baselines must receive comparable information and evaluation opportunities.
 
-**Persistence baseline**
+A weak baseline is not evidence of a strong learning mechanism.
 
-Predicts that the next state will remain similar to the current state.
+## **11. Initial Evaluation Metrics**
 
-**Reactive baseline**
+### **Prediction error**
 
-Uses only the current observation.
+\\[ L\_{\text{pred}} \\]
 
-**Learned Caspian**
+### **Learning curve**
 
-Uses learned internal state and experience.
+Measure:
 
-The purpose is to determine whether learning provides an actual advantage.
+\\[ \text{Performance versus interaction count} \\]
 
----
+### **Sample efficiency**
 
-# 14. Initial Metrics
+How much experience is required to reach a defined performance level?
 
-Phase 1 should measure:
+### **Generalisation**
 
-## 14.1 Prediction error
+Evaluate:
 
-$$ L_{\text{pred}} $$
+- unseen starting positions;
+- unseen trajectories;
+- unseen entity positions;
+- held-out environmental configurations;
+- unfamiliar combinations of properties.
 
-Lower error indicates better prediction under the chosen metric.
+### **Reproducibility**
 
-## 14.2 Learning curve
+Repeat experiments across random seeds.
 
-Plot:
+### **Representation consistency**
 
-$$ \text{performance vs interaction count} $$
+Test whether similar functional situations produce similar internal representations.
 
-## 14.3 Sample efficiency
+# **PART IV — AGENT-DRIVEN DEVELOPMENT**
 
-How much experience is required to reach a specified performance level?
+## **12. Development Method**
 
-## 14.4 Generalization
+Caspian uses Agent-Driven Development.
 
-Evaluate on:
+The coding agent must not freely expand the project.
 
-- unseen starting positions
-- unseen trajectories
-- unseen entity positions
-- held-out environment configurations.
+Every task has a defined contract.
 
-## 14.5 Reproducibility
-
-Run multiple random seeds.
-
-## 14.6 Internal representation consistency
-
-Test whether similar functional situations produce similar internal states.
-
----
-
-# 15. Project Development Method
-
-We use Agent-Driven Development.
-
-The coding agent is not allowed to freely expand the project.
-
-Every task has a contract.
+The development sequence is:
 
 ```
 TASK
-↓
+  ↓
 CONTEXT
-↓
+  ↓
 CONSTRAINTS
-↓
+  ↓
 ACCEPTANCE TESTS
-↓
+  ↓
 IMPLEMENTATION
-↓
+  ↓
 TEST
-↓
+  ↓
 EXPERIMENT
-↓
+  ↓
 DOCUMENT
-↓
+  ↓
 REVIEW
 ```
 
-The development agent should optimize for:
+The coding agent should optimize for:
 
-- correctness
-- reproducibility
-- simplicity
-- tests
+- correctness;
+- reproducibility;
+- simplicity;
+- tests;
 - scientific traceability.
 
-Not:
+It should not optimize for:
 
-- unnecessary complexity
-- impressive architecture
-- premature scaling
-- hidden assumptions.
+- unnecessary complexity;
+- impressive architecture;
+- premature scaling;
+- hidden assumptions;
+- unrequested features.
 
----
-
-# 16. Agent Task Contract
+## **13. Agent Task Contract**
 
 Every coding-agent task should contain:
 
@@ -459,20 +550,56 @@ Every coding-agent task should contain:
 
 The coding agent must report:
 
-- files changed
-- tests created
-- tests passed/failed
-- commands executed
-- experiment results
-- unexpected behavior
-- assumptions
-- limitations.
+1. Files changed.
+2. Tests created.
+3. Tests passed and failed.
+4. Commands executed.
+5. Experiment results.
+6. Unexpected behaviour.
+7. Assumptions.
+8. Limitations.
+9. Recommended next step.
 
----
+## **14. Experiment Documentation**
 
-# 17. Repository Structure
+After every meaningful experiment, generate a separate DOCX report.
 
-Initial repository:
+The report should contain:
+
+- experiment ID;
+- research question;
+- hypothesis;
+- environment;
+- architecture;
+- mathematics;
+- parameters;
+- training procedure;
+- random seeds;
+- commands executed;
+- results;
+- graphs and tables;
+- failures;
+- unexpected behaviour;
+- observations;
+- errors;
+- debugging;
+- changes made;
+- interpretation;
+- alternative explanations;
+- limitations;
+- conclusions;
+- hypothesis verdict;
+- justification for the next experiment.
+
+The distinction is fundamental:
+
+> The Markdown plan describes what we intend to do. The DOCX experiment report records what actually happened.
+
+Never rewrite an experiment report to make an experiment look cleaner than it was.
+
+## **15. Initial Repository Structure**
+
+The original development plan proposed:
 
 ```
 caspian/
@@ -503,1215 +630,2147 @@ caspian/
 │   └── baselines.py
 │
 ├── experiments/
-│
 ├── analysis/
-│
 ├── docs/
 │   └── experiments/
-│
 ├── configs/
-│
 ├── checkpoints/
-│
 ├── logs/
-│
 └── tests/
 ```
 
----
+This is an initial design proposal, not a claim about the current repository.
 
-# 18. Experiment Naming
+The actual repository should evolve without silently deleting or losing existing experiment artifacts.
 
-Every experiment receives a permanent identifier.
+## **16. Initial Technology Stack**
 
-Example:
+Use the simplest technology capable of answering the current research question.
 
-```
-CSP-P1-E001
-CSP-P1-E002
-CSP-P1-E003
-```
+The original starting stack:
 
-Format:
-
-```
-CSP-P<phase>-E<experiment>
-```
-
-Example:
-
-```
-CSP-P1-E001
-```
-
-means:
-
-Caspian, Phase 1, Experiment 001.
-
-If an experiment is repeated with different seeds:
-
-```
-CSP-P1-E001-S01
-CSP-P1-E001-S02
-CSP-P1-E001-S03
-```
-
----
-
-# 19. Experiment Artifact Structure
-
-Each experiment should produce:
-
-```
-experiments/
-└── CSP-P1-E001/
-    ├── config.yaml
-    ├── README.md
-    ├── commands.txt
-    ├── results.json
-    ├── metrics.csv
-    ├── logs/
-    ├── checkpoints/
-    ├── plots/
-    └── report.docx
-```
-
-The report.docx is generated after the experiment.
-
-It is not the project plan.
-
----
-
-# 20. Mandatory Experiment DOCX
-
-After every meaningful experiment, generate a DOCX.
-
-The document title should contain:
-
-```
-CASPIAN EXPERIMENT REPORT
-CSP-P1-E001
-```
-
-The report must contain the following.
-
-## 20.1 Experiment identity
-
-- Experiment ID
-- Date
-- Phase
-- Git commit
-- Configuration version
-- Researcher
-- Agent/coding model used, if applicable
-
-## 20.2 Research question
-
-What are we trying to discover?
-
-## 20.3 Hypothesis
-
-What do we expect?
-
-## 20.4 Null hypothesis
-
-What would count as evidence that the learning mechanism did not provide meaningful improvement?
-
-## 20.5 Environment
-
-Document:
-
-- dimensions
-- entities
-- hidden rules
-- state variables
-- transition rules
-- observation function
-- action space
-- termination conditions.
-
-## 20.6 Semantic firewall audit
-
-Document exactly what the agent could and could not know.
-
-## 20.7 Model
-
-Document:
-
-- architecture
-- layers
-- parameter count
-- activation functions
-- memory
-- policy
-- prediction head.
-
-## 20.8 Mathematics
-
-Show:
-
-- state equations
-- observation equations
-- prediction equations
-- loss
-- optimization rule.
-
-## 20.9 Training
-
-Document:
-
-- optimizer
-- learning rate
-- batch size
-- number of episodes
-- interaction count
-- random seeds
-- hardware
-- software versions.
-
-## 20.10 Commands
-
-Record the exact commands used.
-
-## 20.11 Results
-
-Include:
-
-- raw numbers
-- tables
-- graphs
-- baseline comparisons.
-
-## 20.12 Failures
-
-Record every important failure.
-
-Do not hide failed experiments.
-
-## 20.13 Unexpected behavior
-
-Document anything surprising.
-
-Examples:
-
-- strange movement
-- unstable learning
-- repeated behavior
-- exploitation of environment bugs
-- unexpected correlations
-- degenerate strategies.
-
-## 20.14 Debugging history
-
-Record:
-
-```
-Problem
-→ hypothesis about cause
-→ change
-→ test
-→ result
-```
-
-## 20.15 Interpretation
-
-Separate:
-
-**Evidence** — What was actually observed?
-
-**Interpretation** — What might explain it?
-
-**Alternative explanations** — What else could produce the same result?
-
-## 20.16 Limitations
-
-What does this experiment fail to establish?
-
-## 20.17 Conclusion
-
-Use explicit categories:
-
-- SUPPORTED
-- PARTIALLY SUPPORTED
-- NOT SUPPORTED
-- INCONCLUSIVE
-
-Do not force a positive conclusion.
-
-## 20.18 Next step
-
-The next experiment must be justified by evidence from the current experiment.
-
----
-
-# 21. Phase Roadmap
-
-The project progresses through phases.
-
-```
-PHASE 0
-Research & Reproducibility Foundation
-        ↓
-PHASE 1
-Predictive Interaction
-        ↓
-PHASE 2
-Memory & Persistence
-        ↓
-PHASE 3
-Generalization
-        ↓
-PHASE 4
-World Model
-        ↓
-PHASE 5
-Emergent Categories
-        ↓
-PHASE 6
-Rule Change & Adaptation
-        ↓
-PHASE 7
-Causal Experimentation
-        ↓
-PHASE 8
-Novel Worlds
-        ↓
-PHASE 9
-Scale Study
-```
-
-A phase cannot be advanced merely because the calendar says so.
-
-Progress must be evidence-based.
-
----
-
-# 22. PHASE 0 — Research & Safety Foundation
-
-## Goal
-
-Build the smallest reproducible experimental infrastructure.
-
-## Tasks
-
-- Create repository.
-- Implement deterministic 2D environment.
-- Implement Caspian placeholder.
-- Implement observation interface.
-- Implement action interface.
-- Implement environment transition system.
-- Implement reset.
-- Implement random baseline.
-- Implement scripted/oracle baseline.
-- Implement trajectory recording.
-- Implement configuration files.
-- Implement deterministic seeds.
-- Implement unit tests.
-- Implement experiment logging.
-
-## Required tests
-
-Test:
-
-- movement
-- boundaries
-- collision
-- interaction
-- energy/state changes
-- reset
-- deterministic seeds
-- observation generation
-- action validity.
-
-## Phase 0 exit criteria
-
-Phase 0 is complete only when:
-
-- the environment is deterministic under a fixed seed
-- the oracle behaves according to the known rules
-- the random baseline runs
-- trajectories can be saved
-- experiments can be reproduced
-- tests pass
-- configuration is externalized
-- a new developer can run the baseline experiment.
-
-## Required Phase 0 report
-
-Generate:
-
-```
-CSP-P0-E001.docx
-```
-
-documenting what was actually built and tested.
-
----
-
-# 23. PHASE 1 — Predictive Interaction
-
-## Goal
-
-Demonstrate that a small agent can learn an unlabeled environmental relationship from experience.
-
-## Example hidden rule
-
-```
-interaction with X
-→
-energy changes
-```
-
-The exact relationship may be changed between experiments.
-
-The agent should not receive the semantic explanation.
-
----
-
-# 24. Phase 1 Agent
-
-Initial agent:
-
-```
-Observation
-     ↓
-Encoder
-     ↓
-Internal state
-     ↓
-Prediction / policy
-     ↓
-Action
-```
-
-Keep the model small.
-
-A possible first network:
-
-$$ h_1=\sigma(W_1O_t+b_1) $$
-
-$$ S_t=\sigma(W_2h_1+b_2) $$
-
-Prediction:
-
-$$ \hat O_{t+1}=W_3S_t+b_3 $$
-
-No Transformer is required.
-
----
-
-# 25. Phase 1 Experiments
-
-**CSP-P1-E001 — Can Caspian learn?**
-
-Question: Can Caspian predict the relevant environmental change better than a trivial baseline?
-
-**CSP-P1-E002 — Does it beat persistence?**
-
-Compare Caspian against the Persistence baseline.
-
-If Caspian cannot beat a trivial predictor, complexity should not increase.
-
-**CSP-P1-E003 — Does position matter?**
-
-Change entity positions.
-
-Test whether the agent learns a relationship that depends on spatial conditions.
-
-**CSP-P1-E004 — Does experience matter?**
-
-Compare untrained vs trained.
-
-Measure performance as experience increases.
-
-**CSP-P1-E005 — Is learning reproducible?**
-
-Run multiple seeds.
-
-Example: seed 1, seed 2, seed 3, seed 4, seed 5.
-
-Report variance.
-
-**CSP-P1-E006 — Semantic leakage audit**
-
-Remove or modify potential information channels.
-
-Test whether performance depends on accidental labels or hidden state information.
-
----
-
-# 26. Phase 1 Metrics
-
-Primary:
-
-- prediction error
-- held-out prediction error
-- learning curve
-- sample efficiency
-- baseline gap.
-
-Secondary:
-
-- representation similarity
-- action-outcome prediction
-- adaptation to unseen positions
-- performance variance across seeds.
-
----
-
-# 27. Phase 1 Success Conditions
-
-Phase 1 is considered successful only if evidence supports all or most of the following:
-
-- Caspian learns from experience.
-- Performance improves beyond an untrained agent.
-- Caspian beats relevant trivial baselines.
-- The result survives held-out evaluation.
-- The result is reproducible across seeds.
-- No major semantic leakage explains the result.
-- The learned behavior cannot be explained by a simpler accidental mechanism.
-
-The last condition is particularly important.
-
----
-
-# 28. Phase 1 Failure Conditions
-
-Failure is scientifically useful.
-
-Possible failure:
-
-- Caspian ≈ random
-- or Caspian ≈ persistence baseline
-- or training performance ↑ but held-out performance ↓
-- or only one random seed works
-- or performance disappears after removing a leaked feature.
-
-These are results, not embarrassments.
-
----
-
-# 29. PHASE 2 — Memory & Persistence
-
-## Goal
-
-Determine whether Caspian can retain information across time.
-
-The agent should encounter situations where current observations alone are insufficient.
-
-For example:
-
-```
-Observation at t=1
-        ↓
-Important event
-        ↓
-Observation at t=2
-        ↓
-Correct prediction requires remembering t=1
-```
-
-Potential architectures:
-
-- recurrent networks
-- gated memory
-- explicit memory
-- state-space models.
-
-Questions:
-
-- What information is retained?
-- For how long?
-- Does memory improve prediction?
-- Does memory produce useful internal state?
-
----
-
-# 30. PHASE 3 — Generalization
-
-## Goal
-
-Determine whether Caspian learns rules rather than memorizing configurations.
-
-Test:
-
-- new positions
-- new layouts
-- new trajectories
-- new entity appearances
-- new combinations of known properties.
-
-Core question: Does Caspian learn a reusable relationship?
-
----
-
-# 31. PHASE 4 — World Model
-
-The project moves from simple prediction toward a learned model of environmental dynamics.
-
-The agent should estimate:
-
-$$ P(E_{t+1}|E_t,A_t) $$
-
-or an internal approximation.
-
-The world model can be used to simulate possible futures:
-
-$$ \hat E_{t+1} \rightarrow \hat E_{t+2} \rightarrow \hat E_{t+3} \rightarrow \cdots $$
-
-This introduces planning.
-
----
-
-# 32. PHASE 5 — Emergent Categories
-
-This is one of the central research phases.
-
-Instead of giving Caspian categories such as food, danger, tool, enemy, resource — we create environmental regularities.
-
-Different entities may have different functional consequences.
-
-Caspian may develop internal distinctions that correlate with those regularities.
-
-We then investigate:
-
-Does the agent's internal representation contain structure corresponding to useful environmental categories that were never explicitly provided?
-
-Important: Do not automatically call these discovered structures "concepts."
-
-The experiment must define measurable criteria for category discovery.
-
----
-
-# 33. Possible Category-Discovery Tests
-
-A candidate internal category should ideally satisfy several properties.
-
-**Predictiveness** — It should help predict future states.
-
-**Stability** — It should remain meaningful across time.
-
-**Generalization** — It should apply to unseen instances.
-
-**Compression** — It should summarize multiple observations efficiently.
-
-**Intervention sensitivity** — Changing the relevant environmental property should affect the representation.
-
-**Behavioral relevance** — The representation should help produce better predictions or actions.
-
----
-
-# 34. PHASE 6 — Rule Change & Adaptation
-
-Change the world's rules.
-
-Example:
-
-Before: X → energy increases
-
-Later: X → energy decreases
-
-Question: Can Caspian detect that its existing model is wrong and adapt?
-
-Measure:
-
-- detection time
-- adaptation speed
-- catastrophic forgetting
-- transfer
-- old-model persistence
-- new-model learning.
-
----
-
-# 35. PHASE 7 — Causal Experimentation
-
-Move beyond observation.
-
-Caspian should actively intervene.
-
-Instead of merely observing X, it can:
-
-- approach X
-- interact with X
-- move away from X
-- repeat interaction
-- compare outcomes
-
-The agent can effectively conduct experiments.
-
-The research question becomes: Can an artificial agent discover causal structure by selecting interventions?
-
----
-
-# 36. PHASE 8 — Novel Worlds
-
-Introduce worlds that Caspian has never seen.
-
-Change:
-
-- geometry
-- entity appearance
-- dynamics
-- environmental rules
-- resource distributions
-- action consequences.
-
-The purpose is to test whether learned representations transfer.
-
----
-
-# 37. PHASE 9 — Scale Study
-
-Only after the smaller experiments are understood should we investigate scale.
-
-Variables could include:
-
-- model size
-- memory capacity
-- observation richness
-- world complexity
-- action-space complexity
-- training data
-- number of entities.
-
-The question becomes: Which capabilities emerge as environmental complexity and model capacity increase?
-
-Scaling is an experiment, not a default strategy.
-
----
-
-# 38. What Would Count as Strong Evidence?
-
-The strongest evidence would be a chain:
-
-```
-Agent receives raw/neutral observations
-        ↓
-Agent interacts with environment
-        ↓
-Agent predicts environmental consequences
-        ↓
-Prediction improves through experience
-        ↓
-Agent generalizes to unseen situations
-        ↓
-Agent adapts when rules change
-        ↓
-Internal representations contain stable
-predictive structure
-        ↓
-Agent can use that structure for intervention
-and causal discovery
-```
-
-Even this would not automatically establish consciousness.
-
-It would provide evidence about learned world representation and adaptive intelligence.
-
----
-
-# 39. Claims We Must Not Make Without Evidence
-
-Do not claim "Caspian understands." unless the experiment defines and tests understanding.
-
-Do not claim "Caspian developed concepts." unless measurable criteria for concept formation have been satisfied.
-
-Do not claim "Caspian is conscious." because adaptive behavior or internal representation alone does not establish subjective experience.
-
-Do not claim "Caspian discovered intelligence." Intelligence is multidimensional.
-
-Do not claim "The system discovered reality." It discovered structure in the artificial environment.
-
-Do not claim "The model works." without defining what "works" means, compared with what, under which conditions, with what statistical evidence.
-
----
-
-# 40. Reproducibility Rules
-
-Every experiment must record:
-
-- code version
-- Git commit
-- configuration
-- environment version
-- model architecture
-- parameter count
-- seed
-- hardware
-- software versions
-- training duration
-- number of interactions
-- hyperparameters
-- dataset/trajectory version
-- evaluation procedure.
-
-A future researcher should be able to reconstruct the experiment.
-
----
-
-# 41. Experiment Integrity Rules
-
-- Never delete failed experiments.
-- Never overwrite raw results.
-- Never silently change a configuration.
-- Never change the hypothesis after seeing the result without recording the change.
-- Never hide an unexpected behavior.
-- Never interpret a single run as definitive evidence.
-- Never introduce semantic labels accidentally.
-- Never increase complexity simply because the current experiment failed.
-- Never optimize only for a desired result.
-- Always preserve the original evidence.
-
----
-
-# 42. Debugging vs Experimentation
-
-Separate:
-
-**Engineering debugging** — Example: IndexError. Fix it.
-
-**Scientific experimentation** — Example: Agent predicts poorly. Do not immediately modify everything.
-
-First ask:
-
-- Is the observation sufficient?
-- Is the target predictable?
-- Is the baseline strong?
-- Is the model capable?
-- Is the learning signal correct?
-- Is there leakage?
-- Is the environment stochastic?
-- Is the hypothesis wrong?
-
-A failed experiment may reveal that the hypothesis is wrong.
-
----
-
-# 43. Definition of Done
-
-A task is not done because code exists.
-
-It is done when:
-
-- capability implemented
-- tests written
-- tests passed
-- experiment executed
-- baseline compared
-- raw results preserved
-- results analyzed
-- limitations documented
-- experiment DOCX generated
-- next step justified.
-
----
-
-# 44. Phase Completion Rule
-
-A phase can only be marked complete when:
-
-```
-Implementation
-+
-Tests
-+
-Experiment
-+
-Baseline
-+
-Evaluation
-+
-Reproducibility
-+
-Documentation
-+
-Scientific interpretation
-```
-
-are complete.
-
-The phase report must answer: What did we learn? — not merely: What did we build?
-
----
-
-# 45. Agent-Driven Development Prompt Structure
-
-When delegating work to a coding agent, use:
-
-```
-PROJECT:
-Caspian
-
-PHASE:
-[phase number]
-
-TASK:
-[exact task]
-
-RESEARCH PURPOSE:
-[why this task exists]
-
-CONTEXT:
-[relevant existing system]
-
-CONSTRAINTS:
-[technical/scientific constraints]
-
-SEMANTIC FIREWALL:
-[what information must not be exposed]
-
-ACCEPTANCE TESTS:
-[exact tests]
-
-EXPERIMENT:
-[what should be run]
-
-REQUIRED OUTPUTS:
-[files/results]
-
-DOCUMENTATION:
-[what must be recorded]
-
-DO NOT:
-[forbidden shortcuts]
-
-REPORT:
-At the end, report:
-1. Files changed
-2. Tests run
-3. Tests passed/failed
-4. Commands used
-5. Experiment results
-6. Unexpected behavior
-7. Assumptions
-8. Limitations
-9. Recommended next step
-```
-
----
-
-# 46. Initial Technology Principle
-
-Use the simplest technology that can answer the current research question.
-
-Initial stack can be:
-
-- Python
-- NumPy
-- PyTorch
-- Matplotlib
-- pytest
-- Git
+- Python;
+- NumPy;
+- PyTorch;
+- Matplotlib;
+- pytest;
+- Git;
 - YAML/JSON configuration.
 
-Do not introduce:
+Do not introduce distributed training, large language models, complex simulators, unnecessary databases, or cloud infrastructure until an experiment requires them.
 
-- distributed training
-- large language models
-- complex simulators
-- unnecessary databases
-- cloud infrastructure
+Early experiments should remain small enough to run locally.
 
-until the experiment requires them.
+Scientific control and interpretability take priority over computational scale.
 
----
+## **17. Debugging and Scientific Discipline**
 
-# 47. Suggested Initial Hardware Strategy
+Separate engineering defects from scientific outcomes.
 
-The first experiments should be small enough to run locally.
+**Engineering debugging**
 
-The goal is not computational scale.
+A reproducible implementation defect, such as an incorrect tensor shape or indexing error, should be fixed and tested.
 
-The goal is scientific control and interpretability.
+**Scientific experimentation**
 
-A tiny experiment that can be understood completely is more valuable at this stage than a huge experiment that cannot be explained.
+Poor prediction, unstable learning, or failed generalisation must not trigger indiscriminate changes to the model.
 
----
+Before changing a scientific design, ask:
 
-# 48. Scientific Progression
+1. Is the observation sufficient?
+2. Is the target predictable from the available information?
+3. Is the baseline strong?
+4. Is the model capable of representing the relationship?
+5. Is the learning signal correct?
+6. Is there semantic leakage?
+7. Is the environment stochastic?
+8. Could the hypothesis itself be wrong?
 
-The project should gradually move through:
+A failed experiment may reveal a false hypothesis rather than a coding defect.
 
-```
-Prediction
-   ↓
-Memory
-   ↓
-Generalization
-   ↓
-World Modeling
-   ↓
-Representation
-   ↓
-Category Discovery
-   ↓
-Adaptation
-   ↓
-Causal Reasoning
-   ↓
-Novel Environments
-```
+## **18. Definition of Done**
 
-Each stage depends on evidence from the previous stage.
+A development task is not complete merely because code exists.
 
----
+It is complete when:
 
-# 49. Potential Long-Term Applications
+- the capability is implemented;
+- tests are written and passed;
+- the experiment is executed;
+- baselines are compared;
+- raw results are preserved;
+- results are analysed;
+- limitations are documented;
+- the DOCX report is generated;
+- the next step is justified.
 
-If the research eventually demonstrates strong learned world representations, the ideas could contribute to:
+A phase requires implementation, testing, experimentation, baseline comparison, evaluation, reproducibility, documentation, and scientific interpretation.
 
-- scientific discovery
-- robotics
-- autonomous systems
-- engineering
-- simulation
-- drug discovery
-- climate modeling
-- manufacturing
-- space exploration
-- cybersecurity
-- scientific AI
-- adaptive control
-- autonomous experimentation.
+The phase review must answer:
 
-But artificial-world success does not automatically transfer to real-world environments.
+> What did we learn?
 
-Transfer must be tested separately.
+Not merely:
 
----
+> What did we build?
 
-# 50. The Deeper Research Direction
+# **PART V — EXPERIMENTAL HISTORY: PHASES 0–12**
 
-The long-term idea can be summarized as:
+The following sections record the research progression and available findings.
 
-**Traditional AI**
+The results should be reconciled against the original experiment reports and raw artifacts before being used in a formal publication.
 
-```
-Human knowledge
-      ↓
-Representation
-      ↓
-Model
-      ↓
-Prediction
-```
+## **19. Phase 0 — Research and Safety Foundation**
 
-**Caspian investigates:**
+**Central question:** Can we establish a controlled, deterministic artificial environment in which learning experiments can be conducted and reproduced?
 
-```
-Artificial world
-      ↓
-Perception
-      ↓
-Interaction
-      ↓
-Prediction
-      ↓
-Internal representation
-      ↓
-Category formation
-      ↓
-World model
-      ↓
-Experimentation
-      ↓
-New knowledge
-```
+### **Objectives**
 
-This is the conceptual direction of the project.
+- Create a small artificial 2D world.
+- Establish an agent and environment interface.
+- Define observations and actions.
+- Implement environmental state transitions.
+- Establish deterministic execution.
+- Create tests for the environment.
+- Implement the semantic firewall.
+- Establish random-seed control.
 
----
+### **Initial environment**
 
-# 51. The Consciousness Question
+- Grid: 5 × 5.
+- Agent starting position: (0,0).
+- Unknown entity X: (2,2).
+- Initial internal state: 100.
+- Step penalty: 1.
+- Interaction radius: 1.
+- Hidden entity state modifier: +10.
+- Random seed: 42.
 
-The project may eventually raise a deeper question:
+The environment may internally know the function of entity X, but the agent must not automatically receive that information.
 
-If an artificial system develops increasingly sophisticated models of the world and itself, what does that imply about consciousness?
+### **CSP-P0-E001 findings**
 
-At present, the answer is unresolved.
+- Determinism verified.
+- 100% bitwise trajectory reproducibility.
+- Semantic firewall audited and active.
+- Zero recorded semantic leakages.
+- 29/29 unit tests passed across 12 acceptance criteria.
 
-A system may demonstrate self-modeling, prediction, memory, planning, adaptation, communication, self-preservation behavior — without this establishing subjective experience.
-
-Therefore:
+Trajectory SHA-256:
 
 ```
-Behavior
-≠
-Subjective experience
+ce150a820737511f8fcaa727c87701e423caa9e70b5e7be6155e85a057957b0b
 ```
 
-This distinction must remain explicit throughout the project.
+### **Baseline observations**
 
----
+Across five seeds and 50 steps:
 
-# 52. Safety and Research Boundaries
+| Metric                  | Random | Oracle |
+| ----------------------- | ------ | ------ |
+| Average final energy    | 64.0   | 100    |
+| Cumulative energy delta | -36.0  | 0      |
+| Successful interactions | 1.4    | 47     |
+| Collisions              | 6.0    | 0      |
 
-The initial project should remain sandboxed.
+### **Interpretation**
 
-Requirements:
+Phase 0 established a deterministic and reproducible experimental environment.
 
-- isolated artificial environment
-- controlled actions
-- human-controlled shutdown
-- reproducible experiments
-- no uncontrolled external-world actions
-- no autonomous replication
-- no unrestricted network access
-- persistent experiment logs.
+It did not establish learning or intelligence.
 
-The initial research objective is understanding learned representations, not creating an uncontrolled autonomous system.
+**Status:** Foundation established.
 
----
+## **20. Phase 1 — Predictive Interaction**
 
-# 53. Final Research Standard
+**Central question:** Can Caspian learn useful environmental regularities from observations and actions without receiving human semantic labels?
 
-Every major claim should answer:
+### **Objectives**
 
-- What exactly happened?
-- What evidence supports it?
-- What baseline was used?
-- Could a simpler explanation account for it?
-- Did the result generalize?
-- Was it reproducible?
-- Was there semantic leakage?
-- What remains unknown?
-- What experiment would distinguish competing explanations?
+- Build an initial predictive neural model.
+- Learn relationships between observations, actions, and future environmental states.
+- Compare against non-learning baselines.
+- Evaluate generalisation to unseen trajectories and entity positions.
+- Investigate sample efficiency.
 
----
+### **Evaluation**
 
-# 54. First Milestone
+Initial experiment:
 
-The first scientific milestone is intentionally small:
+- 600 exploratory training steps.
+- 200 independent held-out evaluation steps.
 
-Caspian learns a meaningful environmental relationship from interaction without being given its human semantic label.
+### **Held-out results**
 
-If this fails, investigate why.
+| Model                 | MSE       | RMSE   | MAE    | R²      |
+| --------------------- | --------- | ------ | ------ | ------- |
+| Caspian PredictiveMLP | 2.363496  | 1.5374 | 0.6142 | 0.6026  |
+| Persistence           | 6.02      | 2.4536 | 1.53   | -0.0123 |
+| Reactive              | 6.050569  | 2.4598 | 1.0567 | -0.0174 |
+| Random                | 38.986277 | 6.2439 | 5.4163 | -5.5555 |
 
-If it succeeds, do not immediately declare victory.
+### **Extended findings**
 
-Ask: Did Caspian actually learn a general relationship, or did we accidentally make the answer easy?
+- Eight-seed mean R²: 0.4430.
+- Reproducibility: 100%.
+- Generalisation to unseen entity positions was reported.
 
-Then design the next experiment.
+### **Sample efficiency findings**
 
----
+| Training steps | MSE    | R²      |
+| -------------- | ------ | ------- |
+| 25             | 206.99 | -112.55 |
+| 50             | 40.41  | -21.17  |
+| 100            | 1.92   | -0.0536 |
+| 250            | 1.71   | 0.060   |
+| 500            | 2.22   | -0.2197 |
+| 1000           | 0.2189 | 0.8799  |
 
-# 55. Immediate Development Order
+The training curve was non-monotonic.
 
-The project should begin in this order:
+Removing action information or entity proximity degraded prediction accuracy.
 
-1. Repository
-2. Environment
-3. Deterministic simulation
-4. Observation interface
-5. Action interface
-6. Random baseline
-7. Oracle baseline
-8. Tests
-9. Experiment logger
-10. First predictive model
-11. Training loop
-12. Evaluation
-13. First experiment
-14. Experiment DOCX
-15. Analysis
-16. Phase decision
+Latent clustering was also reported between functional interactions and ordinary spatial transitions.
 
-Do not skip directly to a sophisticated agent.
+### **Interpretation**
 
----
+The findings support predictive learning under the tested conditions.
 
-# 56. First Experiment Contract
+However:
 
-The first actual learning experiment should have a precise contract.
+- prediction does not establish understanding;
+- clustering does not establish concept formation;
+- the non-monotonic learning curve requires further investigation;
+- more training data should not automatically be assumed to improve performance.
 
-**Input** — Neutral environmental observations.
+**Status:** Predictive learning supported within the tested setup.
 
-**Interaction** — Agent can move and interact.
+## **21. Phase 2 — Memory and Temporal Persistence**
 
-**Hidden rule** — An environmental interaction changes a measurable state variable.
+**Central question:** Can Caspian use information from previous observations when the current observation alone is insufficient?
 
-**Learning objective** — Predict the resulting environmental change.
+### **Research motivation**
 
-**Baselines** — random, persistence, reactive.
+A memoryless model estimates:
 
-**Evaluation** — Held-out trajectories and multiple seeds.
+\\[ P(O\_{t+1}\mid O_t,A_t) \\]
 
-**Documentation** — Generate a complete DOCX experiment report.
+A model with temporal information estimates:
 
-**Decision** — Only after analysis decide whether Phase 1 continues, is revised, or stops.
+\\[ P(O\_{t+1}\mid O\_{\leq t},A\_{\<t}) \\]
 
----
+The second formulation allows the model to use information accumulated across previous interactions.
 
-# 57. Project Philosophy
+### **Objectives**
 
-The project follows five principles:
+- Introduce temporal dependencies.
+- Compare memoryless and recurrent architectures.
+- Test whether historical observations improve prediction.
+- Introduce delayed environmental effects.
+- Evaluate memory under different delay lengths.
+- Test generalisation to unseen delays.
+- Ensure hidden state resets correctly between episodes.
 
-1. **Build small.** Small systems reveal causality.
-2. **Measure everything.** Memory is not enough; preserve evidence.
-3. **Challenge your own result.** Try to disprove the hypothesis.
-4. **Earn complexity.** Every new component needs a reason.
-5. **Let the experiment speak.** Do not make the experiment agree with the idea.
+### **Proposed comparisons**
 
----
+- Feedforward model without persistent memory.
+- Recurrent neural network.
+- GRU-based model.
+- Persistence baseline.
 
-# 58. Final North Star
+### **Important experimental requirement**
 
-Caspian is not primarily a software product. It is an experimental instrument for investigating how artificial agents can construct representations of worlds.
+Hidden state must be reset at episode boundaries.
 
-The first world will be tiny.
+Otherwise, information from one episode may leak into another and invalidate the evaluation.
 
-The first model will be tiny.
+### **Historical evidence note**
 
-The first experiment will be tiny.
+The available project history contains later recurrent-model results from Phase 3, including delayed-dependency and temporal generalisation findings.
 
-That is intentional.
+However, the complete Phase 2 numerical report is not available in the current consolidated source material.
 
-The objective is to create a chain of experiments where every increase in complexity is justified by something learned from the previous experiment.
+Its exact metrics and hypothesis verdicts must be reconciled against the primary Phase 2 report.
 
-The project should therefore progress:
+**Status:** Temporal-memory research initiated; full Phase 2 numerical record requires reconciliation.
+
+## **22. Phase 3 — Spatial, Structural and Multi-Entity Generalisation**
+
+**Central question:** Can Caspian learn predictive structures that generalise beyond the exact positions and configurations encountered during training?
+
+### **Objectives**
+
+- Test unseen entity positions.
+- Compare recurrent and feedforward architectures.
+- Expand grid dimensions.
+- Introduce multiple entities.
+- Test delayed environmental effects.
+- Evaluate performance across independent seeds.
+
+### **E001 — Unseen entity positions**
+
+Five unseen positions were tested.
+
+| Test | GRU MSE  | Matched MLP MSE |
+| ---- | -------- | --------------- |
+| 1    | 0.708142 | 5.097081        |
+| 2    | 0.553643 | 9.9082          |
+| 3    | 1.609726 | 6.570701        |
+| 4    | 3.567075 | 10.876487       |
+| 5    | 3.223729 | 13.388822       |
+
+Mean reported GRU advantage: 79.83%.
+
+Five out of five tests passed.
+
+### **E002 — Grid generalisation**
+
+The environment was expanded from 5 × 5 to:
+
+- 7 × 7;
+- 10 × 10.
+
+Reported GRU advantages over matched MLP:
+
+- 82.74%;
+- 85.38%.
+
+### **E003 — Multi-entity delayed interactions**
+
+Two entities with delays of 1 and 3 were introduced.
+
+| Model | MSE      |
+| ----- | -------- |
+| GRU   | 2.351358 |
+| MLP   | 4.952039 |
+
+Reported GRU advantage: 52.52%.
+
+### **E004 — Eight-seed evaluation**
+
+Mean combined advantage: 68.91%.
+
+Standard deviation: 10.85%.
+
+Win rate: 8/8.
+
+The multi-entity results varied substantially across seeds:
+
+| Seed | Reported advantage |
+| ---- | ------------------ |
+| 5    | 95.10%             |
+| 2    | 89.23%             |
+| 7    | 81.05%             |
+| 8    | 75.21%             |
+| 3    | 63.20%             |
+| 4    | 65.94%             |
+| 1    | 34.05%             |
+| 6    | 4.24%              |
+
+### **E005 — Acceptance criteria**
+
+Six out of six criteria were reported as passed.
+
+The criteria covered:
+
+- spatial generalisation;
+- layout generalisation;
+- multi-entity performance;
+- eight-seed reproducibility;
+- episode-reset correctness;
+- semantic-firewall compliance.
+
+Episode reset: 100%.
+
+Firewall violations: zero across 100 transitions.
+
+### **Interpretation**
+
+The findings support recurrent predictive mechanisms under the tested spatial and temporal conditions.
+
+However, multi-entity robustness varied considerably.
+
+The findings do not establish human-like concepts, reasoning, or general intelligence.
+
+**Status:** Spatial and structural generalisation supported within tested environments.
+
+## **23. Phase 4 — World Model, Counterfactual Prediction and Planning**
+
+**Central question:** Can Caspian internally model environmental dynamics and simulate the outcomes of possible actions?
+
+### **Research progression**
+
+The research moves beyond predicting only the next observation.
+
+The intended progression is:
+
+1. One-step prediction.
+2. Multi-step prediction.
+3. Counterfactual prediction.
+4. Model-based planning.
+5. Closed-loop action execution.
+
+### **Objectives**
+
+- Learn action-conditioned environmental dynamics.
+- Predict future states.
+- Simulate alternative actions.
+- Evaluate predicted consequences.
+- Select actions using the learned model.
+- Compare model-based planning with reactive approaches.
+
+### **Historical findings**
+
+The available experiment summary records:
+
+- Counterfactual tests for \\(k=1\\) through \\(k=5\\).
+- Mean reported improvement: 2.56%.
+- Planning reward delta: +75.
+- Eight out of eight seeds.
+
+The full primary report should be checked before using these figures as formal evidence.
+
+### **Scientific cautions**
+
+A model may produce good one-step predictions while accumulating errors during long rollouts.
+
+A planning system may achieve high reward by exploiting weaknesses in its learned model or the simulator.
+
+A counterfactual prediction is not automatically evidence of causal understanding.
+
+### **Interpretation**
+
+Phase 4 introduced the investigation of internal predictive models and action selection.
+
+The important architectural progression is:
+
+\\[ \text{Perceive} \rightarrow \text{Learn Regularities} \rightarrow \text{Internal Model} \rightarrow \text{Predict} \rightarrow \text{Act} \rightarrow \text{Observe Again} \\]
+
+**Status:** Preliminary world-model and planning evidence; primary report reconciliation required.
+
+## **24. Phase 5 — Emergent Functional Structure and Continuous Properties**
+
+**Central question:** Can Caspian develop useful functional representations that generalise across continuous environmental properties?
+
+### **Objectives**
+
+- Introduce continuous environmental properties.
+- Evaluate representations across changing property values.
+- Investigate functional clustering.
+- Test generalisation beyond observed configurations.
+- Evaluate whether representations support actual behaviour.
+
+### **Historical findings**
+
+The available summary records:
+
+- 83.99% mean behavioural accuracy.
+- 100% functional-cluster assignment across five seeds.
+
+The findings were reported for zero-shot generalisation over continuous environmental properties.
+
+### **Interpretation**
+
+These results are promising evidence of functional representation under the tested conditions.
+
+However:
+
+- clustering does not prove concept formation;
+- functional grouping does not prove autonomous ontology discovery;
+- behavioural accuracy must be interpreted relative to the exact task and baselines.
+
+The complete Phase 5 report should be reconciled before making stronger claims.
+
+**Status:** Promising functional representation evidence; not proof of ontology.
+
+## **25. Phase 6 — Compositional and Causal World Structure**
+
+**Central question:** Can Caspian learn how multiple environmental properties combine and influence outcomes?
+
+### **Objectives**
+
+- Introduce multiple environmental properties.
+- Test independent and interacting effects.
+- Investigate unseen property combinations.
+- Examine causal dependencies.
+- Evaluate compositional generalisation.
+- Test whether the model can distinguish relevant from irrelevant information.
+
+### **Research direction**
+
+The phase investigates the difference between learning individual environmental regularities and learning how those regularities combine.
+
+For example, a model might predict the effect of property A and property B independently but fail when both occur together.
+
+The important question is whether the model has learned reusable structure or merely memorised observed combinations.
+
+### **Evidence note**
+
+The complete primary numerical report for Phase 6 is not available in the consolidated source material.
+
+Later Phase 10–12 experiments provide more specific evidence about compositional generalisation and architectural inductive bias, but their findings should not be retroactively attributed to Phase 6.
+
+**Status:** Research direction established; definitive Phase 6 verdict requires primary report reconciliation.
+
+## **26. Phase 7 — Causal Interventions**
+
+**Central question:** Can Caspian distinguish observational relationships from causal relationships through controlled interventions?
+
+### **Objectives**
+
+- Introduce controlled interventions.
+- Change environmental variables independently.
+- Observe resulting state transitions.
+- Compare observational and intervention-based predictions.
+- Evaluate whether learned relationships survive changes in correlated variables.
+
+### **Historical issue**
+
+A Phase 7 experiment, E001, had a reproducibility problem.
+
+Episodes began with internal state fixed at 100.
+
+Reported reproducibility was 22.5%.
+
+This issue must remain visible in the historical record.
+
+It must not be hidden by reporting only later corrected experiments.
+
+### **Interpretation**
+
+A causal claim requires more than correlation or predictive accuracy.
+
+The experiment must establish that the model can predict the consequences of controlled changes and distinguish those consequences from merely associated variables.
+
+The available summary is insufficient to claim successful causal structure recovery.
+
+**Status:** Causal research conducted; successful causal discovery not established.
+
+## **27. Phase 8 — Novel Worlds and Environmental Properties**
+
+**Central question:** Can Caspian learn when environmental properties and rules change in unfamiliar worlds?
+
+### **Objectives**
+
+- Introduce novel environments.
+- Test hypotheses H2 and H3.
+- Investigate how the model responds to changes in environmental properties.
+- Separate familiar structure from new environmental information.
+- Test adaptation and transfer.
+
+### **Historical development**
+
+Experiment E002 introduced an appearance-property channel.
+
+This expanded the environmental observation design and created another dimension for investigating how the agent represents environmental information.
+
+### **Evidence note**
+
+The exact numerical outcomes and full hypothesis verdicts are not available in the current consolidated source material.
+
+They must be reconciled against the original Phase 8 report.
+
+**Status:** Novel-world research initiated; full findings require primary report reconciliation.
+
+## **28. Phase 9 — Scaling Study**
+
+**Central question:** How do model capacity, training data, and environmental complexity affect predictive learning and generalisation?
+
+### **Objectives**
+
+- Investigate model size.
+- Investigate training-data budgets.
+- Increase environmental complexity.
+- Measure in-distribution performance.
+- Measure unseen-position generalisation.
+- Identify capacity and data bottlenecks.
+
+### **E001 experimental design**
+
+Six model sizes:
 
 ```
-WORLD
-→
-OBSERVATION
-→
-ACTION
-→
-FEEDBACK
-→
-PREDICTION
-→
-LEARNING
-→
-REPRESENTATION
-→
-GENERALIZATION
-→
-ADAPTATION
-→
-CAUSAL DISCOVERY
-→
-NEW WORLDS
+157
+313
+753
+1761
+4545
+13185 parameters
 ```
 
-And after every experiment:
+Three training budgets:
 
 ```
-RUN
-↓
-RECORD
-↓
-ANALYZE
-↓
-GENERATE DOCX REPORT
-↓
-REVIEW
-↓
-DECIDE NEXT EXPERIMENT
+500
+2000
+8000
 ```
 
-The code is the implementation.
-The experiments are the evidence.
-The DOCX reports are the scientific record.
-This Markdown file is the living research and development plan.
+Three complexity levels:
+
+| Level | Entities | Types |
+| ----- | -------- | ----- |
+| C1    | 1        | 2     |
+| C2    | 3        | 4     |
+| C3    | 5        | 8     |
+
+Other details:
+
+- Five seeds.
+- Sixty epochs.
+- In-distribution interaction prediction R².
+- Held-out 2 × 2 corner-block position generalisation.
+
+### **Evaluation bug and correction**
+
+The initial smoke test produced held-out R² of exactly zero.
+
+The cause was a test-world design problem: the held-out agent began at the origin and almost never reached the held-out corner.
+
+Only three interactions occurred across 1,500 steps.
+
+The test agent was subsequently placed beside the held-out block, producing 200–470 interaction events per test set.
+
+The correction was documented before the main run and did not change the research hypothesis.
+
+### **C1 in-distribution R²**
+
+| Budget | Six model results                              |
+| ------ | ---------------------------------------------- |
+| 500    | 0.3559, 0.5625, 0.5955, 0.5300, 0.6075, 0.6420 |
+| 2000   | 0.6719, 0.8898, 0.9231, 0.9157, 0.9110, 0.9143 |
+| 8000   | 0.7882, 0.9995, 0.9999, 0.9997, 0.9997, 0.9995 |
+
+### **C1 unseen-position R²**
+
+| Budget | Six model results                              |
+| ------ | ---------------------------------------------- |
+| 500    | 0.2661, 0.4337, 0.2971, 0.1633, 0.1787, 0.1472 |
+| 2000   | 0.6676, 0.8455, 0.5866, 0.4062, 0.4527, 0.4576 |
+| 8000   | 0.7705, 0.9991, 0.9908, 0.9775, 0.9931, 0.9953 |
+
+### **C2 in-distribution R²**
+
+| Budget | Six model results                                |
+| ------ | ------------------------------------------------ |
+| 500    | 0.0196, 0.0512, -0.1793, -0.0672, 0.0074, 0.0113 |
+| 2000   | 0.2930, 0.2727, 0.0292, 0.1388, 0.1987, 0.1966   |
+| 8000   | 0.4765, 0.6152, 0.8495, 0.8791, 0.8802, 0.8879   |
+
+### **C2 unseen-position R²**
+
+| Budget | Six model results                                    |
+| ------ | ---------------------------------------------------- |
+| 500    | -0.1108, 0.0222, -0.2187, -0.2982, -0.1617, -0.2128  |
+| 2000   | -0.2420, -0.5517, -1.3764, -0.7835, -0.4163, -0.3292 |
+| 8000   | 0.2063, -0.1303, 0.3811, 0.4514, 0.5008, 0.5442      |
+
+### **C3 in-distribution R²**
+
+| Budget | Six model results                                    |
+| ------ | ---------------------------------------------------- |
+| 500    | -0.3312, -0.3164, -0.3616, -0.2653, -0.1898, -0.2000 |
+| 2000   | 0.1124, 0.0322, -0.1043, -0.0437, 0.0084, 0.0099     |
+| 8000   | 0.3579, 0.3430, 0.0907, 0.0234, 0.1551, 0.1598       |
+
+### **C3 unseen-position R²**
+
+| Budget | Six model results                                    |
+| ------ | ---------------------------------------------------- |
+| 500    | -1.9428, -0.6133, -0.2753, -0.4925, -0.3768, -0.4984 |
+| 2000   | -0.2808, -0.0780, -0.1807, -0.6163, 0.0259, 0.0022   |
+| 8000   | 0.2110, 0.1964, 0.0374, -0.2920, 0.0541, 0.2132      |
+
+### **E001 hypothesis verdicts**
+
+- **H1 — More data or model size never hurts:** Not supported.
+- **H2 — Data reduces the generalisation gap more than model size:** Weakly supported; observed at two of three complexity levels.
+- **H3 — Required capacity increases with complexity:** Supported as a trend, but C3 remained unresolved.
+
+At 8,000 training steps, the minimum model size reaching R² ≥ 0.9 was:
+
+| Complexity | Minimum model size |
+| ---------- | ------------------ |
+| C1         | 313 parameters     |
+| C2         | None               |
+| C3         | None               |
+
+### **E002 — Higher data budgets**
+
+C2 was tested at 32,000 steps.
+
+C3 was tested at 32,000 and 96,000 steps.
+
+Models:
+
+```
+157
+313
+1761
+13185 parameters
+```
+
+Three seeds.
+
+#### **C2 at 32,000 steps**
+
+| Model  | In-distribution R² | Unseen R² |
+| ------ | ------------------ | --------- |
+| Tiny   | 0.5028             | 0.0927    |
+| Small  | 0.8587             | 0.6347    |
+| Medium | 0.9362             | 0.6390    |
+| XLarge | 0.9582             | 0.7970    |
+
+#### **C3 at 32,000 steps**
+
+| Model  | In-distribution R² | Unseen R² |
+| ------ | ------------------ | --------- |
+| Tiny   | 0.4608             | -0.1795   |
+| Small  | 0.5237             | -0.5363   |
+| Medium | 0.5062             | 0.1488    |
+| XLarge | 0.4472             | 0.0941    |
+
+#### **C3 at 96,000 steps**
+
+| Model  | In-distribution R² | Unseen R² |
+| ------ | ------------------ | --------- |
+| Tiny   | 0.5055             | 0.2277    |
+| Small  | 0.5896             | 0.4139    |
+| Medium | 0.7845             | 0.3877    |
+| XLarge | 0.8262             | 0.0126    |
+
+### **E002 hypothesis verdicts**
+
+- H6 — C2 reaches R² ≥ 0.9 at 32,000 steps for medium and XLarge models: Supported.
+- H7 — C3 reaches R² ≥ 0.9 at 96,000 steps: Not supported.
+- H8 — Tiny models remain below R² 0.9: Supported.
+
+### **Interpretation**
+
+The scaling study suggests:
+
+1. Training data is a major bottleneck.
+2. Capacity requirements increase with environmental complexity.
+3. Excess capacity does not automatically improve performance.
+4. Unseen-position generalisation can lag substantially behind in-distribution performance.
+5. The most complex environment remained unresolved.
+
+### **Limitations**
+
+- Fixed or insufficiently tuned MLP architecture.
+- Larger models may require different optimization.
+- Entity type code used an opaque scalar.
+- Training was passive.
+- Seed counts were limited.
+- Memory, richer action spaces, and richer observation channels were not comprehensively tested.
+
+**Status:** Scaling behaviour characterised within the tested synthetic environments. Emergence was not demonstrated.
+
+## **29. Phase 10 — Ontology Discovery and Compositional Generalisation**
+
+**Central question:** Can Caspian autonomously discover environmental properties and use them compositionally in unfamiliar combinations?
+
+### **Research objectives**
+
+- Investigate autonomous property discovery.
+- Test active versus passive exposure.
+- Test unseen property combinations.
+- Distinguish representation decodability from actual model use.
+- Evaluate whether apparent discovery survives coverage controls.
+- Test intervention-based advantages.
+
+### **Registration**
+
+Registration commit:
+
+```
+02be40c
+```
+
+Experiments:
+
+- E001;
+- E002.
+
+### **E001 — Active versus passive exposure**
+
+Reported results:
+
+| Condition | Swapped-position R² |
+| --------- | ------------------- |
+| Active    | 0.9937 / 0.9903     |
+| Passive   | 0.4836 / 0.3964     |
+
+Active exposure was associated with substantially stronger transfer.
+
+However, coverage differences remained a confounding explanation.
+
+The result does not establish that active interaction itself caused the improvement independently of exposure coverage.
+
+### **E002 — Compositional evaluation**
+
+Four registered composition conditions were tested:
+
+- C1;
+- C2;
+- C3;
+- C4.
+
+Budgets:
+
+```
+1000
+2000
+4000
+8000
+```
+
+Ten seeds.
+
+### **Findings**
+
+- C1 failed.
+- C2 narrowly failed.
+- C3 was uninformative.
+- C4 passed.
+- Held-out MLP R² was approximately 0.65–0.83.
+- Oracle performance was 1.0.
+- Coverage baseline was best or comparable.
+
+### **Representation probe findings**
+
+Probes recovered information from raw or untrained inputs at R² values between 0.96 and 1.0.
+
+This demonstrated that the environmental information was already decodable from the inputs.
+
+It did not demonstrate that the trained model had autonomously discovered or used the property compositionally.
+
+### **Intervention findings**
+
+- Intervention advantage was not established.
+- Coverage and balance explained apparent benefits.
+- A negative control was flawed.
+
+### **Interpretation**
+
+Phase 10 did not establish autonomous ontology discovery.
+
+The results exposed a critical distinction:
+
+> Information being recoverable from a representation does not prove that the model has learned to use that information compositionally.
+
+**Status:** Autonomous ontology discovery not established. Compositional generalisation remained insufficient.
+
+## **30. Phase 11 — Architectural Inductive Bias and Compositional Use**
+
+**Central question:** Does architectural structure determine whether a model can use learned information compositionally?
+
+### **Experimental design**
+
+CSP-P11-E001 compared:
+
+- small MLP;
+- large MLP;
+- factorised model;
+- additive MLP;
+- strict additive model.
+
+The study used:
+
+- two synthetic worlds;
+- two data levels;
+- ten seeds.
+
+### **High-data held-out normalised RMSE**
+
+| Architecture    | World 1 | World 2 |
+| --------------- | ------- | ------- |
+| Small MLP       | 0.183   | 0.019   |
+| Large MLP       | 0.115   | 0.014   |
+| Strict additive | 0.001   | 0.000   |
+
+World 1 memorisation baseline: 0.083.
+
+### **Hypothesis findings**
+
+- **H1:** Supported. Strict additive architecture performed best in the tested additive worlds.
+- **H2:** Unsupported. Increased capacity did not close the observed gap. This does not establish that capacity can never close such a gap.
+- **H3:** Partly supported. Factorised representations helped at high data, but not universally.
+- **H5:** Not met.
+- **H6:** Partly refuted. The additive model adapted through main-effect distortion, with training-combination error increasing by 0.0911.
+
+### **Probe findings**
+
+Probes recovered outcomes at R² = 1 for factorised and additive-MLP representations, even when the prediction head failed to generalise compositionally.
+
+This reinforced the distinction between:
+
+- information being present in a representation;
+- information being accessible to a probe;
+- the model actually using that information to make predictions.
+
+### **Interpretation**
+
+Architectural inductive bias matters when it matches the underlying environmental structure.
+
+However, strict additive architectures may fail when the environment contains non-additive interactions.
+
+**Status:** Architecture-specific compositional advantage supported in tested additive worlds, with important limitations.
+
+## **31. Phase 12 — Non-Additive World and Optimizer Sensitivity**
+
+**Central question:** Does an architectural advantage persist when the environment contains genuine non-additive interactions, and is the result sensitive to optimizer choices?
+
+### **Registration**
+
+Commit:
+
+```
+294303b
+```
+
+Confirmatory seeds:
+
+```
+11–20
+```
+
+These seeds were disjoint from Phase 11.
+
+### **Non-additive world**
+
+The W3 environmental rule was:
+
+\\[ Y=6A-4B+2C+5AB \\]
+
+Training combinations:
+
+```
+000
+100
+010
+110
+001
+111
+```
+
+Held-out combinations:
+
+```
+101
+011
+```
+
+### **High-data held-out normalised RMSE**
+
+| Architecture      | nRMSE |
+| ----------------- | ----- |
+| Small MLP         | 0.179 |
+| Large MLP         | 0.131 |
+| Factorised        | 0.101 |
+| Additive MLP      | 0.112 |
+| Strict additive   | 0.192 |
+| Additive residual | 0.037 |
+
+Additive-residual model parameter count:
+
+```
+1434
+```
+
+Optimizer configuration:
+
+```
+Adam
+Learning rate: 0.01
+Epochs: 200
+```
+
+### **Hypothesis findings**
+
+- H1: Not met.
+- H2a: Met.
+- H2b: Met.
+- H3: Met.
+- H4: Met.
+- H5: Met.
+- H6: Not met.
+
+Reported approximate effects:
+
+- Capacity effect: 0.07.
+- Structural advantage: 0.16.
+
+The broad architecture ranking remained stable across the tested optimizer grid.
+
+### **Interpretation**
+
+The strict additive advantage observed in Phase 11 did not generalise to the non-additive W3 environment.
+
+The additive-residual model achieved the best result in this registered test.
+
+This suggests that architectural inductive bias should match the structure of the environment.
+
+A model that assumes only additive effects may perform extremely well in additive environments but fail when genuine interactions are present.
+
+### **Limitations**
+
+- Small synthetic worlds.
+- High MLP variance.
+- Additive-residual design was post hoc relative to the earlier comparison.
+- Optimizer grid was small.
+- No Phase 10-style probes or property-flip tests.
+- Literature comparison remains outstanding.
+
+**Status:** Additive-residual architecture promising in one tested non-additive world; universal architectural superiority not established.
+
+# **PART VI — CURRENT EVIDENCE LEDGER**
+
+## **32. What Caspian Has Demonstrated So Far**
+
+The evidence should be described carefully.
+
+| Research capability                  | Current evidence status                                        |
+| ------------------------------------ | -------------------------------------------------------------- |
+| Deterministic artificial environment | Established in Phase 0                                         |
+| Semantic-firewall implementation     | Established in initial environment tests                       |
+| Predictive learning                  | Supported in Phase 1                                           |
+| Temporal memory                      | Evidence in Phases 2–3; Phase 2 report requires reconciliation |
+| Spatial generalisation               | Supported in Phase 3                                           |
+| Multi-entity robustness              | Partial; performance varied across seeds                       |
+| World modelling                      | Preliminary evidence in Phase 4                                |
+| Counterfactual prediction            | Preliminary evidence; primary report requires reconciliation   |
+| Planning                             | Preliminary evidence; requires further validation              |
+| Functional representation            | Promising Phase 5 evidence                                     |
+| Continuous-property generalisation   | Promising Phase 5 evidence                                     |
+| Causal discovery                     | Not established                                                |
+| Novel-world adaptation               | Incomplete evidence                                            |
+| Scaling behaviour                    | Characterised in Phase 9                                       |
+| Autonomous ontology discovery        | Not established in Phase 10                                    |
+| Compositional generalisation         | Mixed and unresolved across Phases 10–12                       |
+| Architectural inductive bias         | Supported in specific tested synthetic structures              |
+| Non-additive interaction modelling   | Additive-residual promising in one W3 experiment               |
+| Cross-world transfer                 | Future research target                                         |
+| Continual learning                   | Future research target                                         |
+| Integrated predictive planning       | Future research target                                         |
+| Real-world utility                   | Not yet established                                            |
+| Novel scientific contribution        | Not yet established                                            |
+
+## **33. Important Scientific Lessons So Far**
+
+The first twelve phases have revealed several important issues.
+
+### **33.1 Prediction is not understanding**
+
+A model can predict environmental changes without demonstrating that it has formed human-like concepts.
+
+### **33.2 Decodability is not compositional use**
+
+A probe can recover information from a representation even when the model's own prediction head fails to use that information compositionally.
+
+### **33.3 Coverage can imitate discovery**
+
+An agent that interacts with more relevant configurations may outperform a passive agent without necessarily having discovered a better underlying representation.
+
+### **33.4 Capacity is not a universal solution**
+
+Increasing model size does not automatically solve generalisation or compositionality.
+
+### **33.5 Architectural assumptions matter**
+
+An architecture suited to an additive world may perform poorly in a world with non-additive interactions.
+
+### **33.6 Causal claims require interventions**
+
+Observational relationships are not enough to establish causal learning.
+
+### **33.7 Synthetic success is not real-world transfer**
+
+A system that succeeds in a controlled artificial world has not automatically demonstrated practical utility.
+
+These lessons should directly influence the design of the next phases.
+
+# **PART VII — FUTURE RESEARCH ROADMAP: PHASES 13–20**
+
+The next eight phases are intended to move Caspian from its current predictive and representation-learning experiments toward a more complete adaptive world-model architecture.
+
+They are research targets, not guaranteed milestones.
+
+The research should not advance simply because the previous phase has been implemented. Each phase must produce independently reproducible evidence.
+
+## **34. Phase 13 — Autonomous Property Discovery and Representation Learning**
+
+Next research phase
+
+**Central question:**
+
+Can Caspian discover useful properties of its environment without receiving explicitly separated property channels or property labels?
+
+### **Research motivation**
+
+Previous phases showed that Caspian can learn predictive relationships and that architectural choices influence generalisation.
+
+However, Phase 10 did not establish autonomous ontology discovery.
+
+Phase 13 should directly investigate whether the agent can construct useful representations from raw or minimally processed observations rather than relying on manually separated environmental properties.
+
+### **Objectives**
+
+1. Remove manually supplied property channels.
+2. Introduce raw environmental observations.
+3. Develop a representation-learning component.
+4. Investigate latent environmental property discovery.
+5. Evaluate representation consistency across seeds.
+6. Test whether discovered representations preserve useful environmental structure.
+7. Investigate whether the learned representations support actual prediction and behaviour.
+8. Establish strong controls against information leakage.
+
+### **Proposed experiments**
+
+**Experiment 13.1 — Raw observation generation**
+
+Create an environment where the agent receives raw or minimally processed observations.
+
+The environment may contain multiple underlying properties, but the observation interface must not explicitly identify them.
+
+**Experiment 13.2 — Latent property discovery**
+
+Investigate whether the model develops representations that preserve information about environmental properties.
+
+**Experiment 13.3 — Representation consistency**
+
+Test whether similar environmental structures produce comparable representations across independent seeds and model initializations.
+
+**Experiment 13.4 — Property recovery and intervention sensitivity**
+
+Investigate whether representations respond systematically when environmental properties are changed.
+
+**Experiment 13.5 — Compositional generalisation**
+
+Test whether the model can use discovered representations in combinations that were not encountered during training.
+
+### **Evaluation**
+
+- Held-out prediction performance.
+- Representation consistency.
+- Property recovery against appropriate baselines.
+- Intervention sensitivity.
+- Generalisation to unseen combinations.
+- Behavioural performance.
+- Seed stability.
+- Semantic-firewall compliance.
+
+### **Baselines**
+
+- Random representation.
+- Untrained encoder.
+- Statistical feature extraction.
+- Manually supplied property channels as an upper-bound comparison.
+- Appropriate trained predictive baselines.
+
+### **Success criteria**
+
+Phase 13 succeeds only if Caspian:
+
+- develops useful representations without receiving property labels;
+- performs above appropriate baselines;
+- generalises to unseen property combinations;
+- demonstrates that its actual predictive or behavioural system uses the learned structure;
+- reproduces the findings across independent seeds;
+- passes the semantic-leakage audit.
+
+A successful probe alone is insufficient.
+
+**Expected milestone:** Caspian moves from receiving explicitly separated environmental properties toward learning useful representations from raw observations.
+
+## **35. Phase 14 — Interaction Discovery and Structured Relationships**
+
+**Central question:**
+
+Can Caspian discover how environmental properties interact, including non-additive interactions?
+
+### **Research motivation**
+
+Phase 11 and Phase 12 demonstrated that architectural inductive bias matters.
+
+The strict additive model performed exceptionally well in tested additive worlds but poorly in the non-additive W3 world.
+
+The additive-residual model performed best in that particular non-additive experiment.
+
+Phase 14 should investigate whether Caspian can discover and use interaction structures without being supplied with interaction labels.
+
+### **Objectives**
+
+1. Introduce multiple independent environmental properties.
+2. Introduce interacting properties.
+3. Investigate sparse interaction structures.
+4. Identify independent and dependent effects.
+5. Test pairwise interactions.
+6. Test higher-order interactions.
+7. Evaluate interaction discovery under noisy observations.
+8. Investigate whether the additive-residual architecture remains effective.
+9. Compare architectures under different environmental structures.
+
+### **Proposed experiments**
+
+**Experiment 14.1 — Independent properties**
+
+Introduce multiple properties whose effects are independent.
+
+Establish whether the model can recover independent predictive relationships.
+
+**Experiment 14.2 — Sparse pairwise interactions**
+
+Introduce selected interactions between properties while leaving others independent.
+
+**Experiment 14.3 — Multiple simultaneous interactions**
+
+Test environments containing several interacting relationships.
+
+**Experiment 14.4 — Higher-order interactions**
+
+Introduce interactions involving three or more properties.
+
+**Experiment 14.5 — Noisy interaction discovery**
+
+Introduce observation noise and investigate whether the model can still identify useful relationships.
+
+**Experiment 14.6 — Unseen interaction combinations**
+
+Hold out combinations during training and test whether the model can predict their outcomes.
+
+### **Evaluation**
+
+- Interaction precision.
+- Interaction recall.
+- False interaction detection.
+- Held-out prediction error.
+- Recovery of independent effects.
+- Generalisation to unseen combinations.
+- Robustness across seeds and environments.
+
+### **Architecture comparisons**
+
+Compare:
+
+- strict additive model;
+- additive-residual model;
+- factorised model;
+- standard MLP;
+- larger MLP;
+- appropriate interaction-aware architectures.
+
+### **Success criteria**
+
+Caspian must demonstrate that it can identify and use useful interaction structures without being supplied with interaction labels.
+
+The result must survive multiple environmental structures, not just one favourable synthetic world.
+
+**Expected milestone:** Caspian progresses from learning isolated environmental properties toward learning relationships between those properties.
+
+## **36. Phase 15 — Causal Discovery and Intervention Learning**
+
+**Central question:**
+
+Can Caspian distinguish what merely correlates with an outcome from what actually causes it?
+
+### **Research motivation**
+
+Predictive relationships do not automatically establish causal relationships.
+
+A model may learn that two variables frequently occur together without understanding what happens when one is independently changed.
+
+Phase 15 should investigate whether controlled interventions allow Caspian to learn more reliable causal relationships.
+
+### **Objectives**
+
+1. Introduce controlled environmental interventions.
+2. Distinguish observational relationships from causal relationships.
+3. Learn the consequences of changing individual properties.
+4. Investigate causal dependencies.
+5. Introduce confounding variables.
+6. Investigate hidden-variable effects.
+7. Evaluate counterfactual predictions.
+8. Test causal structure recovery where identifiable.
+
+### **Proposed experiments**
+
+**Experiment 15.1 — Correlation versus causation**
+
+Create environments where variables are correlated but do not have direct causal relationships.
+
+Test whether Caspian incorrectly treats correlation as causation.
+
+**Experiment 15.2 — Single-variable interventions**
+
+Change one environmental property while holding relevant variables constant.
+
+Measure whether the model predicts the resulting change.
+
+**Experiment 15.3 — Multiple-variable interventions**
+
+Change multiple properties simultaneously.
+
+Investigate whether the model can predict combined effects.
+
+**Experiment 15.4 — Confounding**
+
+Introduce variables that influence multiple observed properties.
+
+Test whether the model confuses common causes with direct relationships.
+
+**Experiment 15.5 — Hidden-variable experiments**
+
+Investigate whether unobserved environmental factors cause misleading observational relationships.
+
+**Experiment 15.6 — Counterfactual outcome prediction**
+
+Evaluate whether Caspian can predict what would have happened under an alternative intervention.
+
+**Experiment 15.7 — Causal structure recovery**
+
+Test recovery of causal relationships where the environment makes them identifiable.
+
+### **Evaluation**
+
+- Causal effect estimation error.
+- Intervention prediction accuracy.
+- Counterfactual prediction error.
+- Causal graph recovery where identifiable.
+- Robustness to confounding.
+- Performance against observational-only baselines.
+
+### **Baselines**
+
+- Observational-only model.
+- Intervention-trained model.
+- Random intervention baseline.
+- Oracle causal model where appropriate.
+
+### **Success criteria**
+
+Caspian must demonstrate that intervention-informed learning improves predictions of controlled environmental changes compared with suitable observational-only baselines.
+
+Causal graph recovery must only be claimed where the experimental setup makes the underlying structure identifiable.
+
+**Expected milestone:** Caspian progresses from learning environmental relationships toward learning experimentally supported causal relationships.
+
+## **37. Phase 16 — Cross-World Transfer and Structural Generalisation**
+
+**Central question:**
+
+Can Caspian transfer what it has learned in one environment to a different environment without complete retraining?
+
+### **Research motivation**
+
+A model that learns only one environment may simply memorise its specific structure.
+
+The more important question is whether it can retain reusable environmental relationships and apply them in unfamiliar worlds.
+
+### **Objectives**
+
+1. Introduce multiple structurally related worlds.
+2. Change environmental properties and rules.
+3. Test whether learned representations survive environmental changes.
+4. Separate transferable structures from world-specific information.
+5. Investigate zero-shot transfer.
+6. Investigate few-shot adaptation.
+7. Measure negative transfer.
+8. Compare transfer against training from scratch.
+
+### **Proposed experiments**
+
+**Experiment 16.1 — Multiple independent worlds**
+
+Introduce several worlds with different environmental configurations.
+
+**Experiment 16.2 — Shared and world-specific properties**
+
+Some properties should remain consistent across worlds while others change.
+
+**Experiment 16.3 — Unseen environmental rules**
+
+Introduce rules that the agent has not previously encountered.
+
+**Experiment 16.4 — Changing observation distributions**
+
+Change the way environmental information is presented without necessarily changing the underlying structure.
+
+**Experiment 16.5 — Transfer without complete retraining**
+
+Evaluate whether Caspian can use previously learned structure in a new environment.
+
+**Experiment 16.6 — Zero-shot and few-shot adaptation**
+
+Compare immediate transfer with adaptation after limited new experience.
+
+### **Evaluation**
+
+- Cross-world prediction accuracy.
+- Transfer efficiency.
+- Adaptation sample requirements.
+- Retention of previous knowledge.
+- Out-of-distribution generalisation.
+- Negative transfer.
+- Performance against retraining baselines.
+
+### **Baselines**
+
+- Train from scratch.
+- Fine-tune from previous world.
+- Random initialization.
+- Direct transfer without adaptation.
+- Appropriate oracle references.
+
+### **Success criteria**
+
+Caspian must demonstrate measurable transfer to unfamiliar environments beyond memorisation and direct retraining baselines.
+
+**Expected milestone:** Caspian develops reusable environmental representations that can support learning across multiple worlds.
+
+## **38. Phase 17 — Continual Learning and Persistent Environmental Memory**
+
+**Central question:**
+
+Can Caspian accumulate environmental knowledge over time without continually losing previously learned information?
+
+### **Research motivation**
+
+A useful adaptive system should not need to start from zero every time it encounters a new environment.
+
+However, continually learning new information may interfere with previously learned information.
+
+This is the problem of catastrophic forgetting.
+
+Phase 17 investigates persistent environmental memory and continual adaptation.
+
+### **Objectives**
+
+1. Introduce persistent memory.
+2. Learn across sequential environmental experiences.
+3. Maintain previously discovered properties and relationships.
+4. Adapt to changing environmental rules.
+5. Investigate catastrophic forgetting.
+6. Evaluate memory retrieval.
+7. Measure memory efficiency.
+8. Test whether previously learned knowledge can improve new learning.
+
+### **Proposed experiments**
+
+**Experiment 17.1 — Sequential environment exposure**
+
+Expose Caspian to multiple environments in sequence.
+
+**Experiment 17.2 — Persistent latent representations**
+
+Investigate whether useful representations survive between experiences.
+
+**Experiment 17.3 — Memory retrieval**
+
+Test whether previously learned environmental information can be retrieved when needed.
+
+**Experiment 17.4 — Environmental rule changes**
+
+Change rules in previously encountered worlds.
+
+Evaluate whether Caspian can distinguish outdated information from current environmental behaviour.
+
+**Experiment 17.5 — Continual adaptation**
+
+Investigate whether the system can continue learning without complete retraining.
+
+**Experiment 17.6 — Knowledge retention and forgetting**
+
+Measure how learning new environments affects performance on previously encountered environments.
+
+### **Evaluation**
+
+- Retention accuracy.
+- Forgetting rate.
+- Adaptation speed.
+- Memory retrieval accuracy.
+- Performance on previously encountered worlds.
+- Memory efficiency.
+- Interference between experiences.
+
+### **Success criteria**
+
+Caspian must retain useful knowledge while adapting to new environmental information.
+
+The system must demonstrate measurable advantages over appropriate memoryless or reset-based baselines.
+
+**Expected milestone:** Caspian progresses from a model that learns individual environments toward a persistent learner that accumulates environmental knowledge.
+
+## **39. Phase 18 — Integrated Predictive World Model and Autonomous Planning**
+
+**Central question:**
+
+Can Caspian use its learned environmental structure, memory, and causal knowledge to predict future states and select actions?
+
+### **Research motivation**
+
+This phase integrates the capabilities investigated in earlier experiments.
+
+The objective is not simply to build a larger neural network.
+
+It is to determine whether learned representations, environmental memory, predictive models, and intervention-based knowledge can work together to support useful decision-making.
+
+### **Objectives**
+
+1. Integrate discovered representations with the predictive world model.
+2. Condition predictions on actions and historical information.
+3. Perform multi-step environmental rollouts.
+4. Evaluate predictive uncertainty.
+5. Use learned models for planning.
+6. Compare model-based and reactive decision-making.
+7. Monitor model errors.
+8. Investigate recovery from inaccurate predictions.
+9. Evaluate performance in unfamiliar conditions.
+
+### **Proposed experiments**
+
+**Experiment 18.1 — Integrated state representation**
+
+Combine the validated representation and memory components.
+
+**Experiment 18.2 — Action-conditioned future prediction**
+
+Predict environmental changes under candidate actions.
+
+**Experiment 18.3 — Multi-step prediction**
+
+Investigate prediction over progressively longer time horizons.
+
+**Experiment 18.4 — Counterfactual planning**
+
+Evaluate alternative actions and their predicted consequences.
+
+**Experiment 18.5 — Planning under uncertainty**
+
+Investigate decision-making when predictions are uncertain.
+
+**Experiment 18.6 — Model-based versus reactive decision-making**
+
+Compare decisions produced using the learned world model against reactive approaches.
+
+**Experiment 18.7 — Prediction error monitoring and recovery**
+
+Investigate whether Caspian can detect when its internal model is inaccurate and adapt accordingly.
+
+### **Evaluation**
+
+- One-step prediction accuracy.
+- Multi-step prediction accuracy.
+- Long-horizon prediction degradation.
+- Counterfactual accuracy.
+- Planning reward.
+- Decision regret.
+- Predictive uncertainty calibration.
+- Robustness to unfamiliar situations.
+- Model exploitation resistance.
+
+### **Baselines**
+
+- Reactive policy.
+- Random policy.
+- Non-learning planner.
+- Model-based planner.
+- Oracle planner where appropriate.
+
+### **Success criteria**
+
+The integrated system must use its learned world model to select actions that outperform suitable reactive and non-learning baselines.
+
+The advantage must survive controls against exploiting simulator or model errors.
+
+**Expected milestone:** Caspian progresses from learning environmental structure to using that structure for predictive decision-making.
+
+## **40. Phase 19 — Real-World Transfer and Application Prototype**
+
+**Central question:**
+
+Can the capabilities developed in controlled environments provide measurable value in a real-world problem?
+
+### **Research motivation**
+
+A successful synthetic research system is not automatically a useful product.
+
+Phase 19 investigates whether validated capabilities can transfer to a bounded real-world environment.
+
+This phase should not begin by attempting to build a general-purpose commercial AI.
+
+It should begin with one measurable problem.
+
+### **Objectives**
+
+1. Identify a bounded application domain.
+2. Translate the world-model architecture into a practical environment.
+3. Define observable states, actions, outcomes, and constraints.
+4. Evaluate transfer from synthetic research environments.
+5. Build an application prototype.
+6. Compare against conventional baseline systems.
+7. Evaluate reliability and operational cost.
+8. Investigate adaptation to changing conditions.
+
+### **Potential application directions**
+
+These are research candidates, not predetermined product decisions.
+
+**Dynamic cybersecurity environments**
+
+Investigate whether Caspian can learn patterns of system behaviour, detect changes, and support security decision-making.
+
+**Operational decision-support systems**
+
+Investigate whether Caspian can learn permitted operational patterns and predict relevant changes.
+
+**Predictive systems for changing business environments**
+
+Investigate whether Caspian can model workflows, identify changing patterns, and support operational decisions.
+
+**Adaptive systems that learn operational patterns**
+
+Investigate whether a system can learn from permitted interactions rather than requiring every operational relationship to be manually encoded.
+
+**Simulation and planning environments**
+
+Investigate whether Caspian can improve planning and adaptation in dynamic simulated systems.
+
+### **Proposed experiments**
+
+1. Select a domain with measurable outcomes.
+2. Define the environmental state and action space.
+3. Establish conventional baseline systems.
+4. Evaluate transfer from controlled experiments.
+5. Test learning from new environmental experiences.
+6. Evaluate performance under changing conditions.
+7. Conduct controlled application trials.
+
+### **Evaluation**
+
+- Task-specific predictive accuracy.
+- Decision quality.
+- Adaptation speed.
+- Generalisation to unseen conditions.
+- Operational reliability.
+- Computational requirements.
+- Human oversight requirements.
+- Privacy and safety.
+
+### **Application constraints**
+
+The real-world environment must not become an uncontrolled experiment.
+
+The system must operate within explicit permissions and boundaries.
+
+For organizational applications:
+
+- Do not perform covert employee profiling.
+- Respect privacy.
+- Establish consent and transparency where required.
+- Use role-based access.
+- Maintain appropriate data-retention policies.
+- Preserve human oversight for consequential decisions.
+
+### **Success criteria**
+
+Demonstrate a reproducible advantage on at least one bounded real-world task against relevant baselines.
+
+**Expected milestone:** Caspian moves from controlled artificial research environments into a practical, experimentally evaluated application.
+
+## **41. Phase 20 — Integrated System Validation and Research Consolidation**
+
+**Central question:**
+
+What has Caspian actually demonstrated, and how does its architecture compare with existing approaches?
+
+### **Research motivation**
+
+Phase 20 is the major research consolidation phase.
+
+It should not be treated as a celebration of completing twenty phases.
+
+Its purpose is to establish exactly what the research has demonstrated, what remains uncertain, and whether the system offers a meaningful scientific contribution.
+
+### **Objectives**
+
+1. Integrate validated components from previous phases.
+2. Conduct end-to-end experiments.
+3. Evaluate the complete learning architecture.
+4. Perform comprehensive ablation studies.
+5. Compare against established methods.
+6. Conduct a systematic literature review.
+7. Establish the architecture's limitations.
+8. Identify the actual research contribution.
+9. Produce a reproducible research record.
+
+### **Proposed experiments**
+
+1. Full-system integration.
+2. End-to-end environmental learning.
+3. Property discovery evaluation.
+4. Representation evaluation.
+5. Interaction discovery evaluation.
+6. Causal intervention evaluation.
+7. Cross-world generalisation.
+8. Continual learning evaluation.
+9. Predictive planning evaluation.
+10. Application-level validation, provided Phase 19 succeeds.
+11. Component ablation.
+12. Computational efficiency evaluation.
+13. Reproducibility across independent seeds and environments.
+14. Comparison against relevant existing architectures.
+
+### **Evaluation dimensions**
+
+| Dimension      | Research question                           |
+| -------------- | ------------------------------------------- |
+| Discovery      | Can it discover environmental properties?   |
+| Representation | Does it learn useful internal structures?   |
+| Interaction    | Can it identify relationships?              |
+| Causality      | Can it predict intervention outcomes?       |
+| Generalisation | Can it transfer to unfamiliar worlds?       |
+| Memory         | Can it retain knowledge over time?          |
+| Prediction     | Can it predict future states?               |
+| Planning       | Can it use predictions to select actions?   |
+| Adaptation     | Can it respond to changing environments?    |
+| Application    | Does it provide measurable practical value? |
+
+### **Final deliverables**
+
+1. Integrated Caspian architecture.
+2. Reproducible experimental repository.
+3. Complete phase-by-phase research documentation.
+4. Benchmark and evaluation suite.
+5. Ablation and comparative studies.
+6. System limitations and failure analysis.
+7. Technical research paper.
+8. Application prototype and evaluation report, provided Phase 19 succeeds.
+
+### **Final success criteria**
+
+Phase 20 is successful if Caspian demonstrates a coherent, reproducible set of capabilities across discovery, representation, prediction, adaptation, and planning, with clearly measured advantages and documented limitations.
+
+Novelty and scientific contribution must be established through literature comparison, not assumed from the completion of the roadmap.
+
+**Expected milestone:** A scientifically defensible account of what Caspian is, what it can do, how it works, where it fails, and what contribution it makes.
+
+# **PART VIII — OVERALL RESEARCH DESTINATION**
+
+## **42. The Intended Caspian System**
+
+By the end of Phase 20, the intended research outcome is an integrated artificial learning system capable of investigating and demonstrating the following:
+
+1. Observing an environment without receiving a complete human-defined description of its underlying properties.
+2. Discovering useful latent environmental representations.
+3. Learning relationships and interactions between environmental properties.
+4. Investigating causal structure through interventions.
+5. Generalising learned structures across unfamiliar environments.
+6. Retaining and updating knowledge through continued experience.
+7. Predicting future environmental states.
+8. Evaluating alternative actions and their consequences.
+9. Planning under uncertainty.
+10. Demonstrating measurable utility in at least one bounded real-world application.
+
+These are research targets, not established capabilities.
+
+## **43. The Research Progression**
+
+The intended progression is:
+
+```
+CONTROLLED ENVIRONMENT
+        |
+        v
+PERCEPTION AND INTERACTION
+        |
+        v
+PREDICTIVE LEARNING
+        |
+        v
+TEMPORAL MEMORY AND GENERALISATION
+        |
+        v
+WORLD MODELLING AND COUNTERFACTUAL PREDICTION
+        |
+        v
+REPRESENTATION AND FUNCTIONAL STRUCTURE
+        |
+        v
+PROPERTY DISCOVERY
+        |
+        v
+INTERACTION DISCOVERY
+        |
+        v
+CAUSAL DISCOVERY AND INTERVENTION
+        |
+        v
+CROSS-WORLD TRANSFER
+        |
+        v
+CONTINUAL LEARNING
+        |
+        v
+INTEGRATED PREDICTIVE PLANNING
+        |
+        v
+REAL-WORLD APPLICATION
+        |
+        v
+INTEGRATED SYSTEM VALIDATION
+```
+
+This is a research dependency map, not a guarantee that each capability will emerge automatically from the previous one.
+
+If evidence contradicts the expected progression, the research plan must adapt.
+
+# **PART IX — PRODUCT AND COMMERCIALISATION HYPOTHESIS**
+
+## **44. From Research to Product**
+
+Caspian is primarily a research project.
+
+However, a successful research direction may eventually produce practical applications.
+
+The commercial question is:
+
+> If an artificial system can learn useful models of unfamiliar environments through observation, interaction, memory, prediction, and action, what valuable problems could this capability solve?
+
+Potential application areas include:
+
+- cybersecurity;
+- operational intelligence;
+- business process adaptation;
+- workflow prediction;
+- organizational memory;
+- anomaly detection;
+- adaptive decision support;
+- simulation and planning.
+
+These are hypotheses, not validated markets.
+
+### **44.1 Potential organizational application**
+
+One possible direction is an AI system that learns permitted patterns in an organization's operational environment.
+
+For example, an organization may have:
+
+- recurring workflows;
+- changing operational conditions;
+- dependencies between systems;
+- repeated events;
+- patterns of resource usage;
+- relationships between processes.
+
+A system might learn these patterns and support prediction, adaptation, and decision-making.
+
+### **44.2 What organizations would still provide**
+
+Caspian should not be marketed as a system that requires no instruction or configuration.
+
+Organizations would still need to provide:
+
+- objectives;
+- permissions;
+- system interfaces;
+- operational constraints;
+- evaluation criteria;
+- safety boundaries;
+- relevant data access.
+
+The research opportunity is to investigate whether the system can reduce the amount of manual encoding required to learn useful environmental structure.
+
+### **44.3 Product validation**
+
+A product must demonstrate measurable value.
+
+Possible value measures:
+
+\\[ \text{Value} = \text{Time Saved} + \text{Errors Avoided} + \text{Decisions Improved} + \text{Processes Optimized} \\]
+
+This is a conceptual framework, not a validated financial formula.
+
+The actual commercial opportunity must be established through:
+
+- customer interviews;
+- measurable workflow problems;
+- prototypes;
+- controlled trials;
+- reliability testing;
+- willingness-to-pay evidence;
+- operational cost analysis.
+
+The product decision should be informed by Phase 19 rather than predetermined before the research results exist.
+
+# **PART X — EXECUTION GOVERNANCE**
+
+## **45. Experiment Registration**
+
+Every experiment must have:
+
+- unique experiment ID;
+- phase;
+- Git commit;
+- research question;
+- registered hypotheses;
+- predicted outcomes;
+- success thresholds;
+- environment specification;
+- observation specification;
+- action-space specification;
+- semantic-firewall audit;
+- architecture;
+- optimizer;
+- training configuration;
+- data splits;
+- random seeds;
+- baselines;
+- evaluation metrics;
+- exclusion criteria;
+- stopping rules.
+
+Confirmatory experiments must not silently change their hypotheses after observing results.
+
+Exploratory experiments and confirmatory experiments must be distinguished.
+
+## **46. Experiment Preservation**
+
+Preserve:
+
+- raw outputs;
+- configuration files;
+- source code;
+- random seeds;
+- logs;
+- model checkpoints;
+- evaluation results;
+- failures;
+- deviations;
+- plots;
+- statistical analysis.
+
+Never preserve only the best run.
+
+Report the variation across seeds and explain exclusions.
+
+## **47. Phase Exit Review**
+
+Every phase requires an explicit evidence-based review.
+
+The review must answer:
+
+1. What exact research claim was tested?
+2. What hypotheses were registered?
+3. Which predictions passed?
+4. Which predictions failed?
+5. What did the baselines demonstrate?
+6. Were results reproduced across seeds?
+7. Were alternative explanations investigated?
+8. Was the semantic firewall maintained?
+9. What remains unknown?
+10. Is the next phase scientifically justified?
+11. What result would falsify the next phase's central hypothesis?
+
+A phase must not advance simply because the implementation runs successfully.
+
+## **48. Experiment Report Structure**
+
+Every meaningful experiment should produce a DOCX report containing:
+
+```
+1. Experiment identity
+2. Abstract
+3. Research question
+4. Background
+5. Hypotheses
+6. Experimental methods
+7. Environment specification
+8. Observation and action specification
+9. Architecture
+10. Mathematical formulation
+11. Training configuration
+12. Registration and Git commit
+13. Semantic-firewall audit
+14. Results
+15. Baseline comparisons
+16. Ablations
+17. Negative controls
+18. Failures and unexpected observations
+19. Deviations from the plan
+20. Limitations
+21. Hypothesis verdicts
+22. Interpretation
+23. Reproduction instructions
+24. Next experiment
+```
+
+The report must distinguish observed results from researcher interpretation.
+
+## **49. Suggested Research Repository Structure**
+
+The following is a proposed structure for the expanded research programme:
+
+```
+caspian/
+│
+├── README.md
+├── ROADMAP.md
+├── pyproject.toml
+│
+├── research/
+│   ├── principles.md
+│   ├── architecture.md
+│   ├── semantic_firewall.md
+│   │
+│   ├── phase_00/
+│   ├── phase_01/
+│   ├── phase_02/
+│   ├── phase_03/
+│   ├── phase_04/
+│   ├── phase_05/
+│   ├── phase_06/
+│   ├── phase_07/
+│   ├── phase_08/
+│   ├── phase_09/
+│   ├── phase_10/
+│   ├── phase_11/
+│   ├── phase_12/
+│   ├── phase_13/
+│   ├── phase_14/
+│   ├── phase_15/
+│   ├── phase_16/
+│   ├── phase_17/
+│   ├── phase_18/
+│   ├── phase_19/
+│   └── phase_20/
+│
+├── environments/
+│
+├── agents/
+│
+├── models/
+│
+├── baselines/
+│
+├── experiments/
+│   ├── configs/
+│   ├── registrations/
+│   ├── raw_results/
+│   └── analysis/
+│
+├── reports/
+│   ├── docx/
+│   └── figures/
+│
+├── tests/
+│
+└── benchmarks/
+```
+
+This is a proposed structure. It should be adapted to the actual repository and must not cause existing research artifacts to be lost.
+
+## **50. Research Risks and Open Questions**
+
+The following questions remain important throughout the project.
+
+### **Representation**
+
+- Does the model learn useful representations?
+- Does the model actually use those representations?
+- Can the same structure be recovered across different seeds?
+- Does representation quality improve real prediction and behaviour?
+
+### **Discovery**
+
+- Can properties be discovered without explicit labels?
+- Can the system distinguish meaningful structure from statistical coincidence?
+- How can coverage effects be separated from genuine discovery?
+
+### **Architecture**
+
+- Which inductive biases are useful?
+- When should the model be additive?
+- When should it represent interactions?
+- Does a more complex architecture improve generalisation or simply fit the training environment?
+
+### **Causality**
+
+- Can the model distinguish correlation from causal dependence?
+- Does intervention experience improve causal prediction?
+- How should confounding and hidden variables be handled?
+
+### **Generalisation**
+
+- Can learned structures transfer between different worlds?
+- How much new experience is required?
+- Can the system avoid negative transfer?
+
+### **Memory**
+
+- Can the system preserve useful knowledge?
+- How much information should be retained?
+- How should outdated environmental information be updated?
+- Can the system learn continuously without catastrophic forgetting?
+
+### **World modelling**
+
+- How accurate are long-horizon predictions?
+- How does uncertainty affect planning?
+- Can the model detect its own prediction failures?
+- Can planning exploit errors in the learned model?
+
+### **Real-world application**
+
+- Which real-world environment is sufficiently bounded?
+- What is the measurable value?
+- What data and permissions are necessary?
+- What are the safety and privacy implications?
+- Is there evidence of customer demand?
+
+### **Scientific novelty**
+
+- How does Caspian compare with existing world models?
+- How does it compare with model-based reinforcement learning?
+- How does it compare with representation learning?
+- How does it compare with causal discovery?
+- How does it compare with continual learning?
+- What is genuinely new in the research question, method, architecture, or experimental findings?
+
+Novelty must be established through literature review and experimental comparison.
+
+# **PART XI — FINAL RESEARCH PRINCIPLE**
+
+## **51. What Caspian Is Ultimately Trying to Discover**
+
+Caspian is not being developed simply to produce another neural network.
+
+The deeper research objective is to investigate how an artificial learner can construct useful internal models of an environment through its own experience.
+
+The research begins with a small artificial world.
+
+It investigates prediction, memory, representation, interaction, causal relationships, transfer, continual learning, and planning.
+
+Each capability must be independently tested.
+
+Each claim must be supported by evidence.
+
+Each failure must be preserved.
+
+Each architectural decision must have a research justification.
+
+The system must not be declared intelligent, conscious, ontological, or generally capable merely because it performs well on a collection of synthetic tasks.
+
+Those are separate claims requiring separate evidence.
+
+The long-term direction remains:
+
+> Develop an artificial learning system that constructs useful models of unfamiliar environments through observation, interaction, memory, prediction, and action.
+
+And the governing principle remains:
+
+# **Do not optimize for completing phases. Optimize for discovering what is true about the learning system.**
+
+**End of consolidated master document.**
+
+One important note before you use this as the permanent master: the Phase 2, 6, 7 and 8 historical sections deliberately identify where the primary numerical reports still need reconciliation. I have not invented missing results to make the roadmap appear complete.

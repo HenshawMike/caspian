@@ -973,6 +973,15 @@ def run_all_phase7_experiments(output_dir: str = "logs") -> Dict[str, Any]:
     print("Running CSP-P7-E005 (Strengthened uncertainty + mixed exploration)...")
     e005 = run_experiment_e005()
 
+    print("Running CSP-P7-E005-R2 (mix arms rerun on a consistent broad world)...")
+    e005r2 = run_experiment_e005(arms=["count_mix", "uncertainty_disc_mix", "uncertainty_v2_mix"],
+                                 broad_world="phase7_world_broad_consistent.json", experiment_id="CSP-P7-E005-R2")
+
+    print("Running CSP-P7-E006a / E006b / E007 (noise robustness, harder confound)...")
+    e006a = run_experiment_e006a()
+    e006b = run_experiment_e006b()
+    e007 = run_experiment_e007()
+
     all_results = {
         "phase": "Phase 7 — Causal Experimentation",
         "experiments": {
@@ -982,13 +991,17 @@ def run_all_phase7_experiments(output_dir: str = "logs") -> Dict[str, Any]:
             "CSP-P7-E003": e003,
             "CSP-P7-E004": e004,
             "CSP-P7-E005": e005,
+            "CSP-P7-E005-R2": e005r2,
+            "CSP-P7-E006a": e006a,
+            "CSP-P7-E006b": e006b,
+            "CSP-P7-E007": e007,
         },
     }
 
     os.makedirs(output_dir, exist_ok=True)
     out_file = os.path.join(output_dir, "phase7_all_experiments_results.json")
-    with open(out_file, "w", encoding="utf-8") as f:
-        json.dump(all_results, f, indent=2)
+    from experiments.safe_io import safe_write_json
+    safe_write_json(str(out_file), all_results)
 
     print(f"\nAll Phase 7 experiments completed and saved to: {out_file}")
     return all_results

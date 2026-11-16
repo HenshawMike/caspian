@@ -1,0 +1,1681 @@
+{
+  "phase": "Phase 7 \u2014 Causal Experimentation",
+  "experiments": {
+    "CSP-P7-E001": {
+      "experiment_id": "CSP-P7-E001",
+      "title": "Repeated-Intervention Consistency: Does the Same Intervention Give the Same Outcome?",
+      "seed": 42,
+      "num_trials_attempted": 40,
+      "num_trials_completed": 40,
+      "mean_first_outcome": 9.0,
+      "mean_second_outcome": 9.0,
+      "mean_absolute_difference": 0.0,
+      "max_absolute_difference": 0.0,
+      "num_mismatches": 0,
+      "reproducibility_rate_pct": 100.0,
+      "intervention_is_reproducible": true
+    },
+    "CSP-P7-E002": {
+      "experiment_id": "CSP-P7-E002",
+      "title": "Confounded Observation vs. Active Intervention: Discovering True Causal Structure",
+      "seed": 42,
+      "passive_training": {
+        "num_train_samples": 4800,
+        "val_metrics": {
+          "mse": 0.008148,
+          "rmse": 0.090264,
+          "mae": 0.032716,
+          "r2_score": 0.999176
+        }
+      },
+      "active_training": {
+        "num_train_samples": 4800,
+        "val_metrics": {
+          "mse": 0.012687,
+          "rmse": 0.112634,
+          "mae": 0.045117,
+          "r2_score": 0.998867
+        }
+      },
+      "passive_model_eval": {
+        "type1_near_matched": {
+          "mse": 0.011799,
+          "rmse": 0.108623,
+          "mae": 0.080788,
+          "r2_score": 0.998405
+        },
+        "type3_far_matched": {
+          "mse": 0.338589,
+          "rmse": 0.581884,
+          "mae": 0.144663,
+          "r2_score": 0.951519
+        },
+        "type1_far_swapped": {
+          "mse": 0.851228,
+          "rmse": 0.92262,
+          "mae": 0.557805,
+          "r2_score": 0.882463
+        },
+        "type3_near_swapped": {
+          "mse": 10.762834,
+          "rmse": 3.280676,
+          "mae": 2.756326,
+          "r2_score": -0.689678
+        }
+      },
+      "active_model_eval": {
+        "type1_near_matched": {
+          "mse": 0.046008,
+          "rmse": 0.214494,
+          "mae": 0.107431,
+          "r2_score": 0.993779
+        },
+        "type3_far_matched": {
+          "mse": 0.017686,
+          "rmse": 0.132988,
+          "mae": 0.104304,
+          "r2_score": 0.997468
+        },
+        "type1_far_swapped": {
+          "mse": 0.058325,
+          "rmse": 0.241505,
+          "mae": 0.102718,
+          "r2_score": 0.991947
+        },
+        "type3_near_swapped": {
+          "mse": 0.021232,
+          "rmse": 0.145713,
+          "mae": 0.070659,
+          "r2_score": 0.996667
+        }
+      },
+      "passive_matched_position_r2": 0.975,
+      "passive_swapped_position_r2": 0.0964,
+      "active_matched_position_r2": 0.9956,
+      "active_swapped_position_r2": 0.9943,
+      "passive_model_relied_on_spurious_position": true,
+      "active_model_robust_to_position_swap": true,
+      "active_intervention_recovered_true_cause_where_passive_failed": true
+    },
+    "CSP-P7-E002-STABILITY": {
+      "experiment_id": "CSP-P7-E002-STABILITY",
+      "title": "Stability Check: Does the Confound Result Reproduce Across Seeds?",
+      "seeds": [
+        42,
+        101,
+        7,
+        2026,
+        555
+      ],
+      "per_seed_results": [
+        {
+          "seed": 42,
+          "passive_matched_r2": 0.975,
+          "passive_swapped_r2": 0.0964,
+          "active_matched_r2": 0.9956,
+          "active_swapped_r2": 0.9943,
+          "recovered_true_cause": true
+        },
+        {
+          "seed": 101,
+          "passive_matched_r2": 0.9919,
+          "passive_swapped_r2": 0.0504,
+          "active_matched_r2": 0.991,
+          "active_swapped_r2": 0.9937,
+          "recovered_true_cause": true
+        },
+        {
+          "seed": 7,
+          "passive_matched_r2": 0.9925,
+          "passive_swapped_r2": 0.581,
+          "active_matched_r2": 0.9969,
+          "active_swapped_r2": 0.9954,
+          "recovered_true_cause": true
+        },
+        {
+          "seed": 2026,
+          "passive_matched_r2": 0.9961,
+          "passive_swapped_r2": 0.3788,
+          "active_matched_r2": 0.9931,
+          "active_swapped_r2": 0.9932,
+          "recovered_true_cause": true
+        },
+        {
+          "seed": 555,
+          "passive_matched_r2": 0.9914,
+          "passive_swapped_r2": 0.6389,
+          "active_matched_r2": 0.9957,
+          "active_swapped_r2": 0.9933,
+          "recovered_true_cause": true
+        }
+      ],
+      "reproduced_rate_pct": 100.0,
+      "mean_passive_swap_drop": 0.6403,
+      "mean_active_swap_drop": 0.0005
+    },
+    "CSP-P7-E003": {
+      "experiment_id": "CSP-P7-E003",
+      "title": "Active vs. Passive Sample Efficiency at Equal Environment-Step Budgets",
+      "seeds": [
+        42,
+        101,
+        7,
+        2026,
+        555
+      ],
+      "budgets": [
+        250,
+        500,
+        1000,
+        2000,
+        4000
+      ],
+      "per_budget": {
+        "250": {
+          "per_seed": [
+            {
+              "seed": 42,
+              "passive_interaction_r2": 0.055555,
+              "passive_all_r2": -0.388358,
+              "passive_num_interactions_collected": 21,
+              "active_interaction_r2": 0.164202,
+              "active_all_r2": -0.869539,
+              "active_num_interactions_collected": 52
+            },
+            {
+              "seed": 101,
+              "passive_interaction_r2": -0.089124,
+              "passive_all_r2": -0.590744,
+              "passive_num_interactions_collected": 14,
+              "active_interaction_r2": -0.02561,
+              "active_all_r2": -1.79591,
+              "active_num_interactions_collected": 51
+            },
+            {
+              "seed": 7,
+              "passive_interaction_r2": 0.158825,
+              "passive_all_r2": -0.627963,
+              "passive_num_interactions_collected": 20,
+              "active_interaction_r2": 0.281715,
+              "active_all_r2": -0.886583,
+              "active_num_interactions_collected": 46
+            },
+            {
+              "seed": 2026,
+              "passive_interaction_r2": 0.133705,
+              "passive_all_r2": -0.211947,
+              "passive_num_interactions_collected": 7,
+              "active_interaction_r2": -0.082577,
+              "active_all_r2": -2.519081,
+              "active_num_interactions_collected": 47
+            },
+            {
+              "seed": 555,
+              "passive_interaction_r2": 0.191195,
+              "passive_all_r2": -0.219114,
+              "passive_num_interactions_collected": 13,
+              "active_interaction_r2": 0.205486,
+              "active_all_r2": -1.454269,
+              "active_num_interactions_collected": 46
+            }
+          ],
+          "passive_interaction_r2": {
+            "mean": 0.09,
+            "std": 0.1002
+          },
+          "active_interaction_r2": {
+            "mean": 0.1086,
+            "std": 0.1393
+          },
+          "passive_all_r2": {
+            "mean": -0.4076,
+            "std": 0.1768
+          },
+          "active_all_r2": {
+            "mean": -1.5051,
+            "std": 0.6167
+          },
+          "passive_mean_interactions": 15.0,
+          "active_mean_interactions": 48.4
+        },
+        "500": {
+          "per_seed": [
+            {
+              "seed": 42,
+              "passive_interaction_r2": 0.138427,
+              "passive_all_r2": -0.048531,
+              "passive_num_interactions_collected": 29,
+              "active_interaction_r2": 0.377408,
+              "active_all_r2": -2.202658,
+              "active_num_interactions_collected": 100
+            },
+            {
+              "seed": 101,
+              "passive_interaction_r2": 0.069668,
+              "passive_all_r2": 0.16484,
+              "passive_num_interactions_collected": 28,
+              "active_interaction_r2": 0.538991,
+              "active_all_r2": -8.954391,
+              "active_num_interactions_collected": 96
+            },
+            {
+              "seed": 7,
+              "passive_interaction_r2": 0.132851,
+              "passive_all_r2": -0.648063,
+              "passive_num_interactions_collected": 26,
+              "active_interaction_r2": 0.250947,
+              "active_all_r2": -0.769746,
+              "active_num_interactions_collected": 92
+            },
+            {
+              "seed": 2026,
+              "passive_interaction_r2": 0.080332,
+              "passive_all_r2": 0.002737,
+              "passive_num_interactions_collected": 11,
+              "active_interaction_r2": 0.04397,
+              "active_all_r2": -1.686677,
+              "active_num_interactions_collected": 92
+            },
+            {
+              "seed": 555,
+              "passive_interaction_r2": 0.078063,
+              "passive_all_r2": -0.060355,
+              "passive_num_interactions_collected": 24,
+              "active_interaction_r2": 0.168918,
+              "active_all_r2": -0.98138,
+              "active_num_interactions_collected": 98
+            }
+          ],
+          "passive_interaction_r2": {
+            "mean": 0.0999,
+            "std": 0.0295
+          },
+          "active_interaction_r2": {
+            "mean": 0.276,
+            "std": 0.1705
+          },
+          "passive_all_r2": {
+            "mean": -0.1179,
+            "std": 0.277
+          },
+          "active_all_r2": {
+            "mean": -2.919,
+            "std": 3.0604
+          },
+          "passive_mean_interactions": 23.6,
+          "active_mean_interactions": 95.6
+        },
+        "1000": {
+          "per_seed": [
+            {
+              "seed": 42,
+              "passive_interaction_r2": 0.212846,
+              "passive_all_r2": 0.218451,
+              "passive_num_interactions_collected": 71,
+              "active_interaction_r2": 0.616625,
+              "active_all_r2": -5.6403,
+              "active_num_interactions_collected": 193
+            },
+            {
+              "seed": 101,
+              "passive_interaction_r2": -0.315032,
+              "passive_all_r2": -0.066072,
+              "passive_num_interactions_collected": 59,
+              "active_interaction_r2": 0.713838,
+              "active_all_r2": -2.854871,
+              "active_num_interactions_collected": 192
+            },
+            {
+              "seed": 7,
+              "passive_interaction_r2": 0.239962,
+              "passive_all_r2": 0.149011,
+              "passive_num_interactions_collected": 54,
+              "active_interaction_r2": 0.263381,
+              "active_all_r2": -2.398414,
+              "active_num_interactions_collected": 189
+            },
+            {
+              "seed": 2026,
+              "passive_interaction_r2": -0.832046,
+              "passive_all_r2": -0.948976,
+              "passive_num_interactions_collected": 36,
+              "active_interaction_r2": 0.649745,
+              "active_all_r2": -1.407536,
+              "active_num_interactions_collected": 186
+            },
+            {
+              "seed": 555,
+              "passive_interaction_r2": 0.148618,
+              "passive_all_r2": 0.198685,
+              "passive_num_interactions_collected": 47,
+              "active_interaction_r2": 0.574002,
+              "active_all_r2": -1.45912,
+              "active_num_interactions_collected": 195
+            }
+          ],
+          "passive_interaction_r2": {
+            "mean": -0.1091,
+            "std": 0.414
+          },
+          "active_interaction_r2": {
+            "mean": 0.5635,
+            "std": 0.1569
+          },
+          "passive_all_r2": {
+            "mean": -0.0898,
+            "std": 0.4414
+          },
+          "active_all_r2": {
+            "mean": -2.752,
+            "std": 1.5464
+          },
+          "passive_mean_interactions": 53.4,
+          "active_mean_interactions": 191.0
+        },
+        "2000": {
+          "per_seed": [
+            {
+              "seed": 42,
+              "passive_interaction_r2": 0.296478,
+              "passive_all_r2": 0.371894,
+              "passive_num_interactions_collected": 129,
+              "active_interaction_r2": 0.848011,
+              "active_all_r2": -3.026714,
+              "active_num_interactions_collected": 406
+            },
+            {
+              "seed": 101,
+              "passive_interaction_r2": 0.415855,
+              "passive_all_r2": 0.530948,
+              "passive_num_interactions_collected": 144,
+              "active_interaction_r2": 0.670144,
+              "active_all_r2": -2.888801,
+              "active_num_interactions_collected": 388
+            },
+            {
+              "seed": 7,
+              "passive_interaction_r2": 0.245095,
+              "passive_all_r2": 0.09382,
+              "passive_num_interactions_collected": 125,
+              "active_interaction_r2": 0.651899,
+              "active_all_r2": -2.311558,
+              "active_num_interactions_collected": 377
+            },
+            {
+              "seed": 2026,
+              "passive_interaction_r2": 0.271797,
+              "passive_all_r2": 0.312082,
+              "passive_num_interactions_collected": 71,
+              "active_interaction_r2": 0.667132,
+              "active_all_r2": -1.93463,
+              "active_num_interactions_collected": 378
+            },
+            {
+              "seed": 555,
+              "passive_interaction_r2": 0.151963,
+              "passive_all_r2": 0.214854,
+              "passive_num_interactions_collected": 107,
+              "active_interaction_r2": 0.689338,
+              "active_all_r2": -3.599609,
+              "active_num_interactions_collected": 395
+            }
+          ],
+          "passive_interaction_r2": {
+            "mean": 0.2762,
+            "std": 0.0852
+          },
+          "active_interaction_r2": {
+            "mean": 0.7053,
+            "std": 0.0723
+          },
+          "passive_all_r2": {
+            "mean": 0.3047,
+            "std": 0.1472
+          },
+          "active_all_r2": {
+            "mean": -2.7523,
+            "std": 0.5787
+          },
+          "passive_mean_interactions": 115.2,
+          "active_mean_interactions": 388.8
+        },
+        "4000": {
+          "per_seed": [
+            {
+              "seed": 42,
+              "passive_interaction_r2": 0.930166,
+              "passive_all_r2": 0.927312,
+              "passive_num_interactions_collected": 199,
+              "active_interaction_r2": 0.889637,
+              "active_all_r2": -4.379679,
+              "active_num_interactions_collected": 806
+            },
+            {
+              "seed": 101,
+              "passive_interaction_r2": 0.973619,
+              "passive_all_r2": 0.978665,
+              "passive_num_interactions_collected": 258,
+              "active_interaction_r2": 0.771499,
+              "active_all_r2": -3.534306,
+              "active_num_interactions_collected": 779
+            },
+            {
+              "seed": 7,
+              "passive_interaction_r2": 0.769647,
+              "passive_all_r2": 0.772994,
+              "passive_num_interactions_collected": 219,
+              "active_interaction_r2": 0.828378,
+              "active_all_r2": -3.636381,
+              "active_num_interactions_collected": 757
+            },
+            {
+              "seed": 2026,
+              "passive_interaction_r2": 0.511782,
+              "passive_all_r2": 0.567555,
+              "passive_num_interactions_collected": 205,
+              "active_interaction_r2": 0.713303,
+              "active_all_r2": -2.195102,
+              "active_num_interactions_collected": 755
+            },
+            {
+              "seed": 555,
+              "passive_interaction_r2": 0.933614,
+              "passive_all_r2": 0.941747,
+              "passive_num_interactions_collected": 188,
+              "active_interaction_r2": 0.829421,
+              "active_all_r2": -1.671969,
+              "active_num_interactions_collected": 791
+            }
+          ],
+          "passive_interaction_r2": {
+            "mean": 0.8238,
+            "std": 0.1709
+          },
+          "active_interaction_r2": {
+            "mean": 0.8064,
+            "std": 0.0597
+          },
+          "passive_all_r2": {
+            "mean": 0.8377,
+            "std": 0.1522
+          },
+          "active_all_r2": {
+            "mean": -3.0835,
+            "std": 0.9971
+          },
+          "passive_mean_interactions": 213.8,
+          "active_mean_interactions": 777.6
+        }
+      },
+      "budgets_where_active_better_on_interaction_events": "4/5",
+      "budgets_where_active_better_on_all_transitions": "0/5"
+    },
+    "CSP-P7-E004": {
+      "experiment_id": "CSP-P7-E004",
+      "title": "Autonomous Uncertainty-Driven Intervention Selection vs Baselines (equal budget)",
+      "seeds": [
+        42,
+        101,
+        7,
+        2026,
+        555
+      ],
+      "budget": 2400,
+      "arms": [
+        "confounded",
+        "random",
+        "roundrobin",
+        "count",
+        "uncertainty"
+      ],
+      "per_seed": [
+        {
+          "seed": 42,
+          "confounded": {
+            "swapped_r2": -21.778,
+            "matched_r2": -0.0911,
+            "sites_covered": 2,
+            "swapped_sites_chosen": 0
+          },
+          "random": {
+            "swapped_r2": 0.7895,
+            "matched_r2": 0.8855,
+            "sites_covered": 6,
+            "swapped_sites_chosen": 4
+          },
+          "roundrobin": {
+            "swapped_r2": 0.9401,
+            "matched_r2": 0.9147,
+            "sites_covered": 8,
+            "swapped_sites_chosen": 3
+          },
+          "count": {
+            "swapped_r2": 0.7928,
+            "matched_r2": 0.9051,
+            "sites_covered": 8,
+            "swapped_sites_chosen": 3
+          },
+          "uncertainty": {
+            "swapped_r2": 0.9294,
+            "matched_r2": 0.9662,
+            "sites_covered": 5,
+            "swapped_sites_chosen": 3
+          }
+        },
+        {
+          "seed": 101,
+          "confounded": {
+            "swapped_r2": -22.6824,
+            "matched_r2": -0.4261,
+            "sites_covered": 2,
+            "swapped_sites_chosen": 0
+          },
+          "random": {
+            "swapped_r2": 0.9019,
+            "matched_r2": 0.9554,
+            "sites_covered": 5,
+            "swapped_sites_chosen": 1
+          },
+          "roundrobin": {
+            "swapped_r2": 0.9448,
+            "matched_r2": 0.9518,
+            "sites_covered": 8,
+            "swapped_sites_chosen": 3
+          },
+          "count": {
+            "swapped_r2": 0.9761,
+            "matched_r2": 0.9833,
+            "sites_covered": 8,
+            "swapped_sites_chosen": 3
+          },
+          "uncertainty": {
+            "swapped_r2": 0.7039,
+            "matched_r2": 0.8055,
+            "sites_covered": 4,
+            "swapped_sites_chosen": 1
+          }
+        },
+        {
+          "seed": 7,
+          "confounded": {
+            "swapped_r2": -18.1688,
+            "matched_r2": 0.0122,
+            "sites_covered": 2,
+            "swapped_sites_chosen": 0
+          },
+          "random": {
+            "swapped_r2": 0.8457,
+            "matched_r2": 0.7865,
+            "sites_covered": 6,
+            "swapped_sites_chosen": 2
+          },
+          "roundrobin": {
+            "swapped_r2": 0.8763,
+            "matched_r2": 0.8181,
+            "sites_covered": 8,
+            "swapped_sites_chosen": 3
+          },
+          "count": {
+            "swapped_r2": 0.9904,
+            "matched_r2": 0.984,
+            "sites_covered": 8,
+            "swapped_sites_chosen": 3
+          },
+          "uncertainty": {
+            "swapped_r2": -2.3582,
+            "matched_r2": 0.5137,
+            "sites_covered": 4,
+            "swapped_sites_chosen": 0
+          }
+        },
+        {
+          "seed": 2026,
+          "confounded": {
+            "swapped_r2": -17.286,
+            "matched_r2": -0.1129,
+            "sites_covered": 2,
+            "swapped_sites_chosen": 0
+          },
+          "random": {
+            "swapped_r2": 0.7063,
+            "matched_r2": 0.8999,
+            "sites_covered": 6,
+            "swapped_sites_chosen": 3
+          },
+          "roundrobin": {
+            "swapped_r2": 0.7072,
+            "matched_r2": 0.832,
+            "sites_covered": 8,
+            "swapped_sites_chosen": 3
+          },
+          "count": {
+            "swapped_r2": 0.8065,
+            "matched_r2": 0.7842,
+            "sites_covered": 8,
+            "swapped_sites_chosen": 3
+          },
+          "uncertainty": {
+            "swapped_r2": 0.8226,
+            "matched_r2": 0.8199,
+            "sites_covered": 5,
+            "swapped_sites_chosen": 1
+          }
+        },
+        {
+          "seed": 555,
+          "confounded": {
+            "swapped_r2": -19.2621,
+            "matched_r2": 0.277,
+            "sites_covered": 2,
+            "swapped_sites_chosen": 0
+          },
+          "random": {
+            "swapped_r2": 0.9081,
+            "matched_r2": 0.8288,
+            "sites_covered": 5,
+            "swapped_sites_chosen": 4
+          },
+          "roundrobin": {
+            "swapped_r2": 0.9054,
+            "matched_r2": 0.935,
+            "sites_covered": 8,
+            "swapped_sites_chosen": 3
+          },
+          "count": {
+            "swapped_r2": 0.9599,
+            "matched_r2": 0.9417,
+            "sites_covered": 8,
+            "swapped_sites_chosen": 3
+          },
+          "uncertainty": {
+            "swapped_r2": 0.8766,
+            "matched_r2": 0.9307,
+            "sites_covered": 5,
+            "swapped_sites_chosen": 1
+          }
+        }
+      ],
+      "summary": {
+        "confounded": {
+          "swapped_r2_mean": -19.8355,
+          "swapped_r2_std": 2.0729,
+          "matched_r2_mean": -0.0682,
+          "seeds_swapped_r2_above_0.9": 0
+        },
+        "random": {
+          "swapped_r2_mean": 0.8303,
+          "swapped_r2_std": 0.0754,
+          "matched_r2_mean": 0.8712,
+          "seeds_swapped_r2_above_0.9": 2
+        },
+        "roundrobin": {
+          "swapped_r2_mean": 0.8748,
+          "swapped_r2_std": 0.0874,
+          "matched_r2_mean": 0.8903,
+          "seeds_swapped_r2_above_0.9": 3
+        },
+        "count": {
+          "swapped_r2_mean": 0.9051,
+          "swapped_r2_std": 0.0868,
+          "matched_r2_mean": 0.9197,
+          "seeds_swapped_r2_above_0.9": 3
+        },
+        "uncertainty": {
+          "swapped_r2_mean": 0.1949,
+          "swapped_r2_std": 1.2787,
+          "matched_r2_mean": 0.8072,
+          "seeds_swapped_r2_above_0.9": 1
+        }
+      }
+    },
+    "CSP-P7-E005": {
+      "experiment_id": "CSP-P7-E005",
+      "title": "Strengthened Uncertainty Signal and Mixed Broad Exploration (follow-up to E004)",
+      "seeds": [
+        42,
+        101,
+        7,
+        2026,
+        555
+      ],
+      "budget": 2400,
+      "arms": [
+        "count",
+        "count_mix",
+        "uncertainty_v2",
+        "uncertainty_disc",
+        "uncertainty_v2_mix"
+      ],
+      "per_seed": [
+        {
+          "seed": 42,
+          "count": {
+            "swapped_r2": 0.7928,
+            "matched_r2": 0.9051,
+            "swapped_all_transitions_r2": 0.9256,
+            "sites_covered": 8,
+            "max_site_share": 0.2
+          },
+          "count_mix": {
+            "swapped_r2": -0.1308,
+            "matched_r2": 0.512,
+            "swapped_all_transitions_r2": 0.8667,
+            "sites_covered": 6,
+            "max_site_share": 0.2
+          },
+          "uncertainty_v2": {
+            "swapped_r2": 0.8559,
+            "matched_r2": 0.9744,
+            "swapped_all_transitions_r2": 0.8549,
+            "sites_covered": 3,
+            "max_site_share": 0.5
+          },
+          "uncertainty_disc": {
+            "swapped_r2": 0.963,
+            "matched_r2": 0.9647,
+            "swapped_all_transitions_r2": 0.9298,
+            "sites_covered": 5,
+            "max_site_share": 0.25
+          },
+          "uncertainty_v2_mix": {
+            "swapped_r2": -1.156,
+            "matched_r2": 0.6744,
+            "swapped_all_transitions_r2": 0.7877,
+            "sites_covered": 3,
+            "max_site_share": 0.5
+          }
+        },
+        {
+          "seed": 101,
+          "count": {
+            "swapped_r2": 0.9761,
+            "matched_r2": 0.9833,
+            "swapped_all_transitions_r2": 0.928,
+            "sites_covered": 8,
+            "max_site_share": 0.2
+          },
+          "count_mix": {
+            "swapped_r2": 0.0679,
+            "matched_r2": 0.7117,
+            "swapped_all_transitions_r2": 0.7457,
+            "sites_covered": 6,
+            "max_site_share": 0.2
+          },
+          "uncertainty_v2": {
+            "swapped_r2": 0.9235,
+            "matched_r2": 0.8769,
+            "swapped_all_transitions_r2": 0.9247,
+            "sites_covered": 5,
+            "max_site_share": 0.25
+          },
+          "uncertainty_disc": {
+            "swapped_r2": 0.9372,
+            "matched_r2": 0.9503,
+            "swapped_all_transitions_r2": 0.9103,
+            "sites_covered": 5,
+            "max_site_share": 0.375
+          },
+          "uncertainty_v2_mix": {
+            "swapped_r2": 0.4465,
+            "matched_r2": 0.7984,
+            "swapped_all_transitions_r2": 0.7824,
+            "sites_covered": 4,
+            "max_site_share": 0.5
+          }
+        },
+        {
+          "seed": 7,
+          "count": {
+            "swapped_r2": 0.9904,
+            "matched_r2": 0.984,
+            "swapped_all_transitions_r2": 0.9912,
+            "sites_covered": 8,
+            "max_site_share": 0.2
+          },
+          "count_mix": {
+            "swapped_r2": 0.2154,
+            "matched_r2": 0.7069,
+            "swapped_all_transitions_r2": 0.9249,
+            "sites_covered": 6,
+            "max_site_share": 0.2
+          },
+          "uncertainty_v2": {
+            "swapped_r2": 0.3282,
+            "matched_r2": 0.5196,
+            "swapped_all_transitions_r2": 0.7413,
+            "sites_covered": 4,
+            "max_site_share": 0.375
+          },
+          "uncertainty_disc": {
+            "swapped_r2": 0.9791,
+            "matched_r2": 0.9636,
+            "swapped_all_transitions_r2": 0.9211,
+            "sites_covered": 5,
+            "max_site_share": 0.25
+          },
+          "uncertainty_v2_mix": {
+            "swapped_r2": 0.2595,
+            "matched_r2": 0.9348,
+            "swapped_all_transitions_r2": 0.878,
+            "sites_covered": 3,
+            "max_site_share": 0.5
+          }
+        },
+        {
+          "seed": 2026,
+          "count": {
+            "swapped_r2": 0.8065,
+            "matched_r2": 0.7842,
+            "swapped_all_transitions_r2": 0.8902,
+            "sites_covered": 8,
+            "max_site_share": 0.2
+          },
+          "count_mix": {
+            "swapped_r2": -0.1632,
+            "matched_r2": 0.598,
+            "swapped_all_transitions_r2": 0.8035,
+            "sites_covered": 6,
+            "max_site_share": 0.2
+          },
+          "uncertainty_v2": {
+            "swapped_r2": 0.8123,
+            "matched_r2": 0.8913,
+            "swapped_all_transitions_r2": 0.9268,
+            "sites_covered": 4,
+            "max_site_share": 0.375
+          },
+          "uncertainty_disc": {
+            "swapped_r2": 0.8383,
+            "matched_r2": 0.8009,
+            "swapped_all_transitions_r2": 0.9354,
+            "sites_covered": 6,
+            "max_site_share": 0.25
+          },
+          "uncertainty_v2_mix": {
+            "swapped_r2": -1.5035,
+            "matched_r2": 0.5998,
+            "swapped_all_transitions_r2": 0.5993,
+            "sites_covered": 5,
+            "max_site_share": 0.375
+          }
+        },
+        {
+          "seed": 555,
+          "count": {
+            "swapped_r2": 0.9599,
+            "matched_r2": 0.9417,
+            "swapped_all_transitions_r2": 0.9061,
+            "sites_covered": 8,
+            "max_site_share": 0.2
+          },
+          "count_mix": {
+            "swapped_r2": 0.8339,
+            "matched_r2": 0.6771,
+            "swapped_all_transitions_r2": 0.9618,
+            "sites_covered": 6,
+            "max_site_share": 0.2
+          },
+          "uncertainty_v2": {
+            "swapped_r2": 0.7642,
+            "matched_r2": 0.7623,
+            "swapped_all_transitions_r2": 0.8702,
+            "sites_covered": 4,
+            "max_site_share": 0.25
+          },
+          "uncertainty_disc": {
+            "swapped_r2": 0.1752,
+            "matched_r2": 0.6393,
+            "swapped_all_transitions_r2": 0.5993,
+            "sites_covered": 3,
+            "max_site_share": 0.375
+          },
+          "uncertainty_v2_mix": {
+            "swapped_r2": 0.9021,
+            "matched_r2": 0.9425,
+            "swapped_all_transitions_r2": 0.963,
+            "sites_covered": 4,
+            "max_site_share": 0.375
+          }
+        }
+      ],
+      "summary": {
+        "count": {
+          "swapped_r2_mean": 0.9051,
+          "swapped_r2_std": 0.0868,
+          "swapped_r2_min": 0.7928,
+          "matched_r2_mean": 0.9197,
+          "swapped_all_transitions_r2_mean": 0.9282,
+          "mean_sites_covered": 8.0,
+          "seeds_swapped_r2_above_0.9": 3
+        },
+        "count_mix": {
+          "swapped_r2_mean": 0.1646,
+          "swapped_r2_std": 0.3618,
+          "swapped_r2_min": -0.1632,
+          "matched_r2_mean": 0.6411,
+          "swapped_all_transitions_r2_mean": 0.8605,
+          "mean_sites_covered": 6.0,
+          "seeds_swapped_r2_above_0.9": 0
+        },
+        "uncertainty_v2": {
+          "swapped_r2_mean": 0.7368,
+          "swapped_r2_std": 0.2109,
+          "swapped_r2_min": 0.3282,
+          "matched_r2_mean": 0.8049,
+          "swapped_all_transitions_r2_mean": 0.8636,
+          "mean_sites_covered": 4.0,
+          "seeds_swapped_r2_above_0.9": 1
+        },
+        "uncertainty_disc": {
+          "swapped_r2_mean": 0.7786,
+          "swapped_r2_std": 0.3056,
+          "swapped_r2_min": 0.1752,
+          "matched_r2_mean": 0.8638,
+          "swapped_all_transitions_r2_mean": 0.8592,
+          "mean_sites_covered": 4.8,
+          "seeds_swapped_r2_above_0.9": 3
+        },
+        "uncertainty_v2_mix": {
+          "swapped_r2_mean": -0.2103,
+          "swapped_r2_std": 0.9441,
+          "swapped_r2_min": -1.5035,
+          "matched_r2_mean": 0.79,
+          "swapped_all_transitions_r2_mean": 0.8021,
+          "mean_sites_covered": 3.8,
+          "seeds_swapped_r2_above_0.9": 1
+        }
+      }
+    },
+    "CSP-P7-E005-R2": {
+      "experiment_id": "CSP-P7-E005-R2",
+      "broad_world": "phase7_world_broad_consistent.json",
+      "title": "Strengthened Uncertainty Signal and Mixed Broad Exploration (follow-up to E004)",
+      "seeds": [
+        42,
+        101,
+        7,
+        2026,
+        555
+      ],
+      "budget": 2400,
+      "arms": [
+        "count_mix",
+        "uncertainty_disc_mix",
+        "uncertainty_v2_mix"
+      ],
+      "per_seed": [
+        {
+          "seed": 42,
+          "count_mix": {
+            "swapped_r2": 0.8639,
+            "matched_r2": 0.712,
+            "swapped_all_transitions_r2": 0.9471,
+            "sites_covered": 6,
+            "max_site_share": 0.2
+          },
+          "uncertainty_disc_mix": {
+            "swapped_r2": 0.8551,
+            "matched_r2": 0.9543,
+            "swapped_all_transitions_r2": 0.9116,
+            "sites_covered": 4,
+            "max_site_share": 0.25
+          },
+          "uncertainty_v2_mix": {
+            "swapped_r2": 0.8951,
+            "matched_r2": 0.9417,
+            "swapped_all_transitions_r2": 0.9823,
+            "sites_covered": 4,
+            "max_site_share": 0.375
+          }
+        },
+        {
+          "seed": 101,
+          "count_mix": {
+            "swapped_r2": 0.6596,
+            "matched_r2": 0.8306,
+            "swapped_all_transitions_r2": 0.8738,
+            "sites_covered": 6,
+            "max_site_share": 0.2
+          },
+          "uncertainty_disc_mix": {
+            "swapped_r2": 0.8342,
+            "matched_r2": 0.9446,
+            "swapped_all_transitions_r2": 0.8957,
+            "sites_covered": 6,
+            "max_site_share": 0.25
+          },
+          "uncertainty_v2_mix": {
+            "swapped_r2": 0.8994,
+            "matched_r2": 0.9692,
+            "swapped_all_transitions_r2": 0.9848,
+            "sites_covered": 5,
+            "max_site_share": 0.375
+          }
+        },
+        {
+          "seed": 7,
+          "count_mix": {
+            "swapped_r2": 0.9478,
+            "matched_r2": 0.9192,
+            "swapped_all_transitions_r2": 0.9899,
+            "sites_covered": 6,
+            "max_site_share": 0.2
+          },
+          "uncertainty_disc_mix": {
+            "swapped_r2": 0.9534,
+            "matched_r2": 0.9491,
+            "swapped_all_transitions_r2": 0.9755,
+            "sites_covered": 5,
+            "max_site_share": 0.375
+          },
+          "uncertainty_v2_mix": {
+            "swapped_r2": 0.6357,
+            "matched_r2": 0.9085,
+            "swapped_all_transitions_r2": 0.9092,
+            "sites_covered": 3,
+            "max_site_share": 0.5
+          }
+        },
+        {
+          "seed": 2026,
+          "count_mix": {
+            "swapped_r2": 0.903,
+            "matched_r2": 0.82,
+            "swapped_all_transitions_r2": 0.9673,
+            "sites_covered": 6,
+            "max_site_share": 0.2
+          },
+          "uncertainty_disc_mix": {
+            "swapped_r2": 0.7601,
+            "matched_r2": 0.7529,
+            "swapped_all_transitions_r2": 0.8216,
+            "sites_covered": 6,
+            "max_site_share": 0.25
+          },
+          "uncertainty_v2_mix": {
+            "swapped_r2": 0.3716,
+            "matched_r2": 0.5804,
+            "swapped_all_transitions_r2": 0.7924,
+            "sites_covered": 4,
+            "max_site_share": 0.375
+          }
+        },
+        {
+          "seed": 555,
+          "count_mix": {
+            "swapped_r2": 0.8506,
+            "matched_r2": 0.7854,
+            "swapped_all_transitions_r2": 0.847,
+            "sites_covered": 6,
+            "max_site_share": 0.2
+          },
+          "uncertainty_disc_mix": {
+            "swapped_r2": 0.8601,
+            "matched_r2": 0.9105,
+            "swapped_all_transitions_r2": 0.9339,
+            "sites_covered": 5,
+            "max_site_share": 0.375
+          },
+          "uncertainty_v2_mix": {
+            "swapped_r2": 0.675,
+            "matched_r2": 0.8408,
+            "swapped_all_transitions_r2": 0.8744,
+            "sites_covered": 3,
+            "max_site_share": 0.375
+          }
+        }
+      ],
+      "summary": {
+        "count_mix": {
+          "swapped_r2_mean": 0.845,
+          "swapped_r2_std": 0.0987,
+          "swapped_r2_min": 0.6596,
+          "matched_r2_mean": 0.8134,
+          "swapped_all_transitions_r2_mean": 0.925,
+          "mean_sites_covered": 6.0,
+          "seeds_swapped_r2_above_0.9": 2
+        },
+        "uncertainty_disc_mix": {
+          "swapped_r2_mean": 0.8526,
+          "swapped_r2_std": 0.0618,
+          "swapped_r2_min": 0.7601,
+          "matched_r2_mean": 0.9023,
+          "swapped_all_transitions_r2_mean": 0.9077,
+          "mean_sites_covered": 5.2,
+          "seeds_swapped_r2_above_0.9": 1
+        },
+        "uncertainty_v2_mix": {
+          "swapped_r2_mean": 0.6954,
+          "swapped_r2_std": 0.1951,
+          "swapped_r2_min": 0.3716,
+          "matched_r2_mean": 0.8481,
+          "swapped_all_transitions_r2_mean": 0.9086,
+          "mean_sites_covered": 3.8,
+          "seeds_swapped_r2_above_0.9": 0
+        }
+      }
+    },
+    "CSP-P7-E006a": {
+      "experiment_id": "CSP-P7-E006a",
+      "title": "Repeated Interventions Under Outcome Noise",
+      "seed": 42,
+      "trials_per_cell": 200,
+      "noise_levels": [
+        0.0,
+        5.0,
+        10.0,
+        20.0
+      ],
+      "repeats": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "results": {
+        "0.0": {
+          "1": {
+            "decision_accuracy_pct": 100.0,
+            "std_of_repeat_mean": 0.0,
+            "n": 200
+          },
+          "2": {
+            "decision_accuracy_pct": 100.0,
+            "std_of_repeat_mean": 0.0,
+            "n": 200
+          },
+          "4": {
+            "decision_accuracy_pct": 100.0,
+            "std_of_repeat_mean": 0.0,
+            "n": 200
+          },
+          "8": {
+            "decision_accuracy_pct": 100.0,
+            "std_of_repeat_mean": 0.0,
+            "n": 200
+          },
+          "16": {
+            "decision_accuracy_pct": 100.0,
+            "std_of_repeat_mean": 0.0,
+            "n": 200
+          }
+        },
+        "5.0": {
+          "1": {
+            "decision_accuracy_pct": 98.5,
+            "std_of_repeat_mean": 5.2391,
+            "n": 200
+          },
+          "2": {
+            "decision_accuracy_pct": 99.0,
+            "std_of_repeat_mean": 3.8275,
+            "n": 200
+          },
+          "4": {
+            "decision_accuracy_pct": 100.0,
+            "std_of_repeat_mean": 2.6189,
+            "n": 200
+          },
+          "8": {
+            "decision_accuracy_pct": 100.0,
+            "std_of_repeat_mean": 1.7114,
+            "n": 200
+          },
+          "16": {
+            "decision_accuracy_pct": 100.0,
+            "std_of_repeat_mean": 1.1952,
+            "n": 200
+          }
+        },
+        "10.0": {
+          "1": {
+            "decision_accuracy_pct": 86.5,
+            "std_of_repeat_mean": 9.476,
+            "n": 200
+          },
+          "2": {
+            "decision_accuracy_pct": 96.5,
+            "std_of_repeat_mean": 5.9867,
+            "n": 200
+          },
+          "4": {
+            "decision_accuracy_pct": 98.5,
+            "std_of_repeat_mean": 4.8998,
+            "n": 200
+          },
+          "8": {
+            "decision_accuracy_pct": 99.0,
+            "std_of_repeat_mean": 3.6505,
+            "n": 200
+          },
+          "16": {
+            "decision_accuracy_pct": 100.0,
+            "std_of_repeat_mean": 2.4232,
+            "n": 200
+          }
+        },
+        "20.0": {
+          "1": {
+            "decision_accuracy_pct": 72.0,
+            "std_of_repeat_mean": 20.1907,
+            "n": 200
+          },
+          "2": {
+            "decision_accuracy_pct": 75.0,
+            "std_of_repeat_mean": 14.4405,
+            "n": 200
+          },
+          "4": {
+            "decision_accuracy_pct": 82.5,
+            "std_of_repeat_mean": 9.3339,
+            "n": 200
+          },
+          "8": {
+            "decision_accuracy_pct": 95.0,
+            "std_of_repeat_mean": 6.8989,
+            "n": 200
+          },
+          "16": {
+            "decision_accuracy_pct": 98.5,
+            "std_of_repeat_mean": 4.7862,
+            "n": 200
+          }
+        }
+      },
+      "preregistered_checks": {
+        "i_sigma0_all_100pct": true,
+        "ii_sigma10_gain_ge_10pts": true,
+        "iii_loglog_slope": -0.522,
+        "iii_slope_within_tolerance": true
+      },
+      "preregistered": "see docstring: (i) sigma0 100%; (ii) sigma10 r16-r1 >= +10 pts; (iii) std slope -0.5 +/- 0.15"
+    },
+    "CSP-P7-E006b": {
+      "experiment_id": "CSP-P7-E006b",
+      "title": "Confound Recovery Under Outcome Noise (scored vs noise-free truth)",
+      "seeds": [
+        42,
+        101,
+        7,
+        2026,
+        555
+      ],
+      "noise_levels": [
+        0.0,
+        3.0,
+        6.0
+      ],
+      "steps_per_region": 3000,
+      "per_run": [
+        {
+          "noise": 0.0,
+          "seed": 42,
+          "passive_matched_r2": 1.0,
+          "passive_swapped_r2": 0.9913,
+          "active_matched_r2": 1.0,
+          "active_swapped_r2": 1.0
+        },
+        {
+          "noise": 0.0,
+          "seed": 101,
+          "passive_matched_r2": 0.9999,
+          "passive_swapped_r2": 0.9453,
+          "active_matched_r2": 1.0,
+          "active_swapped_r2": 1.0
+        },
+        {
+          "noise": 0.0,
+          "seed": 7,
+          "passive_matched_r2": 1.0,
+          "passive_swapped_r2": 0.9928,
+          "active_matched_r2": 1.0,
+          "active_swapped_r2": 1.0
+        },
+        {
+          "noise": 0.0,
+          "seed": 2026,
+          "passive_matched_r2": 1.0,
+          "passive_swapped_r2": 0.9918,
+          "active_matched_r2": 1.0,
+          "active_swapped_r2": 1.0
+        },
+        {
+          "noise": 0.0,
+          "seed": 555,
+          "passive_matched_r2": 1.0,
+          "passive_swapped_r2": 0.9631,
+          "active_matched_r2": 1.0,
+          "active_swapped_r2": 1.0
+        },
+        {
+          "noise": 3.0,
+          "seed": 42,
+          "passive_matched_r2": 0.9917,
+          "passive_swapped_r2": 0.625,
+          "active_matched_r2": 0.9889,
+          "active_swapped_r2": 0.9871
+        },
+        {
+          "noise": 3.0,
+          "seed": 101,
+          "passive_matched_r2": 0.9914,
+          "passive_swapped_r2": 0.1227,
+          "active_matched_r2": 0.9975,
+          "active_swapped_r2": 0.9933
+        },
+        {
+          "noise": 3.0,
+          "seed": 7,
+          "passive_matched_r2": 0.994,
+          "passive_swapped_r2": -0.1592,
+          "active_matched_r2": 0.9921,
+          "active_swapped_r2": 0.9949
+        },
+        {
+          "noise": 3.0,
+          "seed": 2026,
+          "passive_matched_r2": 0.9883,
+          "passive_swapped_r2": 0.3418,
+          "active_matched_r2": 0.9947,
+          "active_swapped_r2": 0.9939
+        },
+        {
+          "noise": 3.0,
+          "seed": 555,
+          "passive_matched_r2": 0.9909,
+          "passive_swapped_r2": 0.5891,
+          "active_matched_r2": 0.9946,
+          "active_swapped_r2": 0.9918
+        },
+        {
+          "noise": 6.0,
+          "seed": 42,
+          "passive_matched_r2": 0.9749,
+          "passive_swapped_r2": 0.1215,
+          "active_matched_r2": 0.9612,
+          "active_swapped_r2": 0.9481
+        },
+        {
+          "noise": 6.0,
+          "seed": 101,
+          "passive_matched_r2": 0.9815,
+          "passive_swapped_r2": -0.6137,
+          "active_matched_r2": 0.9859,
+          "active_swapped_r2": 0.9825
+        },
+        {
+          "noise": 6.0,
+          "seed": 7,
+          "passive_matched_r2": 0.9711,
+          "passive_swapped_r2": -0.4269,
+          "active_matched_r2": 0.9586,
+          "active_swapped_r2": 0.9751
+        },
+        {
+          "noise": 6.0,
+          "seed": 2026,
+          "passive_matched_r2": 0.9746,
+          "passive_swapped_r2": 0.0583,
+          "active_matched_r2": 0.9568,
+          "active_swapped_r2": 0.9737
+        },
+        {
+          "noise": 6.0,
+          "seed": 555,
+          "passive_matched_r2": 0.9618,
+          "passive_swapped_r2": 0.1498,
+          "active_matched_r2": 0.9702,
+          "active_swapped_r2": 0.9619
+        }
+      ],
+      "summary": {
+        "0.0": {
+          "active_swapped_r2_mean": 1.0,
+          "passive_swapped_r2_mean": 0.9769,
+          "active_seeds_ge_0.8": 5,
+          "gap": 0.0231,
+          "prereg_met": false
+        },
+        "3.0": {
+          "active_swapped_r2_mean": 0.9922,
+          "passive_swapped_r2_mean": 0.3039,
+          "active_seeds_ge_0.8": 5,
+          "gap": 0.6883,
+          "prereg_met": true
+        },
+        "6.0": {
+          "active_swapped_r2_mean": 0.9683,
+          "passive_swapped_r2_mean": -0.1422,
+          "active_seeds_ge_0.8": 5,
+          "gap": 1.1105,
+          "prereg_met": true
+        }
+      },
+      "preregistered": "per sigma: active swapped R2 >= 0.8 in >= 4/5 seeds AND mean(active)-mean(passive) >= 0.3"
+    },
+    "CSP-P7-E007": {
+      "experiment_id": "CSP-P7-E007",
+      "title": "Harder Confound: 4 Types, 16 Sites, Cyclic-Shift Test, With and Without Noise",
+      "seeds": [
+        42,
+        101,
+        7,
+        2026,
+        555
+      ],
+      "budget": 4800,
+      "noise_levels": [
+        0.0,
+        3.0
+      ],
+      "per_run": [
+        {
+          "noise": 0.0,
+          "seed": 42,
+          "confounded": {
+            "swapped_r2": -1.6618,
+            "matched_r2": 1.0
+          },
+          "random": {
+            "swapped_r2": 0.6599,
+            "matched_r2": 1.0
+          },
+          "count": {
+            "swapped_r2": 1.0,
+            "matched_r2": 1.0
+          }
+        },
+        {
+          "noise": 0.0,
+          "seed": 101,
+          "confounded": {
+            "swapped_r2": -1.1234,
+            "matched_r2": 1.0
+          },
+          "random": {
+            "swapped_r2": 0.9999,
+            "matched_r2": 1.0
+          },
+          "count": {
+            "swapped_r2": 1.0,
+            "matched_r2": 1.0
+          }
+        },
+        {
+          "noise": 0.0,
+          "seed": 7,
+          "confounded": {
+            "swapped_r2": -1.9554,
+            "matched_r2": 1.0
+          },
+          "random": {
+            "swapped_r2": 1.0,
+            "matched_r2": 1.0
+          },
+          "count": {
+            "swapped_r2": 1.0,
+            "matched_r2": 1.0
+          }
+        },
+        {
+          "noise": 0.0,
+          "seed": 2026,
+          "confounded": {
+            "swapped_r2": -1.5081,
+            "matched_r2": 1.0
+          },
+          "random": {
+            "swapped_r2": 0.2781,
+            "matched_r2": 0.9998
+          },
+          "count": {
+            "swapped_r2": 1.0,
+            "matched_r2": 1.0
+          }
+        },
+        {
+          "noise": 0.0,
+          "seed": 555,
+          "confounded": {
+            "swapped_r2": -1.0491,
+            "matched_r2": 1.0
+          },
+          "random": {
+            "swapped_r2": 0.8354,
+            "matched_r2": 1.0
+          },
+          "count": {
+            "swapped_r2": 1.0,
+            "matched_r2": 1.0
+          }
+        },
+        {
+          "noise": 3.0,
+          "seed": 42,
+          "confounded": {
+            "swapped_r2": -2.1106,
+            "matched_r2": 0.9253
+          },
+          "random": {
+            "swapped_r2": -0.4212,
+            "matched_r2": 0.8196
+          },
+          "count": {
+            "swapped_r2": 0.8612,
+            "matched_r2": 0.8241
+          }
+        },
+        {
+          "noise": 3.0,
+          "seed": 101,
+          "confounded": {
+            "swapped_r2": -1.6705,
+            "matched_r2": 0.8957
+          },
+          "random": {
+            "swapped_r2": 0.8451,
+            "matched_r2": 0.8195
+          },
+          "count": {
+            "swapped_r2": 0.8588,
+            "matched_r2": 0.7993
+          }
+        },
+        {
+          "noise": 3.0,
+          "seed": 7,
+          "confounded": {
+            "swapped_r2": -1.3724,
+            "matched_r2": 0.9645
+          },
+          "random": {
+            "swapped_r2": 0.8557,
+            "matched_r2": 0.8853
+          },
+          "count": {
+            "swapped_r2": 0.8727,
+            "matched_r2": 0.869
+          }
+        },
+        {
+          "noise": 3.0,
+          "seed": 2026,
+          "confounded": {
+            "swapped_r2": -1.0947,
+            "matched_r2": 0.948
+          },
+          "random": {
+            "swapped_r2": -0.4229,
+            "matched_r2": 0.9476
+          },
+          "count": {
+            "swapped_r2": 0.7585,
+            "matched_r2": 0.82
+          }
+        },
+        {
+          "noise": 3.0,
+          "seed": 555,
+          "confounded": {
+            "swapped_r2": -1.0944,
+            "matched_r2": 0.9466
+          },
+          "random": {
+            "swapped_r2": 0.1862,
+            "matched_r2": 0.8534
+          },
+          "count": {
+            "swapped_r2": 0.8389,
+            "matched_r2": 0.8444
+          }
+        }
+      ],
+      "summary": {
+        "0.0": {
+          "confounded": {
+            "swapped_r2_mean": -1.4596,
+            "swapped_r2_min": -1.9554,
+            "seeds_ge_0.8": 0,
+            "matched_r2_mean": 1.0
+          },
+          "random": {
+            "swapped_r2_mean": 0.7547,
+            "swapped_r2_min": 0.2781,
+            "seeds_ge_0.8": 3,
+            "matched_r2_mean": 1.0
+          },
+          "count": {
+            "swapped_r2_mean": 1.0,
+            "swapped_r2_min": 1.0,
+            "seeds_ge_0.8": 5,
+            "matched_r2_mean": 1.0
+          },
+          "prereg_met": false
+        },
+        "3.0": {
+          "confounded": {
+            "swapped_r2_mean": -1.4685,
+            "swapped_r2_min": -2.1106,
+            "seeds_ge_0.8": 0,
+            "matched_r2_mean": 0.936
+          },
+          "random": {
+            "swapped_r2_mean": 0.2086,
+            "swapped_r2_min": -0.4229,
+            "seeds_ge_0.8": 2,
+            "matched_r2_mean": 0.8651
+          },
+          "count": {
+            "swapped_r2_mean": 0.838,
+            "swapped_r2_min": 0.7585,
+            "seeds_ge_0.8": 4,
+            "matched_r2_mean": 0.8314
+          },
+          "prereg_met": false
+        }
+      },
+      "preregistered": "random & count: swapped R2 >= 0.8 in >=4/5 seeds at each sigma AND >= confounded + 0.5"
+    }
+  }
+}

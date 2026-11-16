@@ -1,0 +1,23 @@
+matrix done 282.03552317619324
+a1 done 377.29261803627014
+adapt W1 seed 42 128
+adapt W1 seed 101 256
+adapt W1 seed 7 384
+adapt W1 seed 2026 512
+adapt W1 seed 555 640
+adapt W1 seed 1 768
+adapt W1 seed 2 896
+adapt W1 seed 3 1024
+adapt W1 seed 4 1152
+adapt W1 seed 5 1280
+adapt W2 seed 42 1408
+adapt W2 seed 101 1536
+adapt W2 seed 7 1664
+adapt W2 seed 2026 1792
+adapt W2 seed 555 1920
+adapt W2 seed 1 2048
+adapt W2 seed 2 2176
+adapt W2 seed 3 2304
+adapt W2 seed 4 2432
+adapt W2 seed 5 2560
+adapt done 837.20090675354

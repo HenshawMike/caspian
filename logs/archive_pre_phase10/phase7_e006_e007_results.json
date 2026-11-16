@@ -1,0 +1,524 @@
+{
+  "CSP-P7-E006a": {
+    "experiment_id": "CSP-P7-E006a",
+    "title": "Repeated Interventions Under Outcome Noise",
+    "seed": 42,
+    "trials_per_cell": 200,
+    "noise_levels": [
+      0.0,
+      5.0,
+      10.0,
+      20.0
+    ],
+    "repeats": [
+      1,
+      2,
+      4,
+      8,
+      16
+    ],
+    "results": {
+      "0.0": {
+        "1": {
+          "decision_accuracy_pct": 100.0,
+          "std_of_repeat_mean": 0.0,
+          "n": 200
+        },
+        "2": {
+          "decision_accuracy_pct": 100.0,
+          "std_of_repeat_mean": 0.0,
+          "n": 200
+        },
+        "4": {
+          "decision_accuracy_pct": 100.0,
+          "std_of_repeat_mean": 0.0,
+          "n": 200
+        },
+        "8": {
+          "decision_accuracy_pct": 100.0,
+          "std_of_repeat_mean": 0.0,
+          "n": 200
+        },
+        "16": {
+          "decision_accuracy_pct": 100.0,
+          "std_of_repeat_mean": 0.0,
+          "n": 200
+        }
+      },
+      "5.0": {
+        "1": {
+          "decision_accuracy_pct": 98.5,
+          "std_of_repeat_mean": 5.2391,
+          "n": 200
+        },
+        "2": {
+          "decision_accuracy_pct": 99.0,
+          "std_of_repeat_mean": 3.8275,
+          "n": 200
+        },
+        "4": {
+          "decision_accuracy_pct": 100.0,
+          "std_of_repeat_mean": 2.6189,
+          "n": 200
+        },
+        "8": {
+          "decision_accuracy_pct": 100.0,
+          "std_of_repeat_mean": 1.7114,
+          "n": 200
+        },
+        "16": {
+          "decision_accuracy_pct": 100.0,
+          "std_of_repeat_mean": 1.1952,
+          "n": 200
+        }
+      },
+      "10.0": {
+        "1": {
+          "decision_accuracy_pct": 86.5,
+          "std_of_repeat_mean": 9.476,
+          "n": 200
+        },
+        "2": {
+          "decision_accuracy_pct": 96.5,
+          "std_of_repeat_mean": 5.9867,
+          "n": 200
+        },
+        "4": {
+          "decision_accuracy_pct": 98.5,
+          "std_of_repeat_mean": 4.8998,
+          "n": 200
+        },
+        "8": {
+          "decision_accuracy_pct": 99.0,
+          "std_of_repeat_mean": 3.6505,
+          "n": 200
+        },
+        "16": {
+          "decision_accuracy_pct": 100.0,
+          "std_of_repeat_mean": 2.4232,
+          "n": 200
+        }
+      },
+      "20.0": {
+        "1": {
+          "decision_accuracy_pct": 72.0,
+          "std_of_repeat_mean": 20.1907,
+          "n": 200
+        },
+        "2": {
+          "decision_accuracy_pct": 75.0,
+          "std_of_repeat_mean": 14.4405,
+          "n": 200
+        },
+        "4": {
+          "decision_accuracy_pct": 82.5,
+          "std_of_repeat_mean": 9.3339,
+          "n": 200
+        },
+        "8": {
+          "decision_accuracy_pct": 95.0,
+          "std_of_repeat_mean": 6.8989,
+          "n": 200
+        },
+        "16": {
+          "decision_accuracy_pct": 98.5,
+          "std_of_repeat_mean": 4.7862,
+          "n": 200
+        }
+      }
+    },
+    "preregistered_checks": {
+      "i_sigma0_all_100pct": true,
+      "ii_sigma10_gain_ge_10pts": true,
+      "iii_loglog_slope": -0.522,
+      "iii_slope_within_tolerance": true
+    },
+    "preregistered": "see docstring: (i) sigma0 100%; (ii) sigma10 r16-r1 >= +10 pts; (iii) std slope -0.5 +/- 0.15"
+  },
+  "CSP-P7-E006b": {
+    "experiment_id": "CSP-P7-E006b",
+    "title": "Confound Recovery Under Outcome Noise (scored vs noise-free truth)",
+    "seeds": [
+      42,
+      101,
+      7,
+      2026,
+      555
+    ],
+    "noise_levels": [
+      0.0,
+      3.0,
+      6.0
+    ],
+    "steps_per_region": 3000,
+    "per_run": [
+      {
+        "noise": 0.0,
+        "seed": 42,
+        "passive_matched_r2": 1.0,
+        "passive_swapped_r2": 0.9913,
+        "active_matched_r2": 1.0,
+        "active_swapped_r2": 1.0
+      },
+      {
+        "noise": 0.0,
+        "seed": 101,
+        "passive_matched_r2": 0.9999,
+        "passive_swapped_r2": 0.9453,
+        "active_matched_r2": 1.0,
+        "active_swapped_r2": 1.0
+      },
+      {
+        "noise": 0.0,
+        "seed": 7,
+        "passive_matched_r2": 1.0,
+        "passive_swapped_r2": 0.9928,
+        "active_matched_r2": 1.0,
+        "active_swapped_r2": 1.0
+      },
+      {
+        "noise": 0.0,
+        "seed": 2026,
+        "passive_matched_r2": 1.0,
+        "passive_swapped_r2": 0.9918,
+        "active_matched_r2": 1.0,
+        "active_swapped_r2": 1.0
+      },
+      {
+        "noise": 0.0,
+        "seed": 555,
+        "passive_matched_r2": 1.0,
+        "passive_swapped_r2": 0.9631,
+        "active_matched_r2": 1.0,
+        "active_swapped_r2": 1.0
+      },
+      {
+        "noise": 3.0,
+        "seed": 42,
+        "passive_matched_r2": 0.9917,
+        "passive_swapped_r2": 0.625,
+        "active_matched_r2": 0.9889,
+        "active_swapped_r2": 0.9871
+      },
+      {
+        "noise": 3.0,
+        "seed": 101,
+        "passive_matched_r2": 0.9914,
+        "passive_swapped_r2": 0.1227,
+        "active_matched_r2": 0.9975,
+        "active_swapped_r2": 0.9933
+      },
+      {
+        "noise": 3.0,
+        "seed": 7,
+        "passive_matched_r2": 0.994,
+        "passive_swapped_r2": -0.1592,
+        "active_matched_r2": 0.9921,
+        "active_swapped_r2": 0.9949
+      },
+      {
+        "noise": 3.0,
+        "seed": 2026,
+        "passive_matched_r2": 0.9883,
+        "passive_swapped_r2": 0.3418,
+        "active_matched_r2": 0.9947,
+        "active_swapped_r2": 0.9939
+      },
+      {
+        "noise": 3.0,
+        "seed": 555,
+        "passive_matched_r2": 0.9909,
+        "passive_swapped_r2": 0.5891,
+        "active_matched_r2": 0.9946,
+        "active_swapped_r2": 0.9918
+      },
+      {
+        "noise": 6.0,
+        "seed": 42,
+        "passive_matched_r2": 0.9749,
+        "passive_swapped_r2": 0.1215,
+        "active_matched_r2": 0.9612,
+        "active_swapped_r2": 0.9481
+      },
+      {
+        "noise": 6.0,
+        "seed": 101,
+        "passive_matched_r2": 0.9815,
+        "passive_swapped_r2": -0.6137,
+        "active_matched_r2": 0.9859,
+        "active_swapped_r2": 0.9825
+      },
+      {
+        "noise": 6.0,
+        "seed": 7,
+        "passive_matched_r2": 0.9711,
+        "passive_swapped_r2": -0.4269,
+        "active_matched_r2": 0.9586,
+        "active_swapped_r2": 0.9751
+      },
+      {
+        "noise": 6.0,
+        "seed": 2026,
+        "passive_matched_r2": 0.9746,
+        "passive_swapped_r2": 0.0583,
+        "active_matched_r2": 0.9568,
+        "active_swapped_r2": 0.9737
+      },
+      {
+        "noise": 6.0,
+        "seed": 555,
+        "passive_matched_r2": 0.9618,
+        "passive_swapped_r2": 0.1498,
+        "active_matched_r2": 0.9702,
+        "active_swapped_r2": 0.9619
+      }
+    ],
+    "summary": {
+      "0.0": {
+        "active_swapped_r2_mean": 1.0,
+        "passive_swapped_r2_mean": 0.9769,
+        "active_seeds_ge_0.8": 5,
+        "gap": 0.0231,
+        "prereg_met": false
+      },
+      "3.0": {
+        "active_swapped_r2_mean": 0.9922,
+        "passive_swapped_r2_mean": 0.3039,
+        "active_seeds_ge_0.8": 5,
+        "gap": 0.6883,
+        "prereg_met": true
+      },
+      "6.0": {
+        "active_swapped_r2_mean": 0.9683,
+        "passive_swapped_r2_mean": -0.1422,
+        "active_seeds_ge_0.8": 5,
+        "gap": 1.1105,
+        "prereg_met": true
+      }
+    },
+    "preregistered": "per sigma: active swapped R2 >= 0.8 in >= 4/5 seeds AND mean(active)-mean(passive) >= 0.3"
+  },
+  "CSP-P7-E007": {
+    "experiment_id": "CSP-P7-E007",
+    "title": "Harder Confound: 4 Types, 16 Sites, Cyclic-Shift Test, With and Without Noise",
+    "seeds": [
+      42,
+      101,
+      7,
+      2026,
+      555
+    ],
+    "budget": 4800,
+    "noise_levels": [
+      0.0,
+      3.0
+    ],
+    "per_run": [
+      {
+        "noise": 0.0,
+        "seed": 42,
+        "confounded": {
+          "swapped_r2": -1.6618,
+          "matched_r2": 1.0
+        },
+        "random": {
+          "swapped_r2": 0.6599,
+          "matched_r2": 1.0
+        },
+        "count": {
+          "swapped_r2": 1.0,
+          "matched_r2": 1.0
+        }
+      },
+      {
+        "noise": 0.0,
+        "seed": 101,
+        "confounded": {
+          "swapped_r2": -1.1234,
+          "matched_r2": 1.0
+        },
+        "random": {
+          "swapped_r2": 0.9999,
+          "matched_r2": 1.0
+        },
+        "count": {
+          "swapped_r2": 1.0,
+          "matched_r2": 1.0
+        }
+      },
+      {
+        "noise": 0.0,
+        "seed": 7,
+        "confounded": {
+          "swapped_r2": -1.9554,
+          "matched_r2": 1.0
+        },
+        "random": {
+          "swapped_r2": 1.0,
+          "matched_r2": 1.0
+        },
+        "count": {
+          "swapped_r2": 1.0,
+          "matched_r2": 1.0
+        }
+      },
+      {
+        "noise": 0.0,
+        "seed": 2026,
+        "confounded": {
+          "swapped_r2": -1.5081,
+          "matched_r2": 1.0
+        },
+        "random": {
+          "swapped_r2": 0.2781,
+          "matched_r2": 0.9998
+        },
+        "count": {
+          "swapped_r2": 1.0,
+          "matched_r2": 1.0
+        }
+      },
+      {
+        "noise": 0.0,
+        "seed": 555,
+        "confounded": {
+          "swapped_r2": -1.0491,
+          "matched_r2": 1.0
+        },
+        "random": {
+          "swapped_r2": 0.8354,
+          "matched_r2": 1.0
+        },
+        "count": {
+          "swapped_r2": 1.0,
+          "matched_r2": 1.0
+        }
+      },
+      {
+        "noise": 3.0,
+        "seed": 42,
+        "confounded": {
+          "swapped_r2": -2.1106,
+          "matched_r2": 0.9253
+        },
+        "random": {
+          "swapped_r2": -0.4212,
+          "matched_r2": 0.8196
+        },
+        "count": {
+          "swapped_r2": 0.8612,
+          "matched_r2": 0.8241
+        }
+      },
+      {
+        "noise": 3.0,
+        "seed": 101,
+        "confounded": {
+          "swapped_r2": -1.6705,
+          "matched_r2": 0.8957
+        },
+        "random": {
+          "swapped_r2": 0.8451,
+          "matched_r2": 0.8195
+        },
+        "count": {
+          "swapped_r2": 0.8588,
+          "matched_r2": 0.7993
+        }
+      },
+      {
+        "noise": 3.0,
+        "seed": 7,
+        "confounded": {
+          "swapped_r2": -1.3724,
+          "matched_r2": 0.9645
+        },
+        "random": {
+          "swapped_r2": 0.8557,
+          "matched_r2": 0.8853
+        },
+        "count": {
+          "swapped_r2": 0.8727,
+          "matched_r2": 0.869
+        }
+      },
+      {
+        "noise": 3.0,
+        "seed": 2026,
+        "confounded": {
+          "swapped_r2": -1.0947,
+          "matched_r2": 0.948
+        },
+        "random": {
+          "swapped_r2": -0.4229,
+          "matched_r2": 0.9476
+        },
+        "count": {
+          "swapped_r2": 0.7585,
+          "matched_r2": 0.82
+        }
+      },
+      {
+        "noise": 3.0,
+        "seed": 555,
+        "confounded": {
+          "swapped_r2": -1.0944,
+          "matched_r2": 0.9466
+        },
+        "random": {
+          "swapped_r2": 0.1862,
+          "matched_r2": 0.8534
+        },
+        "count": {
+          "swapped_r2": 0.8389,
+          "matched_r2": 0.8444
+        }
+      }
+    ],
+    "summary": {
+      "0.0": {
+        "confounded": {
+          "swapped_r2_mean": -1.4596,
+          "swapped_r2_min": -1.9554,
+          "seeds_ge_0.8": 0,
+          "matched_r2_mean": 1.0
+        },
+        "random": {
+          "swapped_r2_mean": 0.7547,
+          "swapped_r2_min": 0.2781,
+          "seeds_ge_0.8": 3,
+          "matched_r2_mean": 1.0
+        },
+        "count": {
+          "swapped_r2_mean": 1.0,
+          "swapped_r2_min": 1.0,
+          "seeds_ge_0.8": 5,
+          "matched_r2_mean": 1.0
+        },
+        "prereg_met": false
+      },
+      "3.0": {
+        "confounded": {
+          "swapped_r2_mean": -1.4685,
+          "swapped_r2_min": -2.1106,
+          "seeds_ge_0.8": 0,
+          "matched_r2_mean": 0.936
+        },
+        "random": {
+          "swapped_r2_mean": 0.2086,
+          "swapped_r2_min": -0.4229,
+          "seeds_ge_0.8": 2,
+          "matched_r2_mean": 0.8651
+        },
+        "count": {
+          "swapped_r2_mean": 0.838,
+          "swapped_r2_min": 0.7585,
+          "seeds_ge_0.8": 4,
+          "matched_r2_mean": 0.8314
+        },
+        "prereg_met": false
+      }
+    },
+    "preregistered": "random & count: swapped R2 >= 0.8 in >=4/5 seeds at each sigma AND >= confounded + 0.5"
+  }
+}

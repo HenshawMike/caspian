@@ -177,8 +177,8 @@ def run_all_phase9_experiments(output_dir: str = "logs") -> Dict[str, Any]:
     e001 = run_experiment_e001()
     all_results = {"phase": "Phase 9 -- Scale Study", "experiments": {"CSP-P9-E001": e001}}
     os.makedirs(output_dir, exist_ok=True)
-    with open(os.path.join(output_dir, "phase9_all_experiments_results.json"), "w", encoding="utf-8") as f:
-        json.dump(all_results, f, indent=2)
+    from experiments.safe_io import safe_write_json
+    safe_write_json(os.path.join(output_dir, "phase9_all_experiments_results.json"), all_results)
     return all_results
 
 

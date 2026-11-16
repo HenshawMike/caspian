@@ -484,8 +484,8 @@ def run_all_phase6_experiments(output_dir: str = "logs") -> Dict[str, Any]:
 
     os.makedirs(output_dir, exist_ok=True)
     out_file = os.path.join(output_dir, "phase6_all_experiments_results.json")
-    with open(out_file, "w", encoding="utf-8") as f:
-        json.dump(all_results, f, indent=2)
+    from experiments.safe_io import safe_write_json
+    safe_write_json(str(out_file), all_results)
 
     print(f"\nAll Phase 6 experiments completed and saved to: {out_file}")
     return all_results
