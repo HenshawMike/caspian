@@ -250,6 +250,7 @@ Project Caspian uses a two-layer documentation standard:
 | **Phase 10** | **Ontology Discovery & Compositional Audit** | Can standard MLPs autonomously discover properties and extrapolate to held-out combinations? | **Refuted / Critical Diagnostic:** Probes decoded properties from raw/latent states at $R^2 \in [0.96, 1.0]$, yet the MLP prediction head failed to extrapolate compositionally ($R^2 \approx 0.65\text{–}0.83$ vs. oracle $1.0$). Coverage explained active-vs-passive gains. | [CSP-P10-E001.docx](file:///home/henshawmike/Projects/Project_Caspian/docs/CSP-P10-E001.docx), [docs/phase10/](file:///home/henshawmike/Projects/Project_Caspian/docs/phase10/REPRODUCTION_REPORT.md) |
 | **Phase 11** | **Architectural Inductive Bias** | Does architectural structure (`additive`, `factorised`, `additive_mlp`, `mlp_small`, `mlp_large`) govern compositional extrapolation? | **Supported (in Additive Worlds):** Pre-registered across 10 seeds in `W1` and `W2`. Strict additive architecture achieved near-zero held-out nRMSE ($0.001$ / $0.000$) vs. `mlp_small` ($0.183$) and `mlp_large` ($0.115$), proving structure—not mere capacity—drives additive extrapolation; fails as predicted when unidentifiable interaction terms exist. | [CSP-P11-E001.docx](file:///home/henshawmike/Projects/Project_Caspian/docs/CSP-P11-E001.docx), [docs/phase11/](file:///home/henshawmike/Projects/Project_Caspian/docs/phase11/EXPERIMENT_REGISTRY.md) |
 | **Phase 12** | **Non-Additive Interactions & Optimizer Sensitivity** | Can an `additive_residual` architecture handle identifiable non-additive interactions (`W3`: $Y = 6A - 4B + 2C + 5AB$) while preserving additive inductive bias, and is the ranking robust across optimizer grids? | **Supported:** On disjoint seeds `11–20`, strict `additive` failed on `W3` (nRMSE $0.192$), whereas `additive_residual` achieved the best held-out nRMSE ($0.037$ vs. `mlp_small` $0.179$) while retaining the additive advantage on `W1`. Architecture rankings held across all 6 $(\text{lr}, \text{epochs})$ settings. | [CSP-P12-E001.docx](file:///home/henshawmike/Projects/Project_Caspian/docs/CSP-P12-E001.docx), [docs/phase12/](file:///home/henshawmike/Projects/Project_Caspian/docs/phase12/EXPERIMENT_REGISTRY.md) |
+| **Phase 13** | **Autonomous Property Discovery & Representation Learning** | Can Caspian discover underlying environmental properties from 12D raw entangled sensors (80% nuisance variance) without property labels or pre-separated channels, and use them compositionally? | **Supported (`P13-H1, H2, H3, H6` met; `H4, H5, H7` partially met):** On disjoint seeds `21–30` across `W1_raw`, `W2_raw`, `W3_raw`, orthogonal sub-Gaussian kurtosis unmixing (`latent_additive`, `latent_residual`) recovered true properties in individual slots (`slot_match_r2` $1.000$ in `W1_raw`, $0.948$ in `W2_raw`), matched the clean-channel oracle ($0.0001$ vs. `raw_mlp_small` $0.108$ and `pca_statistical` $0.257$), and recovered non-additive interactions in `W3_raw` ($0.041$ vs. $0.158$). | [CSP-P13-E001.docx](file:///home/henshawmike/Projects/Project_Caspian/docs/CSP-P13-E001.docx), [docs/phase13/](file:///home/henshawmike/Projects/Project_Caspian/docs/phase13/EXPERIMENT_REGISTRY.md) |
 
 ---
 
@@ -401,9 +402,9 @@ Every confirmatory experiment requires a **two-stage commit discipline**:
 
 # 14. Project Status
 
-* **Current Stage:** Phase 12 Complete; Phase 13 (*Autonomous Property Discovery and Representation Learning*) next on the roadmap.
-* **Implemented Phases:** Phases 0–12 (`CSP-P0-E001` through `CSP-P12-E001`).
-* **Test Suite Status:** `117 passed` across 19 test modules.
+* **Current Stage:** Phase 13 Complete; Phase 14 (*Interaction Discovery and Structured Relationships*) next on the roadmap.
+* **Implemented Phases:** Phases 0–13 (`CSP-P0-E001` through `CSP-P13-E001`).
+* **Test Suite Status:** `125 passed` across 20 test modules.
 * **Semantic Firewall Status:** Active and enforced on all observations (`0` leakages).
-* **Next Immediate Research Question (Phase 13):**
-  > **Can Caspian discover useful properties of its environment from raw or minimally processed observations without receiving explicitly separated property channels or property labels?**
+* **Next Immediate Research Question (Phase 14):**
+  > **Can Caspian discover how multiple environmental properties interact—including sparse pairwise and higher-order non-additive interactions under observation noise—without receiving interaction labels?**

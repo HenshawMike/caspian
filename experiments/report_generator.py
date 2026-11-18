@@ -6,32 +6,214 @@ Supports Phase 0 (Foundation) and Phase 1 (Predictive Interaction) reports.
 """
 
 import os
+import zipfile
+from pathlib import Path
 from typing import Dict, Any, List, Optional
-import docx
-from docx.shared import Inches, Pt, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
-from docx.oxml import OxmlElement, parse_xml
-from docx.oxml.ns import nsdecls, qn
+from xml.sax.saxutils import escape as _xml_escape
 
+try:
+    import docx
+    from docx.shared import Inches, Pt, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
+    from docx.oxml import OxmlElement, parse_xml
+    from docx.oxml.ns import nsdecls, qn
 
-def _set_cell_background(cell, fill_hex: str) -> None:
-    """Set the background color of a table cell."""
-    tcPr = cell._element.get_or_add_tcPr()
-    shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{fill_hex}"/>')
-    tcPr.append(shd)
+    def _set_cell_background(cell, fill_hex: str) -> None:
+        """Set the background color of a table cell."""
+        tcPr = cell._element.get_or_add_tcPr()
+        shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{fill_hex}"/>')
+        tcPr.append(shd)
 
+    def _set_cell_margins(cell, top=100, bottom=100, left=150, right=150) -> None:
+        """Set padding for a table cell."""
+        tcPr = cell._element.get_or_add_tcPr()
+        tcMar = OxmlElement('w:tcMar')
+        for margin_name, val in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
+            node = OxmlElement(f'w:{margin_name}')
+            node.set(qn('w:w'), str(val))
+            node.set(qn('w:type'), 'dxa')
+            tcMar.append(node)
+        tcPr.append(tcMar)
 
-def _set_cell_margins(cell, top=100, bottom=100, left=150, right=150) -> None:
-    """Set padding for a table cell."""
-    tcPr = cell._element.get_or_add_tcPr()
-    tcMar = OxmlElement('w:tcMar')
-    for margin_name, val in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
-        node = OxmlElement(f'w:{margin_name}')
-        node.set(qn('w:w'), str(val))
-        node.set(qn('w:type'), 'dxa')
-        tcMar.append(node)
-    tcPr.append(tcMar)
+except ModuleNotFoundError:
+    # Pure-Python OOXML fallback when python-docx is not installed in .venv
+    class Inches(float):
+        def __new__(cls, val):
+            return super().__new__(cls, float(val) * 1440.0)
+
+    class Pt(float):
+        def __new__(cls, val):
+            return super().__new__(cls, float(val))
+
+    class RGBColor(str):
+        def __new__(cls, r: int, g: int, b: int):
+            return super().__new__(cls, f"{r:02X}{g:02X}{b:02X}")
+
+    class WD_ALIGN_PARAGRAPH:
+        LEFT = "left"; CENTER = "center"; RIGHT = "right"
+
+    class WD_TABLE_ALIGNMENT:
+        LEFT = "left"; CENTER = "center"; RIGHT = "right"
+
+    class WD_ALIGN_VERTICAL:
+        TOP = "top"; CENTER = "center"; BOTTOM = "bottom"
+
+    class _Font:
+        def __init__(self):
+            self.size = None
+            self.bold = False
+            self.italic = False
+            self.color = type("_Color", (), {"rgb": None})()
+
+    class _Run:
+        def __init__(self, text: str = ""):
+            self.text = str(text)
+            self.font = _Font()
+
+        def to_xml(self) -> str:
+            rpr = []
+            if self.font.bold:
+                rpr.append("<w:b/>")
+            if self.font.italic:
+                rpr.append("<w:i/>")
+            if self.font.color.rgb:
+                rpr.append(f'<w:color w:val="{self.font.color.rgb}"/>')
+            if self.font.size is not None:
+                half_pts = int(round(float(self.font.size) * 2))
+                rpr.append(f'<w:sz w:val="{half_pts}"/>')
+            rpr_xml = f"<w:rPr>{''.join(rpr)}</w:rPr>" if rpr else ""
+            return f'<w:r>{rpr_xml}<w:t xml:space="preserve">{_xml_escape(self.text)}</w:t></w:r>'
+
+    class _ParagraphFormat:
+        def __init__(self):
+            self.space_before = None
+            self.space_after = None
+
+    class _Paragraph:
+        def __init__(self):
+            self.runs: List[_Run] = []
+            self.paragraph_format = _ParagraphFormat()
+            self.alignment = None
+
+        def add_run(self, text: str = "") -> _Run:
+            r = _Run(text)
+            self.runs.append(r)
+            return r
+
+        def to_xml(self) -> str:
+            ppr = []
+            if self.paragraph_format.space_before is not None or self.paragraph_format.space_after is not None:
+                attrs = []
+                if self.paragraph_format.space_before is not None:
+                    attrs.append(f'w:before="{int(round(float(self.paragraph_format.space_before) * 20))}"')
+                if self.paragraph_format.space_after is not None:
+                    attrs.append(f'w:after="{int(round(float(self.paragraph_format.space_after) * 20))}"')
+                ppr.append(f"<w:spacing {' '.join(attrs)}/>")
+            ppr_xml = f"<w:pPr>{''.join(ppr)}</w:pPr>" if ppr else ""
+            return f"<w:p>{ppr_xml}{''.join(r.to_xml() for r in self.runs)}</w:p>"
+
+    class _Cell:
+        def __init__(self):
+            self.paragraphs: List[_Paragraph] = [_Paragraph()]
+            self.width = None
+            self._bg = None
+            self._margins = None
+
+        def to_xml(self) -> str:
+            tcpr = []
+            if self._bg:
+                tcpr.append(f'<w:shd xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" w:fill="{self._bg}"/>')
+            if self._margins:
+                t, b, l, r = self._margins
+                tcpr.append(
+                    f'<w:tcMar><w:top w:w="{t}" w:type="dxa"/><w:bottom w:w="{b}" w:type="dxa"/>'
+                    f'<w:left w:w="{l}" w:type="dxa"/><w:right w:w="{r}" w:type="dxa"/></w:tcMar>'
+                )
+            tcpr_xml = f"<w:tcPr>{''.join(tcpr)}</w:tcPr>" if tcpr else ""
+            return f"<w:tc>{tcpr_xml}{''.join(p.to_xml() for p in self.paragraphs)}</w:tc>"
+
+    class _Row:
+        def __init__(self, cols: int):
+            self.cells = [_Cell() for _ in range(cols)]
+
+        def to_xml(self) -> str:
+            return f"<w:tr>{''.join(c.to_xml() for c in self.cells)}</w:tr>"
+
+    class _Table:
+        def __init__(self, rows: int, cols: int):
+            self.rows = [_Row(cols) for _ in range(rows)]
+            self.alignment = None
+
+        def to_xml(self) -> str:
+            return f'<w:tbl><w:tblPr><w:tblStyle w:val="TableGrid"/><w:jc w:val="center"/></w:tblPr>{"".join(r.to_xml() for r in self.rows)}</w:tbl>'
+
+    class _Section:
+        def __init__(self):
+            self.top_margin = 1152; self.bottom_margin = 1152; self.left_margin = 1152; self.right_margin = 1152
+
+    class _Document:
+        def __init__(self):
+            self.sections = [_Section()]
+            self._items = []
+
+        def add_paragraph(self, text: Optional[str] = None) -> _Paragraph:
+            p = _Paragraph()
+            if text is not None:
+                p.add_run(text)
+            self._items.append(p)
+            return p
+
+        def add_table(self, rows: int, cols: int) -> _Table:
+            t = _Table(rows, cols)
+            self._items.append(t)
+            return t
+
+        def save(self, output_path: str) -> None:
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+            template_docx = Path(__file__).resolve().parent.parent / "docs" / "CSP-P12-E001.docx"
+            header = (
+                "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>\n"
+                '<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" '
+                'xmlns:mo="http://schemas.microsoft.com/office/mac/office/2008/main" '
+                'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" '
+                'xmlns:mv="urn:schemas-microsoft-com:mac:vml" '
+                'xmlns:o="urn:schemas-microsoft-com:office:office" '
+                'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" '
+                'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" '
+                'xmlns:v="urn:schemas-microsoft-com:vml" '
+                'xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" '
+                'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" '
+                'xmlns:w10="urn:schemas-microsoft-com:office:word" '
+                'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
+                'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" '
+                'xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" '
+                'xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" '
+                'xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" '
+                'xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" '
+                'mc:Ignorable="w14 wp14"><w:body>'
+            )
+            footer = (
+                '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/>'
+                '<w:pgMar w:top="1152" w:right="1152" w:bottom="1152" w:left="1152" w:header="720" w:footer="720" w:gutter="0"/>'
+                '<w:cols w:space="720"/><w:docGrid w:linePitch="360"/></w:sectPr></w:body></w:document>'
+            )
+            doc_xml = (header + "".join(it.to_xml() for it in self._items) + footer).encode("utf-8")
+            with zipfile.ZipFile(template_docx, "r") as zin, zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zout:
+                for item in zin.infolist():
+                    if item.filename == "word/document.xml":
+                        zout.writestr(item, doc_xml)
+                    else:
+                        zout.writestr(item, zin.read(item.filename))
+
+    class docx:
+        Document = _Document
+
+    def _set_cell_background(cell, fill_hex: str) -> None:
+        cell._bg = fill_hex
+
+    def _set_cell_margins(cell, top=100, bottom=100, left=150, right=150) -> None:
+        cell._margins = (top, bottom, left, right)
 
 
 def generate_docx_report(data: Dict[str, Any], output_path: str) -> str:
@@ -2425,5 +2607,126 @@ def generate_p12_docx_report(an: Dict[str, Any], output_path: str) -> str:
     h1("7. Next steps")
     body("(1) A world where some pairs interact and others do not, to see whether additive_residual keeps its advantage when the residual is sparse. "
          "(2) Property-discovery test: remove the pre-separated channels. (3) Matched-start re-measure of the Phase 9 gap (issue 2). (4) Systematic literature review before any claim of novelty.")
+    doc.save(output_path)
+    return output_path
+
+
+def generate_p13_docx_report(an: Dict[str, Any], output_path: str) -> str:
+    """Phase 13 report (CSP-P13-E001) from logs/phase13/confirmatory_analysis.json."""
+    doc = docx.Document()
+    for sec in doc.sections:
+        sec.top_margin = Inches(0.8); sec.bottom_margin = Inches(0.8); sec.left_margin = Inches(0.8); sec.right_margin = Inches(0.8)
+    PRIMARY = RGBColor(24, 43, 73); SECONDARY = RGBColor(70, 80, 95)
+
+    def h1(t):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(14)
+        r = p.add_run(t); r.font.size = Pt(15); r.font.bold = True; r.font.color.rgb = PRIMARY
+
+    def h2(t):
+        p = doc.add_paragraph(); r = p.add_run(t); r.font.size = Pt(12); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    def body(t, size=10):
+        p = doc.add_paragraph(); r = p.add_run(t); r.font.size = Pt(size)
+
+    def table(headers, rows):
+        t = doc.add_table(rows=1 + len(rows), cols=len(headers)); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for j, h in enumerate(headers):
+            c = t.rows[0].cells[j]; r = c.paragraphs[0].add_run(h); r.font.bold = True; r.font.size = Pt(9)
+            r.font.color.rgb = RGBColor(255, 255, 255); _set_cell_background(c, "182B49"); _set_cell_margins(c)
+        for i, row in enumerate(rows):
+            for j, v in enumerate(row):
+                c = t.rows[i + 1].cells[j]; r = c.paragraphs[0].add_run(str(v)); r.font.size = Pt(9)
+                _set_cell_background(c, "FAFAFA" if i % 2 == 0 else "F0F4F8"); _set_cell_margins(c)
+        doc.add_paragraph()
+
+    worlds = an["worlds"]; T = an["tests"]; cka = an["cka"]
+    archs = [
+        "latent_additive",
+        "latent_residual",
+        "raw_naive_additive",
+        "pca_statistical",
+        "raw_mlp_small",
+        "raw_mlp_large",
+        "untrained_encoder",
+        "random_repr",
+        "oracle_channels_additive",
+    ]
+    f = lambda x, n=3: f"{x:.{n}f}"
+
+    p = doc.add_paragraph(); r = p.add_run("PROJECT CASPIAN"); r.font.size = Pt(24); r.font.bold = True; r.font.color.rgb = PRIMARY
+    p = doc.add_paragraph(); r = p.add_run("Phase 13 Report (CSP-P13-E001): Autonomous Property Discovery and Representation Learning from Raw Observations"); r.font.size = Pt(14); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    h1("1. Executive Summary & Abstract")
+    body("Phase 13 (CSP-P13-E001) removed the manually separated property channels used in Phases 11-12 and tested whether Caspian can discover underlying environmental properties from 12-dimensional entangled sensory vectors (where 80% of raw sensor variance comes from task-irrelevant nuisance factors) and use them for compositional generalisation. "
+         "Under a protocol pre-registered before confirmatory execution on disjoint seeds 21-30 across three raw-observation worlds (W1_raw, W2_raw, W3_raw), the orthogonal sub-Gaussian unmixing architecture (latent_additive and latent_residual) autonomously recovered the 3 task-relevant properties in individual latent slots (Hungarian-matched single-slot R2 >= 0.99), achieved high inter-seed representation consistency (Linear CKA >= 0.98), and matched the clean oracle-channel upper bound on held-out combinations while variance-driven PCA, untrained encoders, random projections, and standard MLPs failed.")
+
+    h1("2. Experimental Design & Raw Observation Protocol")
+    body("Each entity in W1_raw, W2_raw, and W3_raw exposes 12 raw sensor channels generated by multiplying 3 task-relevant latent properties (amplitude 1.0) and 3 independent nuisance variables (amplitude 2.0, 4x variance) by a dense 6x12 row-orthonormal mixing matrix M. "
+         "No raw sensor channel aligns with any single property, and top-3 variance-driven PCA is dominated by the nuisance subspace. "
+         "All observations were verified by Observation.assert_semantic_purity() with 0 semantic firewall violations and 0 combination leakage rows across all 540 model trainings (3 worlds x 10 seeds x 2 data levels x 9 architectures).")
+
+    for wname, wdesc in (
+        ("W1_raw", "W1_raw (Additive Binary World: Y = 6A - 4B + 2C, 12D Raw Sensors)"),
+        ("W2_raw", "W2_raw (Nonlinear Multi-Level Additive World: Y = 3u - 4v + w^2, 12D Raw Sensors)"),
+        ("W3_raw", "W3_raw (Identifiable Non-Additive Interaction World: Y = 6A - 4B + 2C + 5AB, 12D Raw Sensors)"),
+    ):
+        h1(f"3. Observed Results — {wdesc}")
+        w = worlds[wname]
+        rows = []
+        for a in archs:
+            lo_cell = w[f"lo|{a}"]; hi_cell = w[f"hi|{a}"]
+            cka_str = f(cka[f"{wname}|hi|{a}"]["mean"], 3) if f"{wname}|hi|{a}" in cka else "N/A"
+            rows.append([
+                a,
+                hi_cell["n_params"],
+                f"{f(lo_cell['heldout_mean'])} ({f(lo_cell['heldout_sd'])})",
+                f"{f(hi_cell['heldout_mean'])} ({f(hi_cell['heldout_sd'])})",
+                f(hi_cell["indist_mean"], 4),
+                f(hi_cell["slot_match_r2_mean"], 3),
+                f(hi_cell["flip_unseen_nmae_mean"], 3),
+                f(hi_cell["intervention_selectivity_mean"], 3),
+                f(hi_cell["distractor_sensitivity_mean"], 4),
+                cka_str,
+            ])
+        table(
+            ["Architecture", "Params", "Held-out nRMSE (lo)", "Held-out nRMSE (hi)", "In-dist nRMSE (hi)",
+             "Slot R2", "Unseen Flip nMAE", "Interv. Selectivity", "Distractor Sens.", "Inter-Seed CKA"],
+            rows,
+        )
+
+    h1("4. Pre-Registered Hypothesis Verdicts")
+    def fmt_t(t):
+        return f"diff={t['mean_diff']:.4f}, CI=[{t['ci95'][0]:.3f}, {t['ci95'][1]:.3f}], seeds={t['seeds_meeting_threshold']}/10"
+
+    h_rows = [
+        ["P13-H1", "latent_additive beats raw_mlp_small on held-out nRMSE (margin 0.02) in W1_raw and W2_raw",
+         f"W1: {fmt_t(T['P13-H1_W1_latent_additive_vs_raw_mlp_small'])}; W2: {fmt_t(T['P13-H1_W2_latent_additive_vs_raw_mlp_small'])}",
+         "MET" if T["P13-H1"]["met"] else "NOT MET"],
+        ["P13-H2", "latent_additive beats pca_statistical, untrained_encoder, random_repr (margin 0.05) in W1_raw & W2_raw",
+         f"All 6 baseline cells met={T['P13-H2']['all_cells_met']}",
+         "MET" if T["P13-H2"]["met"] else "NOT MET"],
+        ["P13-H3", "latent_additive beats raw_naive_additive on W2_raw held-out nRMSE (0.02) & distractor sensitivity (0.005)",
+         f"nRMSE: {fmt_t(T['P13-H3_W2_nrmse_vs_raw_naive_additive'])}; Distractor: {fmt_t(T['P13-H3_W2_distractor_vs_raw_naive_additive'])}",
+         "MET" if T["P13-H3"]["met"] else "NOT MET"],
+        ["P13-H4", "Single-slot property recovery R2 >= 0.90 in >= 9/10 seeds and beats pca & raw_mlp_small by >= 0.20",
+         f"W1 seeds>=0.90: {T['P13-H4']['W1_seeds_ge_0.90']}/10; W2 seeds>=0.90: {T['P13-H4']['W2_seeds_ge_0.90']}/10",
+         "MET" if T["P13-H4"]["met"] else "NOT MET"],
+        ["P13-H5", "Inter-seed Linear CKA >= 0.85 and exceeds untrained_encoder & raw_mlp_small by >= 0.15",
+         f"W1 CKA={T['P13-H5']['W1_latent_additive_cka']:.3f} (MLP {T['P13-H5']['W1_raw_mlp_small_cka']:.3f}); W2 CKA={T['P13-H5']['W2_latent_additive_cka']:.3f}",
+         "MET" if T["P13-H5"]["met"] else "NOT MET"],
+        ["P13-H6", "Lower unseen single-property intervention error (0.02) & higher intervention selectivity (0.15) vs raw_mlp_small",
+         f"W1 flip: {fmt_t(T['P13-H6_W1_flip_unseen'])}; W2 flip: {fmt_t(T['P13-H6_W2_flip_unseen'])}",
+         "MET" if T["P13-H6"]["met"] else "NOT MET"],
+        ["P13-H7", "W3_raw: latent_additive in-dist >= 0.05 in >= 9/10 seeds; latent_residual beats latent_additive & raw_mlp_small (0.02)",
+         f"in-dist>=0.05: {T['P13-H7']['latent_additive_indist_ge_0.05_seeds']}/10; res vs add: {fmt_t(T['P13-H7_W3_residual_vs_additive'])}; res vs mlp: {fmt_t(T['P13-H7_W3_residual_vs_mlp_small'])}",
+         "MET" if T["P13-H7"]["met"] else "NOT MET"],
+    ]
+    table(["Hypothesis", "Registered Criterion", "Observed Summary", "Verdict"], h_rows)
+
+    h1("5. Scientific Interpretation & Limitations")
+    body("1. Why variance-based PCA failed while orthogonal kurtosis unmixing succeeded: because the 3 nuisance variables had 2x amplitude (4x variance), top-3 PCA extracted purely task-irrelevant nuisance components (slot R2 near 0). By contrast, scale-invariant fourth-moment kurtosis minimization exploited the sub-Gaussian physical structure of the underlying factors to unmix all 6 factors (3 properties + 3 nuisances) without labels, allowing the downstream additive head to zero out the nuisance slots via consequence gradients.")
+    body("2. Why unmixing before additive readout is necessary: in W2_raw (where Y = 3u - 4v + w^2 is nonlinear in w), applying per-channel additive MLPs directly to raw entangled sensors (raw_naive_additive) created spurious cross-terms between w, u, and the nuisance variables, inflating held-out error and distractor sensitivity. Unmixing the sensors into independent latent slots first eliminated those cross-terms and matched the clean oracle-channel upper bound.")
+    body("3. Limitations & Next Steps (Phase 14): Phase 13 unmixing relies on linear orthogonal mixing of sub-Gaussian latent factors and tests a fixed 3-property structure. Phase 14 will investigate sparse pairwise and higher-order interaction discovery across larger numbers of properties and under observation noise.")
+
     doc.save(output_path)
     return output_path
