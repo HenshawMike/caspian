@@ -1,0 +1,52 @@
+{
+  "phase": 15,
+  "experiment_id": "CSP-P15-E001",
+  "forensic_verdict": "LEGIT",
+  "pillar_a_legitimacy_audit": {
+    "ast_oracle_and_semantic_firewall": {
+      "files_checked": [
+        "__init__.py",
+        "activations.py",
+        "causal.py",
+        "compositional.py",
+        "deepsets.py",
+        "discovery.py",
+        "interactions.py",
+        "layers.py",
+        "mlp.py",
+        "normalization.py",
+        "optimizers.py",
+        "rnn.py"
+      ],
+      "violations": [],
+      "passed": true
+    },
+    "confirmatory_log_integrity": {
+      "total_rows": 480,
+      "leak_rows_total": 0,
+      "non_finite_rows": 0,
+      "seed_independence_verified": true,
+      "obs_mlp_hidden_confounder_nrmse": 0.6048,
+      "obs_lin_hidden_confounder_nrmse": 0.6035,
+      "passed": true
+    },
+    "live_causal_fit": {
+      "effective_weights_l2_norm": 6.4493,
+      "discovered_parents": [
+        1,
+        2
+      ],
+      "passed": true
+    }
+  },
+  "pillar_b_first_principles_investigation": {
+    "root_cause_summary": "1. Backdoor Identifiability of OLS in W15_corr_vs_cause & W15_obs_confounder (P15-H1): Because all variables in W15_corr_vs_cause and W15_obs_confounder are observed with independent noise (epsilon ~ N(0, 0.05^2)), conditioning on all observed covariates in OLS (observational_linear) automatically blocks the observed backdoor path via Frisch-Waugh-Lovell partial regression, scoring ~0.003 nRMSE. By contrast, observational_mlp (with L2 weight decay) splits weight across collinear features (0.086 and 0.137), and observational_linear collapses completely when a confounder is unobserved (W15_hidden_confounder: 0.604) or under multi-cause collinearity (W15_multi_cause: 0.210).\n2. Equal Interventional Data Ceiling in P15-H5: Both causal_intervention and mlp_intervention were trained on the exact same interventional dataset, so both achieved F1 = 1.000 at the 0.75 ATE threshold (0.0 diff).\n3. Zero-Error Floor in P15-H6 (ATE nMAE): causal_intervention beat mlp_intervention in 10/10 seeds (d_z = 3.40, 95% CI = [0.0070, 0.0098]), cutting ATE error by 65.3% relative error reduction, but because mlp_intervention's own ATE error was ~0.013, the absolute difference (0.0084) could not exceed 0.015.",
+    "after_fix": {
+      "P15_H6_seeds_causal_beats_mlp_int": 10,
+      "P15_H6_mean_ate_rer": 0.5589,
+      "P15_H6_rer_ge_0.50_seeds": 6,
+      "causal_f1_40_of_40_cells": true,
+      "all_phenomena_explained": true
+    }
+  }
+}

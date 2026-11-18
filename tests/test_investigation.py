@@ -42,3 +42,11 @@ def test_saved_phase14_investigation_report():
     assert rep["pillar_b_first_principles_investigation"]["after_fix"]["all_three_criteria_resolved"] is True
 
 
+def test_saved_phase15_investigation_report():
+    import json
+    rep = json.load(open("logs/phase15/investigation_report.json"))
+    assert rep["forensic_verdict"] == "LEGIT"
+    assert rep["pillar_b_first_principles_investigation"]["after_fix"]["all_phenomena_explained"] is True
+
+
+

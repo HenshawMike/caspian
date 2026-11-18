@@ -242,9 +242,30 @@ As the number of environmental properties grows from K = 3 (Phase 12) to K = 5 (
 
 ---
 
+## Phase 15: Causal Discovery & Intervention Learning — Confounding, Hidden Variables & Counterfactuals
+
+**Linked Codebase Files:** `models/causal.py, experiments/phase15_experiments.py, experiments/analyze_phase15.py, experiments/investigation.py, docs/phase15/EXPERIMENT_REGISTRY.md, docs/phase15/INVESTIGATION.md, tests/test_phase15.py`
+
+Predictive correlation P(Y | X) is fundamentally different from causal intervention P(Y | do(X = x)).
+
+1. Observational Backdoor Adjustment vs. Unobserved Confounding: When a confounder C is observed (e.g., C -> X_1 and C -> Y) with independent noise, conditioning on all observed variables in OLS (Frisch-Waugh-Lovell) blocks the backdoor path. However, when an unobserved latent variable U drives both X_0 and Y (W15_hidden_confounder: X_0 = 0.5 + 0.28U, Y = 6X_1 - 4X_2 + 3.5U), the backdoor path X_0 <- U -> Y CANNOT be blocked by any observational estimator! Only active intervention do(X_0 = x_0) severs the arrow U -> X_0 and reveals the true causal effect (ATE_0 = 0).
+
+2. Sparse Causal Parent Discovery ('CausalStructuralModel'): Using standardized ISTA + Gauss-Lasso debiasing on interventional transitions identifies the exact direct causal parents Pa(Y) with zero false causal edges.
+
+3. Pearl's 3-Step Counterfactual Inference (Abduction-Action-Prediction): Given a factual episode (X_obs, Y_obs) containing unobserved latent noise U, an interventional predictor E[Y | do(X)] alone cannot predict individual counterfactuals Y_{X_k <- x'}. CausalStructuralModel computes: (i) Abduction u_hat = Y_obs - f_causal(X_obs) (recovering 3.5U!), (ii) Action X_cf = X_obs[k <- x'], and (iii) Prediction Y_cf = f_causal(X_cf) + u_hat.
+
+**Empirical Evidence:** Report CSP-P15-E001 & docs/phase15/INVESTIGATION.md (disjoint seeds 41-50, 4 worlds x 6 models x 2 levels = 480 trainings): causal_intervention achieved causal_f1 = 1.000 in 40/40 world-seed cells (0 false causal edges), beat observational_mlp and observational_linear on W15_hidden_confounder by 0.55 nRMSE (10/10 seeds, P15-H2 MET), beat all baselines on multi-variable interventions (P15-H3 MET), beat observational_mlp and mlp_intervention on counterfactuals by > 0.51 nRMSE (P15-H4 MET), and cut ATE error vs mlp_intervention by 65.3% RER across all 4 worlds (10/10 seeds).
+
+### Viva / Defense Q&A
+- **Q: Why did observational_linear succeed on W15_obs_confounder yet fail catastrophically (0.604 nRMSE) on W15_hidden_confounder?**
+  - **A:** Because in W15_obs_confounder the common cause X_0 was observed with independent noise on X_1, so OLS backdoor-adjusted for X_0 automatically. In W15_hidden_confounder, the common cause U was unobserved (not in Observation), making the backdoor path mathematically unidentifiable from passive observations.
+- **Q: Why can't an unstructured MLP trained on interventional data (mlp_intervention) answer counterfactual queries accurately?**
+  - **A:** Because mlp_intervention learns only the population interventional expectation E[Y | do(X)] (~0.12 nRMSE), whereas Pearl's Abduction-Action-Prediction in CausalStructuralModel abducts the individual latent U = Y_obs - f_causal(X_obs) from the factual outcome, reducing counterfactual error from ~0.58 down to 0.051 nRMSE.
+
+---
+
 ## Forward Curriculum Expansion Roadmap (Phases 14–20)
 
-- **Phase 15 — Causal Discovery & Intervention Learning** (`research/ontology`): Separating observational confounding and hidden common causes from direct causal effects via active do(X) interventions.
 - **Phase 16 — Cross-World Transfer & Structural Generalisation** (`feature/multiple-worlds, research/ontology`): Separating reusable structural rules from world-specific sensor calibrations for zero-shot and few-shot transfer.
 - **Phase 17 — Continual Learning & Persistent Environmental Memory** (`feature/memory, research/learning-mechanisms`): Sequential multi-world learning with episodic/parametric memory to prevent catastrophic forgetting.
 - **Phase 18 — Integrated Predictive World Model & Autonomous Planning** (`feature/planning, research/architecture`): Combining discovered representations, causal structure, and uncertainty-aware multi-step rollouts for closed-loop planning.
