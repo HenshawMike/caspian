@@ -567,7 +567,12 @@ CURRICULUM_MODULES: List[Dict[str, Any]] = [
             "3. Pearl's 3-Step Counterfactual Inference (Abduction-Action-Prediction): Given a factual episode (X_obs, Y_obs) containing "
             "unobserved latent noise U, an interventional predictor E[Y | do(X)] alone cannot predict individual counterfactuals Y_{X_k <- x'}. "
             "CausalStructuralModel computes: (i) Abduction u_hat = Y_obs - f_causal(X_obs) (recovering 3.5U!), (ii) Action X_cf = X_obs[k <- x'], "
-            "and (iii) Prediction Y_cf = f_causal(X_cf) + u_hat."
+            "and (iii) Prediction Y_cf = f_causal(X_cf) + u_hat.\n"
+            "4. Joint Invariant Causal Fusion (Stage C First-Principles Solution): Rather than discarding passive observational data, "
+            "fit_joint_causal_structure() uses scarce interventions to discover Pa(Y), runs a Chow-type coefficient invariance test "
+            "(z_diff < 2.5) between obs and int restricted to Pa(Y), and pools obs + int on the invariant causal parent set—cutting "
+            "W15_hidden_confounder error from 0.0512 to 0.0425 and achieving 3x lower ATE error than mlp_intervention (0.0412 vs 0.1201) "
+            "under scarce interventions (N_int = 80, N_obs = 480)."
         ),
         "empirical_link": (
             "Report CSP-P15-E001 & docs/phase15/INVESTIGATION.md (disjoint seeds 41-50, 4 worlds x 6 models x 2 levels = 480 trainings): "

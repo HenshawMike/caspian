@@ -412,7 +412,7 @@ def run_full_phase15_investigation(
     eff_w = m_live.effective_weights()
     w_norm = float(np.linalg.norm(eff_w))
 
-    # Pillar B: Relative Error Reduction on P15-H6 (ATE nMAE: causal_intervention vs mlp_intervention)
+    # Pillar B: First-principles Joint Invariant Causal Fusion (interventional discovery + invariance-tested obs pooling)
     def _vec_world(wname, arch, key):
         hi_st = max(r["steps"] for r in rows if r["world"] == wname)
         sel = [r for r in rows if r["world"] == wname and r["arch"] == arch and r["steps"] == hi_st]
@@ -422,6 +422,34 @@ def run_full_phase15_investigation(
     ate_ci = np.mean(np.stack([_vec_world(w, "causal_intervention", "ate_nmae") for w in ("W15_corr_vs_cause", "W15_obs_confounder", "W15_hidden_confounder", "W15_multi_cause")], axis=0), axis=0)
     ate_mlp = np.mean(np.stack([_vec_world(w, "mlp_intervention", "ate_nmae") for w in ("W15_corr_vs_cause", "W15_obs_confounder", "W15_hidden_confounder", "W15_multi_cause")], axis=0), axis=0)
     rer_ate = 1.0 - (ate_ci / np.maximum(ate_mlp, 1e-8))
+
+    # Verify Joint Invariant Causal Fusion on W15_hidden_confounder (full & scarce intervention regimes)
+    from experiments.phase15_experiments import evaluate_causal_metrics
+    from models.mlp import PredictiveMLP
+    from experiments.phase11_experiments import train_model
+    hc_old_si, hc_joint_si = [], []
+    scarce_ci_ate, scarce_mlp_ate, scarce_ci_f1, scarce_mlp_f1 = [], [], [], []
+    for s in SEEDS15:
+        ds = collect_p15_datasets(W15_HIDDEN_CONFOUNDER, s, 2400)
+        Xo, Yo, _ = ds["obs"]
+        Xi, Yi, _ = ds["int"]
+        m_old = CausalStructuralModel(4, seed=s)
+        m_old.fit_causal_structure(Xi, Yi)
+        hc_old_si.append(evaluate_causal_metrics(W15_HIDDEN_CONFOUNDER, m_old, s)["single_int_nrmse"])
+
+        m_j = CausalStructuralModel(4, seed=s)
+        m_j.fit_joint_causal_structure(Xi, Yi, Xo, Yo)
+        hc_joint_si.append(evaluate_causal_metrics(W15_HIDDEN_CONFOUNDER, m_j, s)["single_int_nrmse"])
+
+        # Scarce-intervention diagnostic (N_int=80, N_obs=480)
+        m_sc = CausalStructuralModel(4, seed=s)
+        m_sc.fit_joint_causal_structure(Xi[:80], Yi[:80], Xo, Yo)
+        r_sc = evaluate_causal_metrics(W15_HIDDEN_CONFOUNDER, m_sc, s)
+        m_mlp_sc = PredictiveMLP(4, (32, 16), 1, seed=s)
+        train_model(m_mlp_sc, Xi[:80], Yi[:80], s, epochs=120, batch_size=32)
+        r_mlp_sc = evaluate_causal_metrics(W15_HIDDEN_CONFOUNDER, m_mlp_sc, s)
+        scarce_ci_ate.append(r_sc["ate_nmae"]); scarce_mlp_ate.append(r_mlp_sc["ate_nmae"])
+        scarce_ci_f1.append(r_sc["causal_f1"]); scarce_mlp_f1.append(r_mlp_sc["causal_f1"])
 
     legit = bool(
         ast_audit["passed"]
@@ -463,16 +491,24 @@ def run_full_phase15_investigation(
                 "(with L2 weight decay) splits weight across collinear features (0.086 and 0.137), and observational_linear "
                 "collapses completely when a confounder is unobserved (W15_hidden_confounder: 0.604) or under multi-cause "
                 "collinearity (W15_multi_cause: 0.210).\n"
-                "2. Equal Interventional Data Ceiling in P15-H5: Both causal_intervention and mlp_intervention were trained "
-                "on the exact same interventional dataset, so both achieved F1 = 1.000 at the 0.75 ATE threshold (0.0 diff).\n"
-                "3. Zero-Error Floor in P15-H6 (ATE nMAE): causal_intervention beat mlp_intervention in 10/10 seeds (d_z = 3.40, "
-                "95% CI = [0.0070, 0.0098]), cutting ATE error by 65.3% relative error reduction, but because mlp_intervention's "
-                "own ATE error was ~0.013, the absolute difference (0.0084) could not exceed 0.015."
+                "2. Equal Interventional Data Ceiling & Discarded Observational Data (P15-H5 & P15-H6): In the initial confirmatory "
+                "run, causal_intervention discarded all passive observational data and trained only on N_int=480 interventional "
+                "samples—the exact same dataset given to mlp_intervention—so both saturated at F1=1.000 and ate_nmae had a 0.013 floor."
+            ),
+            "first_principles_solution": (
+                "Implemented Joint Invariant Causal Fusion (CausalStructuralModel.fit_joint_causal_structure): uses scarce/controlled "
+                "interventions to discover unconfounded Pa(Y), runs a Chow-type coefficient invariance test (z_diff < 2.5) between "
+                "interventional and observational regressions on Pa(Y), and pools obs + int on the invariant causal subset."
             ),
             "after_fix": {
                 "P15_H6_seeds_causal_beats_mlp_int": int(np.sum(ate_ci < ate_mlp)),
                 "P15_H6_mean_ate_rer": round(float(np.mean(rer_ate)), 4),
-                "P15_H6_rer_ge_0.50_seeds": int(np.sum(rer_ate >= 0.50)),
+                "W15_hc_full_single_int_before": round(float(np.mean(hc_old_si)), 5),
+                "W15_hc_full_single_int_after_joint_fusion": round(float(np.mean(hc_joint_si)), 5),
+                "scarce_int_80_hc_ate_causal_fusion": round(float(np.mean(scarce_ci_ate)), 5),
+                "scarce_int_80_hc_ate_mlp_int": round(float(np.mean(scarce_mlp_ate)), 5),
+                "scarce_int_80_hc_f1_causal_fusion": round(float(np.mean(scarce_ci_f1)), 4),
+                "scarce_int_80_hc_f1_mlp_int": round(float(np.mean(scarce_mlp_f1)), 4),
                 "causal_f1_40_of_40_cells": bool(an["tests"]["P15-H5"]["mean_f1_causal_intervention"] == 1.0),
                 "all_phenomena_explained": True,
             },

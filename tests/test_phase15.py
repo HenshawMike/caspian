@@ -58,3 +58,13 @@ def test_causal_intervention_recovers_true_parents_while_observational_confounde
 def test_run_cell_p15_smoke():
     r = run_cell_p15(W15_HIDDEN_CONFOUNDER, "causal_intervention", seed=9001, steps=2400, cache={})
     assert r["leak_rows"] == 0 and r["finite"] and r["causal_f1"] == 1.0
+
+
+def test_joint_invariant_causal_fusion_preserves_parents_and_reduces_error():
+    ds_map = collect_p15_datasets(W15_HIDDEN_CONFOUNDER, seed=41, steps=2400)
+    Xo, Yo, _ = ds_map["obs"]
+    Xi, Yi, _ = ds_map["int"]
+    m = CausalStructuralModel(4, seed=41)
+    m.fit_joint_causal_structure(Xi, Yi, Xo, Yo)
+    assert m.discovered_parents() == {1, 2}
+

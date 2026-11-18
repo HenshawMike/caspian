@@ -99,6 +99,41 @@ class CausalStructuralModel:
         self.linear.weights = w_final
         self.linear.bias = b_final
 
+    def fit_joint_causal_structure(
+        self,
+        X_int: np.ndarray,
+        Y_int: np.ndarray,
+        X_obs: np.ndarray,
+        Y_obs: np.ndarray,
+        invariance_z: float = 2.5,
+    ) -> None:
+        """First-Principles Joint Invariant Causal Fusion:
+        1. Discover the unconfounded direct causal parents Pa(Y) from controlled interventional data (X_int, Y_int).
+        2. Test Chow-type coefficient invariance between interventional and observational regressions restricted to Pa(Y).
+        3. If invariant (z_diff < invariance_z), pool (X_int, Y_int) and (X_obs, Y_obs) on Pa(Y) to cut estimator variance
+           while remaining immune to unobserved confounders on excluded variables.
+        """
+        self.fit_causal_structure(X_int, Y_int)
+        pa = sorted(list(self.discovered_parents()))
+        if not pa:
+            return
+        D_int = np.hstack([np.ones((len(X_int), 1)), self.normalizer.transform(X_int)[:, pa]])
+        D_obs = np.hstack([np.ones((len(X_obs), 1)), self.normalizer.transform(X_obs)[:, pa]])
+        b_int, *_ = np.linalg.lstsq(D_int, Y_int, rcond=None)
+        b_obs, *_ = np.linalg.lstsq(D_obs, Y_obs, rcond=None)
+        res_int = np.asarray(Y_int, dtype=float).reshape(-1) - (D_int @ b_int).reshape(-1)
+        cov_diag = np.diag(np.linalg.pinv(D_int.T @ D_int))
+        se_int = np.sqrt(np.maximum(np.mean(res_int ** 2) * cov_diag, 1e-12))
+        z_diff = float(np.max(np.abs(b_int[1:] - b_obs[1:]) / se_int[1:]))
+        if z_diff < invariance_z:
+            X_all = np.vstack([X_int, X_obs])
+            Y_all = np.concatenate([np.asarray(Y_int, dtype=float).reshape(-1), np.asarray(Y_obs, dtype=float).reshape(-1)])
+            D_all = np.hstack([np.ones((len(X_all), 1)), self.normalizer.transform(X_all)[:, pa]])
+            b_pool, *_ = np.linalg.lstsq(D_all, Y_all, rcond=None)
+            self.linear.weights.fill(0.0)
+            self.linear.weights[pa, 0] = b_pool[1:]
+            self.linear.bias = np.array([float(b_pool[0])], dtype=float)
+
     def discovered_parents(self, threshold: Optional[float] = None) -> Set[int]:
         thr = self.edge_threshold if threshold is None else float(threshold)
         eff = self.effective_weights()
