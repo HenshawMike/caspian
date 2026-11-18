@@ -6,32 +6,214 @@ Supports Phase 0 (Foundation) and Phase 1 (Predictive Interaction) reports.
 """
 
 import os
+import zipfile
+from pathlib import Path
 from typing import Dict, Any, List, Optional
-import docx
-from docx.shared import Inches, Pt, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
-from docx.oxml import OxmlElement, parse_xml
-from docx.oxml.ns import nsdecls, qn
+from xml.sax.saxutils import escape as _xml_escape
 
+try:
+    import docx
+    from docx.shared import Inches, Pt, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
+    from docx.oxml import OxmlElement, parse_xml
+    from docx.oxml.ns import nsdecls, qn
 
-def _set_cell_background(cell, fill_hex: str) -> None:
-    """Set the background color of a table cell."""
-    tcPr = cell._element.get_or_add_tcPr()
-    shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{fill_hex}"/>')
-    tcPr.append(shd)
+    def _set_cell_background(cell, fill_hex: str) -> None:
+        """Set the background color of a table cell."""
+        tcPr = cell._element.get_or_add_tcPr()
+        shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{fill_hex}"/>')
+        tcPr.append(shd)
 
+    def _set_cell_margins(cell, top=100, bottom=100, left=150, right=150) -> None:
+        """Set padding for a table cell."""
+        tcPr = cell._element.get_or_add_tcPr()
+        tcMar = OxmlElement('w:tcMar')
+        for margin_name, val in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
+            node = OxmlElement(f'w:{margin_name}')
+            node.set(qn('w:w'), str(val))
+            node.set(qn('w:type'), 'dxa')
+            tcMar.append(node)
+        tcPr.append(tcMar)
 
-def _set_cell_margins(cell, top=100, bottom=100, left=150, right=150) -> None:
-    """Set padding for a table cell."""
-    tcPr = cell._element.get_or_add_tcPr()
-    tcMar = OxmlElement('w:tcMar')
-    for margin_name, val in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
-        node = OxmlElement(f'w:{margin_name}')
-        node.set(qn('w:w'), str(val))
-        node.set(qn('w:type'), 'dxa')
-        tcMar.append(node)
-    tcPr.append(tcMar)
+except ModuleNotFoundError:
+    # Pure-Python OOXML fallback when python-docx is not installed in .venv
+    class Inches(float):
+        def __new__(cls, val):
+            return super().__new__(cls, float(val) * 1440.0)
+
+    class Pt(float):
+        def __new__(cls, val):
+            return super().__new__(cls, float(val))
+
+    class RGBColor(str):
+        def __new__(cls, r: int, g: int, b: int):
+            return super().__new__(cls, f"{r:02X}{g:02X}{b:02X}")
+
+    class WD_ALIGN_PARAGRAPH:
+        LEFT = "left"; CENTER = "center"; RIGHT = "right"
+
+    class WD_TABLE_ALIGNMENT:
+        LEFT = "left"; CENTER = "center"; RIGHT = "right"
+
+    class WD_ALIGN_VERTICAL:
+        TOP = "top"; CENTER = "center"; BOTTOM = "bottom"
+
+    class _Font:
+        def __init__(self):
+            self.size = None
+            self.bold = False
+            self.italic = False
+            self.color = type("_Color", (), {"rgb": None})()
+
+    class _Run:
+        def __init__(self, text: str = ""):
+            self.text = str(text)
+            self.font = _Font()
+
+        def to_xml(self) -> str:
+            rpr = []
+            if self.font.bold:
+                rpr.append("<w:b/>")
+            if self.font.italic:
+                rpr.append("<w:i/>")
+            if self.font.color.rgb:
+                rpr.append(f'<w:color w:val="{self.font.color.rgb}"/>')
+            if self.font.size is not None:
+                half_pts = int(round(float(self.font.size) * 2))
+                rpr.append(f'<w:sz w:val="{half_pts}"/>')
+            rpr_xml = f"<w:rPr>{''.join(rpr)}</w:rPr>" if rpr else ""
+            return f'<w:r>{rpr_xml}<w:t xml:space="preserve">{_xml_escape(self.text)}</w:t></w:r>'
+
+    class _ParagraphFormat:
+        def __init__(self):
+            self.space_before = None
+            self.space_after = None
+
+    class _Paragraph:
+        def __init__(self):
+            self.runs: List[_Run] = []
+            self.paragraph_format = _ParagraphFormat()
+            self.alignment = None
+
+        def add_run(self, text: str = "") -> _Run:
+            r = _Run(text)
+            self.runs.append(r)
+            return r
+
+        def to_xml(self) -> str:
+            ppr = []
+            if self.paragraph_format.space_before is not None or self.paragraph_format.space_after is not None:
+                attrs = []
+                if self.paragraph_format.space_before is not None:
+                    attrs.append(f'w:before="{int(round(float(self.paragraph_format.space_before) * 20))}"')
+                if self.paragraph_format.space_after is not None:
+                    attrs.append(f'w:after="{int(round(float(self.paragraph_format.space_after) * 20))}"')
+                ppr.append(f"<w:spacing {' '.join(attrs)}/>")
+            ppr_xml = f"<w:pPr>{''.join(ppr)}</w:pPr>" if ppr else ""
+            return f"<w:p>{ppr_xml}{''.join(r.to_xml() for r in self.runs)}</w:p>"
+
+    class _Cell:
+        def __init__(self):
+            self.paragraphs: List[_Paragraph] = [_Paragraph()]
+            self.width = None
+            self._bg = None
+            self._margins = None
+
+        def to_xml(self) -> str:
+            tcpr = []
+            if self._bg:
+                tcpr.append(f'<w:shd xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" w:fill="{self._bg}"/>')
+            if self._margins:
+                t, b, l, r = self._margins
+                tcpr.append(
+                    f'<w:tcMar><w:top w:w="{t}" w:type="dxa"/><w:bottom w:w="{b}" w:type="dxa"/>'
+                    f'<w:left w:w="{l}" w:type="dxa"/><w:right w:w="{r}" w:type="dxa"/></w:tcMar>'
+                )
+            tcpr_xml = f"<w:tcPr>{''.join(tcpr)}</w:tcPr>" if tcpr else ""
+            return f"<w:tc>{tcpr_xml}{''.join(p.to_xml() for p in self.paragraphs)}</w:tc>"
+
+    class _Row:
+        def __init__(self, cols: int):
+            self.cells = [_Cell() for _ in range(cols)]
+
+        def to_xml(self) -> str:
+            return f"<w:tr>{''.join(c.to_xml() for c in self.cells)}</w:tr>"
+
+    class _Table:
+        def __init__(self, rows: int, cols: int):
+            self.rows = [_Row(cols) for _ in range(rows)]
+            self.alignment = None
+
+        def to_xml(self) -> str:
+            return f'<w:tbl><w:tblPr><w:tblStyle w:val="TableGrid"/><w:jc w:val="center"/></w:tblPr>{"".join(r.to_xml() for r in self.rows)}</w:tbl>'
+
+    class _Section:
+        def __init__(self):
+            self.top_margin = 1152; self.bottom_margin = 1152; self.left_margin = 1152; self.right_margin = 1152
+
+    class _Document:
+        def __init__(self):
+            self.sections = [_Section()]
+            self._items = []
+
+        def add_paragraph(self, text: Optional[str] = None) -> _Paragraph:
+            p = _Paragraph()
+            if text is not None:
+                p.add_run(text)
+            self._items.append(p)
+            return p
+
+        def add_table(self, rows: int, cols: int) -> _Table:
+            t = _Table(rows, cols)
+            self._items.append(t)
+            return t
+
+        def save(self, output_path: str) -> None:
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+            template_docx = Path(__file__).resolve().parent.parent / "docs" / "CSP-P12-E001.docx"
+            header = (
+                "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>\n"
+                '<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" '
+                'xmlns:mo="http://schemas.microsoft.com/office/mac/office/2008/main" '
+                'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" '
+                'xmlns:mv="urn:schemas-microsoft-com:mac:vml" '
+                'xmlns:o="urn:schemas-microsoft-com:office:office" '
+                'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" '
+                'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" '
+                'xmlns:v="urn:schemas-microsoft-com:vml" '
+                'xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" '
+                'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" '
+                'xmlns:w10="urn:schemas-microsoft-com:office:word" '
+                'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
+                'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" '
+                'xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" '
+                'xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" '
+                'xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" '
+                'xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" '
+                'mc:Ignorable="w14 wp14"><w:body>'
+            )
+            footer = (
+                '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/>'
+                '<w:pgMar w:top="1152" w:right="1152" w:bottom="1152" w:left="1152" w:header="720" w:footer="720" w:gutter="0"/>'
+                '<w:cols w:space="720"/><w:docGrid w:linePitch="360"/></w:sectPr></w:body></w:document>'
+            )
+            doc_xml = (header + "".join(it.to_xml() for it in self._items) + footer).encode("utf-8")
+            with zipfile.ZipFile(template_docx, "r") as zin, zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zout:
+                for item in zin.infolist():
+                    if item.filename == "word/document.xml":
+                        zout.writestr(item, doc_xml)
+                    else:
+                        zout.writestr(item, zin.read(item.filename))
+
+    class docx:
+        Document = _Document
+
+    def _set_cell_background(cell, fill_hex: str) -> None:
+        cell._bg = fill_hex
+
+    def _set_cell_margins(cell, top=100, bottom=100, left=150, right=150) -> None:
+        cell._margins = (top, bottom, left, right)
 
 
 def generate_docx_report(data: Dict[str, Any], output_path: str) -> str:

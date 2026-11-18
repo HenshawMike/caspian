@@ -46,8 +46,8 @@ All models are implemented in pure NumPy (`models/discovery.py`) with analytical
 
 - **Confirmatory Seeds:** `21, 22, 23, 24, 25, 26, 27, 28, 29, 30` ($n = 10$, strictly disjoint from Phase 11 seeds and Phase 12 seeds `11–20`).
 - **Exploratory Smoke Seeds:** `9001, 9002, 9003` (pipeline verification only).
-- **Data Budgets:** `lo` and `hi` (`(667, 2667)` steps per training combination in `W1_raw`/`W3_raw`; `(643, 2571)` in `W2_raw`). Primary evaluation level: `hi`.
-- **Optimiser:** Adam (`lr = 0.01`, `weight_decay = 1e-4`, `batch_size = 32`, `epochs = 200`), identical across all architectures.
+- **Data Budgets:** `lo` and `hi` (`(250, 750)` steps per training combination across `W1_raw`, `W2_raw`, `W3_raw`, yielding ~120 interaction events at `lo` and ~360–900 interaction events at `hi`; `lo` sliced as a deterministic prefix of the `hi` trajectory). Primary evaluation level: `hi`.
+- **Optimiser:** Adam (`lr = 0.01`, `weight_decay = 1e-4`, `batch_size = 64`, `epochs = 120`), identical across all architectures.
 - **Metrics:**
   - `heldout_nrmse` and `indist_nrmse` ($\text{RMSE} / \text{value\_range}$).
   - `slot_match_r2`: Mean univariate $R^2$ between the 3 ground-truth properties $(p_1, p_2, p_3)$ and the best Hungarian-matched individual latent coordinates on held-out combinations (measures true single-slot property disentanglement rather than multi-slot probe mixing).

@@ -75,7 +75,7 @@ class OrthogonalUnmixingLayer:
     def num_parameters(self) -> int:
         return int(self.W.size)
 
-    def fit_subspace(self, X: np.ndarray, n_restarts: int = 10, steps: int = 200, lr: float = 0.2):
+    def fit_subspace(self, X: np.ndarray, n_restarts: int = 5, steps: int = 80, lr: float = 0.25):
         """Unsupervised initialization of subspace basis V_sub and orthogonal unmixing W on unlabeled X."""
         X = np.asarray(X, dtype=float)
         self.mean = np.zeros((1, self.raw_dim), dtype=float)
@@ -104,6 +104,12 @@ class OrthogonalUnmixingLayer:
         Z_init = X_sub @ self.W
         self.scale = np.std(Z_init, axis=0, keepdims=True)
         self.scale = np.where(self.scale < 1e-6, 1.0, self.scale)
+
+    def copy_from(self, other: "OrthogonalUnmixingLayer"):
+        self.mean = other.mean.copy()
+        self.V_sub = other.V_sub.copy()
+        self.W = other.W.copy()
+        self.scale = other.scale.copy()
 
     def forward(self, X: np.ndarray) -> np.ndarray:
         X = np.asarray(X, dtype=float)
@@ -161,8 +167,11 @@ class LatentDiscoveryModel:
     def num_parameters(self) -> int:
         return self.unmix.num_parameters + self.head.num_parameters
 
-    def fit_normalizer(self, X: np.ndarray):
-        self.unmix.fit_subspace(X)
+    def fit_normalizer(self, X: np.ndarray, shared_unmix: Optional[OrthogonalUnmixingLayer] = None):
+        if shared_unmix is not None:
+            self.unmix.copy_from(shared_unmix)
+        else:
+            self.unmix.fit_subspace(X)
         Z = self.unmix.forward(X)
         self.head.fit_normalizer(Z)
 
