@@ -254,6 +254,8 @@ Predictive correlation P(Y | X) is fundamentally different from causal intervent
 
 3. Pearl's 3-Step Counterfactual Inference (Abduction-Action-Prediction): Given a factual episode (X_obs, Y_obs) containing unobserved latent noise U, an interventional predictor E[Y | do(X)] alone cannot predict individual counterfactuals Y_{X_k <- x'}. CausalStructuralModel computes: (i) Abduction u_hat = Y_obs - f_causal(X_obs) (recovering 3.5U!), (ii) Action X_cf = X_obs[k <- x'], and (iii) Prediction Y_cf = f_causal(X_cf) + u_hat.
 
+4. Joint Invariant Causal Fusion (Stage C First-Principles Solution): Rather than discarding passive observational data, fit_joint_causal_structure() uses scarce interventions to discover Pa(Y), runs a Chow-type coefficient invariance test (z_diff < 2.5) between obs and int restricted to Pa(Y), and pools obs + int on the invariant causal parent set—cutting W15_hidden_confounder error from 0.0512 to 0.0425 and achieving 3x lower ATE error than mlp_intervention (0.0412 vs 0.1201) under scarce interventions (N_int = 80, N_obs = 480).
+
 **Empirical Evidence:** Report CSP-P15-E001 & docs/phase15/INVESTIGATION.md (disjoint seeds 41-50, 4 worlds x 6 models x 2 levels = 480 trainings): causal_intervention achieved causal_f1 = 1.000 in 40/40 world-seed cells (0 false causal edges), beat observational_mlp and observational_linear on W15_hidden_confounder by 0.55 nRMSE (10/10 seeds, P15-H2 MET), beat all baselines on multi-variable interventions (P15-H3 MET), beat observational_mlp and mlp_intervention on counterfactuals by > 0.51 nRMSE (P15-H4 MET), and cut ATE error vs mlp_intervention by 65.3% RER across all 4 worlds (10/10 seeds).
 
 ### Viva / Defense Q&A
