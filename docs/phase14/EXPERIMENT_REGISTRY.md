@@ -9,8 +9,8 @@
 
 Each world has $K = 5$ binary environmental properties $(p_0, p_1, p_2, p_3, p_4) \in \{0, 1\}^5$ encoded as neutral physical channels $(0.2, 0.8)^5$ ($2^5 = 32$ total combinations).
 - **Compositional Split (Experiment 14.6):**
-  - Training combinations (`24` combinations): all $c \in \{0, 1\}^5$ where $\neg(p_3 = 1 \land p_4 = 1)$.
-  - Held-out combinations (`8` combinations): all $c \in \{0, 1\}^5$ where $p_3 = 1 \land p_4 = 1$ (testing every combination of $(p_0, p_1, p_2) \in \{0, 1\}^3$ in the unseen context $p_3=1, p_4=1$).
+  - Training combinations (`22` combinations): all $c \in \{0, 1\}^5$ except the held-out set below (ensuring every pairwise and 3-way interaction among $(p_0, p_1, p_2)$ is observed when $p_3 = 0$).
+  - Held-out combinations (`10` combinations): all $c \in \{0, 1\}^5$ where $(p_0 = 1 \land p_1 = 1 \land p_3 = 1)$ or $(p_3 = 1 \land p_4 = 1)$ (testing whether an interaction $(p_0, p_1)$ learned at $p_3 = 0$ transfers compositionally to the unseen context $p_3 = 1$, and whether non-interacting $(p_3, p_4)$ extrapolates additively).
 - **Base Main-Effect Structure:**
   $$f_{\text{main}}(p) = 5 p_0 - 4 p_1 + 3 p_2 - 2 p_3 + 1.5 p_4$$
 

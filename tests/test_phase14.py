@@ -54,7 +54,7 @@ def test_p14_gradients_match_numerical(arch):
 
 @pytest.mark.parametrize("spec", [W14_INDEP, W14_SPARSE_PAIR, W14_MULTI_PAIR, W14_HIGHER_ORDER])
 def test_p14_worlds_truth_semantic_purity_and_zero_leakage(spec):
-    assert len(spec.train_combos) == 24 and len(spec.heldout_combos) == 8
+    assert len(spec.train_combos) == 22 and len(spec.heldout_combos) == 10
     assert not (set(spec.train_combos) & set(spec.heldout_combos))
     for c in spec.heldout_combos[:2]:
         ds = p7._collect_passive(make_p14_world(spec, [c]), seed=5, num_steps=400)

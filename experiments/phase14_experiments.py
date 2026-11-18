@@ -30,8 +30,8 @@ EXPLORATORY14 = [9001, 9002, 9003]
 N_PROPS14 = 5
 EPOCHS14 = 120
 BATCH_SIZE14 = 64
-STEPS_PER_COMBO_14 = (100, 300)  # 24 train combos -> 2,400 steps (lo) and 7,200 steps (hi)
-DETECT_THRESHOLD = 1.0
+STEPS_PER_COMBO_14 = (100, 300)  # 22 train combos -> 2,200 steps (lo) and 6,600 steps (hi)
+DETECT_THRESHOLD = 0.45
 MAIN_EFFECTS_TRUE = (5.0, -4.0, 3.0, -2.0, 1.5)
 
 ARCHS14 = [
@@ -71,8 +71,10 @@ def _delta_higher_order(c: Tuple[int, ...]) -> float:
 
 
 ALL_COMBOS_14: List[Tuple[int, ...]] = list(itertools.product((0, 1), repeat=N_PROPS14))
-TRAIN_COMBOS_14: List[Tuple[int, ...]] = [c for c in ALL_COMBOS_14 if not (c[3] == 1 and c[4] == 1)]
-HELDOUT_COMBOS_14: List[Tuple[int, ...]] = [c for c in ALL_COMBOS_14 if (c[3] == 1 and c[4] == 1)]
+HELDOUT_COMBOS_14: List[Tuple[int, ...]] = [
+    c for c in ALL_COMBOS_14 if (c[0] == 1 and c[1] == 1 and c[3] == 1) or (c[3] == 1 and c[4] == 1)
+]
+TRAIN_COMBOS_14: List[Tuple[int, ...]] = [c for c in ALL_COMBOS_14 if c not in HELDOUT_COMBOS_14]
 
 
 @dataclass
@@ -202,61 +204,76 @@ def probe_model_interactions_and_main_effects(
     model,
     threshold: float = DETECT_THRESHOLD,
 ) -> Dict[str, Any]:
-    """Model-agnostic discrete mixed partial derivative (Mobius) probe on {0.2, 0.8}^5:
-    - Evaluates main effects: d_i = f(e_i) - f(0) for i in 0..4
-    - Evaluates all 10 pairwise interactions: d_{ij} = f(e_i + e_j) - f(e_i) - f(e_j) + f(0)
-    - Evaluates all 10 3-way interactions: d_{ijk} = sum_{a,b,c in {0,1}} (-1)^{3-(a+b+c)} f(a e_i + b e_j + c e_k)
+    """Model-agnostic discrete mixed partial derivative (Mobius) probe across all contexts on {0.2, 0.8}^5:
+    - Evaluates single-property main-effect recovery across unseen/held-out contexts and baseline origin.
+    - Evaluates all 10 3-way interactions across background contexts.
+    - Evaluates all 10 pairwise interactions across background contexts (excluding contexts where an active 3-way term fires).
     """
-    def _f(combo: Tuple[int, ...]) -> float:
-        x = np.array([spec.combo_to_channel_vec(combo)], dtype=float)
-        return float(np.asarray(model.forward(x)).reshape(-1)[0])
+    all_c = spec.all_combos()
+    X_all = np.array([spec.combo_to_channel_vec(c) for c in all_c], dtype=float)
+    preds = np.asarray(model.forward(X_all)).reshape(-1)
+    pred_map = {c: float(v) for c, v in zip(all_c, preds)}
 
+    # 1. Main-effect recovery across baseline + held-out context flips of additive properties
     c0 = (0, 0, 0, 0, 0)
-    f0 = _f(c0)
-
-    # 1. Main effects recovery
+    f0 = pred_map[c0]
     main_errs = []
-    f_unit = {}
     for i in range(spec.n_props):
         ci = [0] * spec.n_props
         ci[i] = 1
-        ci_t = tuple(ci)
-        f_unit[i] = _f(ci_t)
-        est_main = f_unit[i] - f0
-        main_errs.append(abs(est_main - MAIN_EFFECTS_TRUE[i]))
+        main_errs.append(abs((pred_map[tuple(ci)] - f0) - MAIN_EFFECTS_TRUE[i]))
+    # Also evaluate single-property flips of non-interacting properties (p3, p4) across all contexts touching held-out
+    held_set = set(spec.heldout_combos)
+    for c in all_c:
+        for i in (3, 4):
+            if c[i] == 0:
+                c2 = list(c)
+                c2[i] = 1
+                c2_t = tuple(c2)
+                if c in held_set or c2_t in held_set:
+                    est_flip = pred_map[c2_t] - pred_map[c]
+                    main_errs.append(abs(est_flip - MAIN_EFFECTS_TRUE[i]))
     main_effect_nmae = float(np.mean(main_errs)) / spec.value_range
 
-    # 2. Pairwise and 3-way discrete mixed partial derivatives
+    # 2. 3-way discrete mixed partial derivatives across background contexts
     detected: Set[Tuple[int, ...]] = set()
-    f_pair = {}
-    for i, j in itertools.combinations(range(spec.n_props), 2):
-        cij = [0] * spec.n_props
-        cij[i] = 1
-        cij[j] = 1
-        f_ij = _f(tuple(cij))
-        f_pair[(i, j)] = f_ij
-        mobius_ij = f_ij - f_unit[i] - f_unit[j] + f0
-        if abs(mobius_ij) >= threshold:
-            detected.add((i, j))
-
     for i, j, k in itertools.combinations(range(spec.n_props), 3):
-        c_ijk = [0] * spec.n_props
-        c_ijk[i] = 1
-        c_ijk[j] = 1
-        c_ijk[k] = 1
-        f_ijk = _f(tuple(c_ijk))
-        mobius_ijk = (
-            f_ijk
-            - f_pair[(i, j)]
-            - f_pair[(i, k)]
-            - f_pair[(j, k)]
-            + f_unit[i]
-            + f_unit[j]
-            + f_unit[k]
-            - f0
-        )
-        if abs(mobius_ijk) >= threshold:
+        others = [m for m in range(spec.n_props) if m not in (i, j, k)]
+        max_m3 = 0.0
+        for bg in itertools.product((0, 1), repeat=len(others)):
+            val = 0.0
+            for a, b, cc in itertools.product((0, 1), repeat=3):
+                c = [0] * spec.n_props
+                c[i], c[j], c[k] = a, b, cc
+                for om, ov in zip(others, bg):
+                    c[om] = ov
+                sign = -1.0 if ((3 - (a + b + cc)) % 2 == 1) else 1.0
+                val += sign * pred_map[tuple(c)]
+            if abs(val) > max_m3:
+                max_m3 = abs(val)
+        if max_m3 >= threshold:
             detected.add((i, j, k))
+
+    # 3. Pairwise discrete mixed partial derivatives across contexts
+    for i, j in itertools.combinations(range(spec.n_props), 2):
+        others = [m for m in range(spec.n_props) if m not in (i, j)]
+        max_m2 = 0.0
+        for bg in itertools.product((0, 1), repeat=len(others)):
+            if any(tuple(sorted((i, j, om))) in detected and ov == 1 for om, ov in zip(others, bg)):
+                continue
+            c_base = [0] * spec.n_props
+            for om, ov in zip(others, bg):
+                c_base[om] = ov
+            val = 0.0
+            for a, b in itertools.product((0, 1), repeat=2):
+                c = list(c_base)
+                c[i], c[j] = a, b
+                sign = -1.0 if ((2 - (a + b)) % 2 == 1) else 1.0
+                val += sign * pred_map[tuple(c)]
+            if abs(val) > max_m2:
+                max_m2 = abs(val)
+        if max_m2 >= threshold:
+            detected.add((i, j))
 
     true_set = spec.true_interactions
     tp = len(detected & true_set)
