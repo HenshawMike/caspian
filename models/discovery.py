@@ -75,27 +75,45 @@ class OrthogonalUnmixingLayer:
     def num_parameters(self) -> int:
         return int(self.W.size)
 
-    def fit_subspace(self, X: np.ndarray, n_restarts: int = 5, steps: int = 80, lr: float = 0.25):
-        """Unsupervised initialization of subspace basis V_sub and orthogonal unmixing W on unlabeled X."""
+    def fit_subspace(self, X: np.ndarray, n_restarts: int = 10, steps: int = 100, lr: float = 0.22,
+                     max_pair_corr: float = 0.52):
+        """Unsupervised initialization of subspace basis V_sub and orthogonal unmixing W on unlabeled X.
+        Includes a first-principles non-duplication correlation guard (penalizing pairwise |Corr(Z_i, Z_j)| > max_pair_corr)
+        so high-variance binary nuisance factors cannot dominate multiple Euclidean-orthogonal columns simultaneously.
+        """
         X = np.asarray(X, dtype=float)
         self.mean = np.zeros((1, self.raw_dim), dtype=float)
         _, _, Vt = np.linalg.svd(X, full_matrices=False)
         self.V_sub = Vt[:self.n_slots].T.copy()               # (D, K) orthonormal columns
         X_sub = X @ self.V_sub                                # (N, K)
+        N = float(len(X_sub))
 
         best_W = self.W.copy()
         best_loss = float("inf")
         rng = np.random.default_rng(self.seed + 17)
         for r in range(n_restarts):
             W = np.eye(self.n_slots) if r == 0 else _project_orthogonal(rng.standard_normal((self.n_slots, self.n_slots)))
-            for _ in range(steps):
+            for st in range(steps):
                 Z = X_sub @ W
                 _, gz = _kurtosis_loss_and_grad_z(Z)
-                gW = X_sub.T @ gz
+                rms = np.sqrt(np.mean(Z ** 2, axis=0, keepdims=True)) + 1e-6
+                Zn = Z / rms
+                C = (Zn.T @ Zn) / N
+                excess = np.maximum(0.0, np.abs(C) - max_pair_corr) * np.sign(C)
+                np.fill_diagonal(excess, 0.0)
+                g_corr = (2.0 / N) * (Zn @ excess) / rms
+                gW = X_sub.T @ (gz + 0.15 * g_corr)
+                step_lr = lr * (0.985 ** st)
                 # Riemannian tangent step + polar retraction onto O(K)
-                W = _project_orthogonal(W - lr * (gW - W @ gW.T @ W))
+                W = _project_orthogonal(W - step_lr * (gW - W @ gW.T @ W))
             Z_final = X_sub @ W
-            loss_final, _ = _kurtosis_loss_and_grad_z(Z_final)
+            loss_kurt, _ = _kurtosis_loss_and_grad_z(Z_final)
+            rms_f = np.sqrt(np.mean(Z_final ** 2, axis=0, keepdims=True)) + 1e-6
+            Zn_f = Z_final / rms_f
+            C_f = (Zn_f.T @ Zn_f) / N
+            np.fill_diagonal(C_f, 0.0)
+            pen_corr = float(np.sum(np.maximum(0.0, np.abs(C_f) - max_pair_corr) ** 2))
+            loss_final = loss_kurt + 0.25 * pen_corr
             if loss_final < best_loss:
                 best_loss = loss_final
                 best_W = W.copy()

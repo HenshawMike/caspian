@@ -31,8 +31,12 @@ Every phase and capability in Project Caspian must be developed, tested, committ
    - Execute the locked confirmatory run, save outputs via `safe_write_json` in `logs/phase<N>/`, run `experiments/analyze_phase<N>.py`, generate the Layer B report `docs/CSP-P<N>-E001.docx`, and record commit hashes in `docs/phase<N>/OPERATIONAL_RECORD.md`.
    - Re-run `.venv/bin/pytest -q` to confirm all tests pass.
    - Commit Stage B on the target branch.
-4. **Post-Testing Branch Selection & GitHub Push:**
-   - After testing passes at the end of a phase, sync the work to the relevant research/feature branch(es), merge validated phase completions into `main` using `git merge --no-ff`, and push the updated target branches (`research/*`, `feature/*`, and `main`) to GitHub (`origin`).
+4. **Stage C — Mandatory Post-Phase Investigation ("Fake vs. Legit" + First-Principles Solutions):**
+   - Before advancing to the next phase, run `experiments/investigation.py` and write `docs/phase<N>/INVESTIGATION.md`:
+     1. **Legitimacy Audit ("Fake vs. Legit"):** Prove 0 data/target leakage, no privileged oracle access in `models/`, genuine parameter updates, distinct per-seed trajectories, and valid negative/shuffled controls.
+     2. **First-Principles Root-Cause Analysis of Any Unmet Criterion:** For every criterion marked `NOT MET`, isolate the failing seeds/cells, derive the exact mathematical root cause from first principles, and verify a first-principles solution in a diagnostic experiment (preserving the original confirmatory logs intact).
+5. **Post-Testing Branch Selection & GitHub Push:**
+   - After testing and investigation pass at the end of a phase, sync the work to the relevant research/feature branch(es), merge validated phase completions into `main` using `git merge --no-ff`, and push the updated target branches (`research/*`, `feature/*`, and `main`) to GitHub (`origin`).
 
 ## 2. Scientific & Safety Invariants
 - **Semantic Firewall:** Never expose semantic labels (`food`, `hazard`, `reward`, `beneficial`, `harmful`, etc.) in `Observation`. Every `Observation` must pass `assert_semantic_purity()`.
