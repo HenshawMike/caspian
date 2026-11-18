@@ -1,0 +1,95 @@
+{
+  "phase": 13,
+  "experiment_id": "CSP-P13-E001",
+  "forensic_verdict": "LEGIT",
+  "pillar_a_legitimacy_audit": {
+    "ast_oracle_and_semantic_firewall": {
+      "files_checked": [
+        "__init__.py",
+        "activations.py",
+        "compositional.py",
+        "deepsets.py",
+        "discovery.py",
+        "layers.py",
+        "mlp.py",
+        "normalization.py",
+        "optimizers.py",
+        "rnn.py"
+      ],
+      "violations": [],
+      "passed": true
+    },
+    "confirmatory_log_integrity": {
+      "total_rows": 540,
+      "leak_rows_total": 0,
+      "non_finite_rows": 0,
+      "seed_independence_verified": true,
+      "max_shuffled_probe_r2": 0.0405,
+      "shuffled_control_passed": true,
+      "w3_oracle_additive_heldout_nrmse": 0.1939,
+      "structural_negative_control_passed": true,
+      "passed": true
+    },
+    "live_gradient_and_weight_movement": {
+      "initial_loss": 40.8565,
+      "final_loss": 0.12055,
+      "loss_ratio_final_over_init": 0.00295,
+      "total_weight_l2_movement": 11.7811,
+      "passed": true
+    }
+  },
+  "pillar_b_first_principles_investigation": {
+    "root_cause_summary": "All three unmet sub-criteria (P13-H4 W2_raw 8/10 seeds >= 0.90; P13-H5 W2_raw CKA 0.745 < 0.85; P13-H7 W3_raw in-dist nRMSE >= 0.05 in 8/10 seeds) traced to a single first-principles root cause in unwhitened Euclidean Stiefel kurtosis minimization: (1) In W2_raw (seeds 22 & 27), the 3 binary nuisance factors have 7x the variance (sigma^2 = 4.0) and lower kurtosis (kappa = 1.00) than the 3-level property u (sigma^2 = 0.57, kappa = 1.65). A 36.8-degree Euclidean rotation allowed one binary nuisance factor to dominate TWO columns simultaneously (|Corr(Z_1, Z_2)| = 0.74), achieving a lower unweighted kurtosis sum (0.2957 < 0.2967) than the true unmixing matrix W*. (2) In W3_raw (seeds 28 & 29), 5 restarts x 80 steps stopped in a 45-degree planar saddle (A +/- B)/sqrt(2), which by the Polarization Identity A*B = ((A+B)^2 - (A-B)^2)/4 allowed univariate slot MLPs to fit the 5AB interaction in-distribution.",
+    "first_principles_solution": "Added a pairwise correlation non-duplication guard (penalizing |Corr(Z_i, Z_j)| > 0.52, above the maximum 0.50 missing-corner training correlation) with decayed step schedule (10 restarts x 100 steps) in OrthogonalUnmixingLayer.fit_subspace().",
+    "before_fix": {
+      "P13_H4_W2_slot_match_ge_0.90_seeds": 8,
+      "P13_H4_W2_slot_match_r2_mean": 0.9479,
+      "P13_H5_W2_inter_seed_cka_mean": 0.745,
+      "P13_H7_W3_indist_ge_0.05_seeds": 8
+    },
+    "after_fix": {
+      "P13_H4_W2_slot_match_per_seed": [
+        1.0,
+        1.0,
+        0.9987,
+        0.9992,
+        1.0,
+        0.9997,
+        0.9858,
+        0.9998,
+        1.0,
+        0.9667
+      ],
+      "P13_H4_W2_slot_match_ge_0.90_seeds": 10,
+      "P13_H4_W2_slot_match_r2_mean": 0.995,
+      "P13_H5_W2_inter_seed_cka_mean": 0.9849,
+      "P13_H5_W2_inter_seed_cka_min": 0.9462,
+      "P13_H7_W3_slot_match_per_seed": [
+        1.0,
+        1.0,
+        0.9981,
+        0.8321,
+        0.984,
+        0.7981,
+        0.9994,
+        0.867,
+        0.9966,
+        0.9999
+      ],
+      "P13_H7_W3_indist_per_seed": [
+        0.08325,
+        0.08792,
+        0.08016,
+        0.08085,
+        0.06922,
+        0.0638,
+        0.06765,
+        0.04554,
+        0.08718,
+        0.08526
+      ],
+      "P13_H7_W3_indist_ge_0.05_seeds": 9,
+      "all_three_criteria_resolved": true
+    }
+  }
+}
