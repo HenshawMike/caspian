@@ -31,10 +31,11 @@ Every phase and capability in Project Caspian must be developed, tested, committ
    - Execute the locked confirmatory run, save outputs via `safe_write_json` in `logs/phase<N>/`, run `experiments/analyze_phase<N>.py`, generate the Layer B report `docs/CSP-P<N>-E001.docx`, and record commit hashes in `docs/phase<N>/OPERATIONAL_RECORD.md`.
    - Re-run `.venv/bin/pytest -q` to confirm all tests pass.
    - Commit Stage B on the target branch.
-4. **Stage C — Mandatory Post-Phase Investigation ("Fake vs. Legit" + First-Principles Solutions):**
+4. **Stage C — Mandatory Post-Phase Investigation ("Fake vs. Legit" + First-Principles Solutions) & Living Study Curriculum Update:**
    - Before advancing to the next phase, run `experiments/investigation.py` and write `docs/phase<N>/INVESTIGATION.md`:
      1. **Legitimacy Audit ("Fake vs. Legit"):** Prove 0 data/target leakage, no privileged oracle access in `models/`, genuine parameter updates, distinct per-seed trajectories, and valid negative/shuffled controls.
      2. **First-Principles Root-Cause Analysis of Any Unmet Criterion:** For every criterion marked `NOT MET`, isolate the failing seeds/cells, derive the exact mathematical root cause from first principles, and verify a first-principles solution in a diagnostic experiment (preserving the original confirmatory logs intact).
+   - **Update the Living Study & Defense Curriculum:** Append the completed phase's first-principles derivations, codebase mapping, empirical results, and Viva/Defense Q&A to `experiments/generate_curriculum.py` and regenerate `docs/Caspian_First_Principles_Study_Curriculum.docx` (and `docs/curriculum/CASPIAN_STUDY_CURRICULUM.md`).
 5. **Post-Testing Branch Selection & GitHub Push:**
    - After testing and investigation pass at the end of a phase, sync the work to the relevant research/feature branch(es), merge validated phase completions into `main` using `git merge --no-ff`, and push the updated target branches (`research/*`, `feature/*`, and `main`) to GitHub (`origin`).
 
