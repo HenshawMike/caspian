@@ -349,8 +349,9 @@ def run_cell_p14(
     model = build_p14_model(arch, spec.n_props, seed=seed)
     if isinstance(model, SparseInteractionDiscoveryModel):
         y_main_target = model.fit_sparse_hierarchy(Ptr, Ytr)
+        Ptr_clean = model.p_min + model._normalized_coords(Ptr) * model.p_span
         _, losses = train_model(
-            model.main_trunk, Ptr, y_main_target, seed, epochs=epochs, lr=lr, batch_size=batch_size, refit_normalizer=False
+            model.main_trunk, Ptr_clean, y_main_target, seed, epochs=epochs, lr=lr, batch_size=batch_size, refit_normalizer=False
         )
     else:
         _, losses = train_model(model, Ptr, Ytr, seed, epochs=epochs, lr=lr, batch_size=batch_size)

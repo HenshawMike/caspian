@@ -488,11 +488,64 @@ CURRICULUM_MODULES: List[Dict[str, Any]] = [
             ),
         ],
     },
+    {
+        "module_id": "Phase 14",
+        "title": "Interaction Discovery & Structured Relationships — Functional ANOVA, Mobius Contrasts & Sparse Recovery",
+        "code_files": [
+            "models/interactions.py",
+            "experiments/phase14_experiments.py",
+            "experiments/analyze_phase14.py",
+            "experiments/investigation.py",
+            "docs/phase14/EXPERIMENT_REGISTRY.md",
+            "docs/phase14/INVESTIGATION.md",
+            "tests/test_phase14.py",
+        ],
+        "first_principles": (
+            "As the number of environmental properties grows from K = 3 (Phase 12) to K = 5 (Phase 14: 2^5 = 32 combinations, C(5,2) = 10 pairs, "
+            "C(5,3) = 10 triplets), why does Phase 12's dense 'additive_residual' degrade while 'sparse_interaction' succeeds?\n"
+            "1. Why Dense Residual Networks Hallucinate False Interactions at K = 5: In 'additive_residual', the residual branch concatenates "
+            "all K = 5 property embeddings into a 40D vector passed into a dense 16-unit ReLU layer. When an interaction +6 p_0 p_1 is observed "
+            "in training only when p_3 = 0 (because (p_0=1, p_1=1, p_3=1) is held out), a dense 5-variable ReLU network cannot distinguish the "
+            "2-way interaction +6 p_0 p_1 from the 3-way conjunction +6 p_0 p_1 (1 - p_3), inventing 3 to 5 false interactions on held-out contexts!\n"
+            "2. First-Principles Functional-ANOVA / Mobius Decomposition ('SparseInteractionDiscoveryModel'): Any function on {0, 1}^K decomposes "
+            "uniquely into orthogonal orders of interaction: f(A) = f_0 + sum_i f_i(A_i) + sum_{i<j} w_{ij} A_i A_j + sum_{i<j<k} w_{ijk} A_i A_j A_k. "
+            "By the Frisch-Waugh-Lovell Theorem, projecting both the candidate interaction dictionary Psi(A) = [A_i A_j, A_i A_j A_k] in R^{N x 20} "
+            "and target Y onto the orthogonal complement of the main-effect space M_main = [1, A] (via QR projection I - Q_m Q_m^T) isolates the "
+            "pure non-additive residual without penalizing main effects. Iterative Soft-Thresholding (ISTA) followed by Gauss-Lasso debiasing "
+            "recovers the exact sparse interaction support S* with zero shrinkage bias.\n"
+            "3. Model-Agnostic Discrete Mixed Partial Derivatives (Mobius Probing): Any black-box model f_hat can be audited for learned interactions "
+            "without inspecting internal weights by evaluating its discrete 2nd-order mixed difference Delta_{ij} f_hat = f_hat(1,1) - f_hat(1,0) - "
+            "f_hat(0,1) + f_hat(0,0) and 3rd-order mixed difference Delta_{ijk} f_hat across background contexts."
+        ),
+        "empirical_link": (
+            "Report CSP-P14-E001 & docs/phase14/INVESTIGATION.md (disjoint seeds 31-40, 5 worlds x 6 architectures x 2 levels = 600 trainings): "
+            "sparse_interaction achieved F1 = 1.000 and 0 false interactions in 10/10 seeds across all 5 worlds (W14_indep, W14_sparse_pair, "
+            "W14_multi_pair, W14_higher_order, W14_noisy_pair), while mlp_small/large hallucinated ~10.8 false interactions and additive_residual "
+            "hallucinated ~3.9 false interactions (P14-H6 MET, 10/10 seeds). Stage C Investigation proved 100% LEGIT status, explained the "
+            "Zero-Error Floor Effect (RER >= 92% in 10/10 seeds on W14_indep and >= 99.7% in 10/10 seeds on W14_multi_pair), and derived the "
+            "Midpoint-Split 2-Mode Conditional Mean Estimator to eliminate tail-percentile noise attenuation in W14_noisy_pair (cutting noisy "
+            "held-out nRMSE in half from 0.01037 to 0.00537, beating additive_residual in 9/10 seeds)."
+        ),
+        "defense_qa": [
+            (
+                "Why did you use Frisch-Waugh-Lovell projection before ISTA instead of running L1 Lasso on [A, Psi(A)] jointly?",
+                "Because if main effects A_i are L1-penalized alongside product terms A_i A_j (which are positively correlated with A_i on {0,1}^K), "
+                "Lasso shrinkage on A_i leaks main-effect variance into the interaction coefficients w_{ij} (violating the statistical principle "
+                "of strong heredity). Projecting out M_main = [1, A] via QR ensures main effects are 100% unpenalized and w_int fits only "
+                "variance orthogonal to all additive functions."
+            ),
+            (
+                "In Stage C of Phase 14, why did splitting at the sample median fail on p_3 in W14_noisy_pair whereas splitting at the range midpoint succeeded?",
+                "Because 10 of the 16 combinations with p_3 = 1 were held out from the 22 training combinations, leaving 72.7% of training "
+                "samples at p_3 = 0 (0.2) and only 27.3% at p_3 = 1 (0.8). When > 50% of samples belong to the lower mode, the sample median "
+                "falls inside the lower mode (0.20) rather than between the two modes! Splitting at the 5th/95th percentile midpoint (~0.50) "
+                "is invariant to class-ratio imbalance."
+            ),
+        ],
+    },
 ]
 
 FUTURE_PHASES_ROADMAP = [
-    ("Phase 14", "Interaction Discovery & Structured Relationships", "research/ontology, research/architecture",
-     "Sparse pairwise and higher-order interaction discovery among K >= 5 properties under observation noise."),
     ("Phase 15", "Causal Discovery & Intervention Learning", "research/ontology",
      "Separating observational confounding and hidden common causes from direct causal effects via active do(X) interventions."),
     ("Phase 16", "Cross-World Transfer & Structural Generalisation", "feature/multiple-worlds, research/ontology",

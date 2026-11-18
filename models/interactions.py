@@ -61,7 +61,10 @@ class SparseInteractionDiscoveryModel:
 
     def _normalized_coords(self, X: np.ndarray) -> np.ndarray:
         X = np.asarray(X, dtype=float)
-        return (X - self.p_min) / self.p_span
+        A_raw = (X - self.p_min) / self.p_span
+        # Snap within-cluster Gaussian jitter (< 0.18 from 0 or 1) to clean binary modes while remaining continuous in the interior
+        A_snap = np.where(A_raw < 0.18, 0.0, np.where(A_raw > 0.82, 1.0, A_raw))
+        return A_snap
 
     def compute_interaction_basis(self, X: np.ndarray) -> np.ndarray:
         """Compute Psi(X) of shape (B, n_int) containing all pairwise and 3-way product features."""
@@ -79,13 +82,15 @@ class SparseInteractionDiscoveryModel:
 
     def fit_normalizer(self, X: np.ndarray):
         X = np.asarray(X, dtype=float)
-        # Robust 2nd/98th percentile bounds so small Gaussian sensor noise does not distort [0, 1] scaling
-        lo = np.percentile(X, 2.0, axis=0, keepdims=True)
-        hi = np.percentile(X, 98.0, axis=0, keepdims=True)
+        # First-principles 2-mode K-means estimator: split at range midpoint (invariant to 73%/27% held-out class imbalance)
+        mid = 0.5 * (np.percentile(X, 5.0, axis=0, keepdims=True) + np.percentile(X, 95.0, axis=0, keepdims=True))
+        lo = np.array([[float(np.mean(X[:, k][X[:, k] < mid[0, k]])) if np.any(X[:, k] < mid[0, k]) else float(np.min(X[:, k])) for k in range(self.n_props)]])
+        hi = np.array([[float(np.mean(X[:, k][X[:, k] >= mid[0, k]])) if np.any(X[:, k] >= mid[0, k]) else float(np.max(X[:, k])) for k in range(self.n_props)]])
         span = hi - lo
         self.p_min = lo
         self.p_span = np.where(span < 1e-6, 1.0, span)
-        self.main_trunk.fit_normalizer(X)
+        X_clean = self.p_min + self._normalized_coords(X) * self.p_span
+        self.main_trunk.fit_normalizer(X_clean)
 
     def fit_sparse_hierarchy(self, X: np.ndarray, Y: np.ndarray, ista_steps: int = 250, step_size: float = 0.4):
         """First-Principles Frisch-Waugh-Lovell + ISTA + Gauss-Lasso debiasing solver on (X, Y):
@@ -138,7 +143,9 @@ class SparseInteractionDiscoveryModel:
                 w_debiased[active_final] = beta_final[M_main.shape[1]:]
 
         self.w_int = w_debiased
-        return y.reshape(-1) - (Psi @ self.w_int).reshape(-1)
+        # Return Gauss-Markov denoised main-effect target M_main @ beta_main so main_trunk does not overfit zero-mean outcome noise
+        beta_main, *_ = np.linalg.lstsq(M_main, y - Psi @ self.w_int, rcond=None)
+        return (M_main @ beta_main).reshape(-1)
 
     def discovered_interactions(self, threshold: Optional[float] = None) -> Dict[Tuple[int, ...], float]:
         thr = self.prune_threshold if threshold is None else float(threshold)
@@ -149,7 +156,8 @@ class SparseInteractionDiscoveryModel:
         }
 
     def forward(self, X: np.ndarray) -> np.ndarray:
-        y_add = self.main_trunk.forward(X)
+        X_clean = self.p_min + self._normalized_coords(X) * self.p_span
+        y_add = self.main_trunk.forward(X_clean)
         self._psi_cache = self.compute_interaction_basis(X)
         y_int = self._psi_cache @ self.w_int
         return y_add + y_int
