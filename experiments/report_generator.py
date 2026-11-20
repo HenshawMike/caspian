@@ -3149,3 +3149,114 @@ def generate_p16_docx_report(an: Dict[str, Any], output_path: str, inv: Optional
 
     doc.save(output_path)
     return output_path
+
+
+def generate_p17_docx_report(an: Dict[str, Any], output_path: str, inv: Optional[Dict[str, Any]] = None) -> str:
+    """Phase 17 report (CSP-P17-E001) from logs/phase17/confirmatory_analysis.json and logs/phase17/investigation_report.json."""
+    if inv is None:
+        inv_path = Path(__file__).resolve().parent.parent / "logs" / "phase17" / "investigation_report.json"
+        if inv_path.exists():
+            import json
+            inv = json.load(open(inv_path))
+    doc = docx.Document()
+    for sec in doc.sections:
+        sec.top_margin = Inches(0.8); sec.bottom_margin = Inches(0.8)
+        sec.left_margin = Inches(0.8); sec.right_margin = Inches(0.8)
+    PRIMARY = RGBColor(24, 43, 73); SECONDARY = RGBColor(70, 80, 95)
+
+    def h1(t):
+        p = doc.add_paragraph(); p.paragraph_format.space_before = Pt(14)
+        r = p.add_run(t); r.font.size = Pt(15); r.font.bold = True; r.font.color.rgb = PRIMARY
+
+    def body(t, size=10):
+        p = doc.add_paragraph(); r = p.add_run(t); r.font.size = Pt(size)
+
+    def table(headers, rows):
+        t = doc.add_table(rows=1 + len(rows), cols=len(headers)); t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        for j, h in enumerate(headers):
+            c = t.rows[0].cells[j]; r = c.paragraphs[0].add_run(h); r.font.bold = True; r.font.size = Pt(8.5)
+            r.font.color.rgb = RGBColor(255, 255, 255); _set_cell_background(c, "182B49"); _set_cell_margins(c)
+        for i, row in enumerate(rows):
+            for j, v in enumerate(row):
+                c = t.rows[i + 1].cells[j]; r = c.paragraphs[0].add_run(str(v)); r.font.size = Pt(8.5)
+                _set_cell_background(c, "FAFAFA" if i % 2 == 0 else "F0F4F8"); _set_cell_margins(c)
+        doc.add_paragraph()
+
+    archs = an["archs"]; T = an["tests"]
+    f = lambda x, n=4: f"{x:.{n}f}"
+
+    p = doc.add_paragraph(); r = p.add_run("PROJECT CASPIAN"); r.font.size = Pt(24); r.font.bold = True; r.font.color.rgb = PRIMARY
+    p = doc.add_paragraph(); r = p.add_run("Phase 17 Report (CSP-P17-E001): Continual Learning and Persistent Environmental Memory"); r.font.size = Pt(14); r.font.bold = True; r.font.color.rgb = SECONDARY
+
+    h1("1. Executive Summary")
+    met_count = sum(1 for v in T.values() if v.get("met"))
+    body(
+        f"Phase 17 (CSP-P17-E001) evaluated sequential continual learning across a 5-stage multi-world stream "
+        f"(W17_alpha -> W17_beta -> W17_gamma_shared [10-shot] -> W17_delta_inverted -> W17_beta_mutated) on disjoint "
+        f"confirmatory seeds 71-80 with ZERO world_id privilege, 0 leakage rows, and fair equally-structured baselines. "
+        f"Pre-registered hypotheses met: {met_count}/{len(T)}."
+    )
+
+    h1("2. Observed Continual Learning Performance (Seeds 71-80)")
+    order = ["persistent_memory", "memoryless_structural", "replay_mlp", "ewc_mlp", "naive_sequential_mlp", "oracle_multi_world"]
+    rows = []
+    for a in order:
+        d = archs[a]
+        lbl = f"{a} [diagnostic]" if a == "oracle_multi_world" else a
+        rows.append([
+            lbl,
+            f"{int(d['n_params_final_mean'])} ({int(d['raw_replay_stored_mean'])} replay)",
+            f"{f(d['mean_ret_post4']['mean'])} ({f(d['mean_ret_post4']['sd'])})",
+            f"{f(d['mean_forgetting_alpha_beta']['mean'])}",
+            f"{f(d['forward_transfer_gamma']['mean'])} ({f(d['forward_transfer_gamma']['sd'])})",
+            f"{f(d['stage5_beta_mutated_nrmse']['mean'])}",
+            f"{f(d['ret_alpha_post5']['mean'])}",
+            f"{d['retrieval_acc_mean']*100:.1f}%",
+        ])
+    table(
+        ["Model", "Params (Replay)", "4-World Ret (SD)", "Forgetting (A,B)", "Stage 3 Fwd Transfer (10-shot)", "Stage 5 Mutated Beta", "Post-5 Alpha Ret", "Retrieval Acc"],
+        rows,
+    )
+
+    h1("3. Pre-Registered Hypothesis Verdicts (P17-H1 through P17-H5)")
+    h_rows = [
+        ["P17-H1", "4-world retention < 0.025 (>=9/10), forgetting < 0.01, beat all 4 baselines (95% CI > 0)",
+         f"ret<0.025: {T['P17-H1']['ret_lt_0.025_seeds']}/10, forg={T['P17-H1']['mean_forgetting_alpha_beta']:.4f}",
+         "MET" if T["P17-H1"]["met"] else "NOT MET"],
+        ["P17-H2", "Autonomous zero-world_id retrieval accuracy >= 0.95 (8-sample probe)",
+         f"{T['P17-H2']['correct']}/{T['P17-H2']['total']} ({T['P17-H2']['accuracy']*100:.1f}%)",
+         "MET" if T["P17-H2"]["met"] else "NOT MET"],
+        ["P17-H3", "Underdetermined 10-shot forward transfer on W17_gamma_shared vs fair memoryless_structural & MLPs",
+         f"wins vs scratch={T['P17-H3']['cells']['memoryless_structural']['wins']}/10, diff={T['P17-H3']['cells']['memoryless_structural']['mean_diff']:+.4f}",
+         "MET" if T["P17-H3"]["met"] else "NOT MET"],
+        ["P17-H4", "Outdated memory detection (10/10), Stage 5 nRMSE < 0.025 (>=9/10), beat EWC/Replay, Alpha ret < 0.02",
+         f"outdated={T['P17-H4']['outdated_detected_seeds']}/10, st5<0.025={T['P17-H4']['stage5_lt_0.025_seeds']}/10, a5<0.02={T['P17-H4']['alpha_post5_lt_0.02_seeds']}/10",
+         "MET" if T["P17-H4"]["met"] else "NOT MET"],
+        ["P17-H5", "Memory efficiency: <= 330 total params, 0 raw replay, beats replay_mlp & ewc_mlp on retention",
+         f"max_params={T['P17-H5']['max_params_final']}, raw_replay={T['P17-H5']['max_raw_replay_stored']}",
+         "MET" if T["P17-H5"]["met"] else "NOT MET"],
+    ]
+    table(["Hypothesis", "Pre-Registered Criterion", "Observed Evidence", "Verdict"], h_rows)
+
+    if inv is not None:
+        h1("4. Stage C Forensic Legitimacy Audit ('Fake vs. Legit') & First-Principles Investigation")
+        pa = inv["pillar_a_legitimacy_audit"]
+        pb = inv["pillar_b_first_principles_investigation"]
+        body(
+            f"Forensic Verdict: {inv['forensic_verdict']}. Zero AST oracle/semantic violations across all "
+            f"{len(pa['ast_oracle_and_semantic_firewall']['files_checked'])} model modules, "
+            f"{pa['confirmatory_log_integrity']['leak_rows_total']} leakage rows across all "
+            f"{pa['confirmatory_log_integrity']['total_rows']} runs, verified cross-seed independence, and verified "
+            f"catastrophic forgetting control on naive_sequential_mlp ({pa['confirmatory_log_integrity']['naive_mlp_forgetting_alpha_beta']})."
+        )
+        body(f"First-Principles Analysis: {pb['root_cause_summary']}")
+        if pb.get("first_principles_solution"):
+            body(f"First-Principles Solution: {pb['first_principles_solution']}")
+        if pb.get("summary_rows"):
+            table(["Check / Criterion", "Observed / Before", "Resolution / Verification", "Status"], pb["summary_rows"])
+
+    h1("5. Next Steps (Phase 18)")
+    body("Phase 18 will integrate discovered representations, causal structure, and persistent environmental memory into an uncertainty-aware predictive world model for autonomous multi-step planning.")
+
+    doc.save(output_path)
+    return output_path

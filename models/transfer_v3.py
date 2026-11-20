@@ -277,7 +277,21 @@ class ModularTransferModelV3:
             shifted = bool(align_sensors)
 
         if shifted:
-            xm_t, W_ad, b_ad, _ = self._align_canonical(Xu, yu, wu, opt_b=True)
+            # Occam-Hierarchy Alignment: when G <= 10 unique states (ultra-few-shot where 10-DOF overfits),
+            # try 6-DOF pure O(K) first and unlock 10-DOF only if 6-DOF fails the replicate noise floor;
+            # when G > 10, run centered 10-DOF (R, b_adapter) directly for exact additive-offset invariance.
+            if len(Xu) <= 10:
+                xm_6, W_6, b_6, loss_6 = self._align_canonical(
+                    Xu, yu, wu, opt_b=False, xm_fixed=np.zeros((1, self.in_dim), dtype=float), n_restarts=30,
+                )
+                var_y = max(float(np.var(yu)), 1e-8)
+                if loss_6 <= max(4.0 * sig2, 0.015 * var_y):
+                    xm_t, W_ad, b_ad = xm_6, W_6, b_6
+                else:
+                    xm_10, W_10, b_10, loss_10 = self._align_canonical(Xu, yu, wu, opt_b=True)
+                    xm_t, W_ad, b_ad = (xm_10, W_10, b_10) if loss_10 < 0.75 * loss_6 else (xm_6, W_6, b_6)
+            else:
+                xm_t, W_ad, b_ad, _ = self._align_canonical(Xu, yu, wu, opt_b=True)
         else:
             xm_t, W_ad, b_ad = xm_src.copy(), W_src.copy(), np.zeros((1, self.n_latent), dtype=float)
 

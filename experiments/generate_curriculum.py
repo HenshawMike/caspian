@@ -653,11 +653,56 @@ CURRICULUM_MODULES: List[Dict[str, Any]] = [
             ),
         ],
     },
+    {
+        "module_id": "Phase 17",
+        "title": "Continual Learning & Persistent Environmental Memory — Zero-Privilege Retrieval, Anti-Forgetting & Outdated-Memory Detection",
+        "code_files": [
+            "models/memory.py",
+            "models/transfer_v3.py",
+            "experiments/phase17_experiments.py",
+            "experiments/analyze_phase17.py",
+            "experiments/investigation.py",
+            "docs/phase17/EXPERIMENT_REGISTRY.md",
+            "docs/phase17/INVESTIGATION.md",
+            "tests/test_phase17.py",
+        ],
+        "first_principles": (
+            "Monolithic neural networks suffer catastrophic forgetting when trained sequentially across distinct worlds (naive MLP), "
+            "while replay buffers store raw historical transitions and Fisher-information EWC trades plasticity for stability.\n"
+            "1. Compact Parametric Engram Bank ('PersistentWorldMemory'): Stores each distinct world as a 66-parameter ModularTransferModelV3 "
+            "engram (x_mean, W_adapter, b_adapter, w_core, b_core, w_world, b_world, sigma2_ref) with ZERO raw replay samples.\n"
+            "2. Autonomous Zero-world_id Retrieval: Given an 8-sample interaction probe (X_probe, Y_probe) from an unknown environment, "
+            "evaluates predictive MSE against every stored engram and selects the minimum-MSE match with a noise-floor confidence check.\n"
+            "3. Outdated-Memory Detection (Exp 17.4): When a previously encountered sensor subspace (r_subspace < 0.12) suddenly yields high "
+            "predictive surprise (MSE > max(10*sigma2_ref, 0.10*Var(Y))), flags the stored engram as outdated and updates it cleanly without "
+            "corrupting other worlds in memory.\n"
+            "4. Occam-Hierarchy Forward Transfer (Stage C Discovery): Fitting 10 DOF (6-DOF R in O(4) + 4-DOF b_adapter) on G ~ 7 unique "
+            "corners (N=10 shots) overfits multiple stored cores to spurious low training loss. Attempting 6-DOF pure O(K) alignment first and "
+            "unlocking b_adapter only when 6-DOF fails the noise floor eliminates ultra-few-shot overfitting while preserving additive-offset invariance."
+        ),
+        "empirical_link": (
+            "Report CSP-P17-E001 & docs/phase17/INVESTIGATION.md (disjoint seeds 71-80, 5-stage multi-world stream, 0 world_id privilege, 0 leaks): "
+            "P17-H2 (95.0% autonomous 8-probe retrieval, 38/40), P17-H4 (10/10 outdated-memory detection on W17_beta_mutated, 0.0040 nRMSE, "
+            "W17_alpha retained at 0.0019), and P17-H5 (264 total params, 0 raw replay) all MET with exact 0.0000 forgetting on W17_alpha & W17_beta. "
+            "P17-H1 and P17-H3 missed in Stage B due to 10-DOF alignment overfitting on 10-shot W17_gamma_shared (0.1764), resolved in Stage C via "
+            "Occam-Hierarchy 6-DOF-first alignment."
+        ),
+        "defense_qa": [
+            (
+                "How does PersistentWorldMemory distinguish two worlds that share the exact same sensor subspace (W17_alpha vs W17_delta_inverted) without world_id?",
+                "Because retrieve(X_probe, Y_probe) evaluates predictive MSE against actual interaction consequences Y_probe, not just observation geometry X_probe. "
+                "Even though M_1 is identical, W17_alpha's engram predicts +y while W17_delta_inverted's engram predicts -y, giving 95%+ autonomous retrieval from 8 probes."
+            ),
+            (
+                "Why did 10-DOF alignment (R + b_adapter) fail on 10-shot W17_gamma_shared even though it worked on 20-shot W16_obs_shift?",
+                "Because 10 draws with replacement from 16 hypercube corners hit only ~7 unique states. With 10 DOF on 7 points, Adam overfits BOTH W17_alpha and W17_beta "
+                "to near-zero training loss. Occam-Hierarchy Alignment tries 6-DOF pure O(4) first and unlocks b_adapter only if 6-DOF fails the noise-floor test."
+            ),
+        ],
+    },
 ]
 
 FUTURE_PHASES_ROADMAP = [
-    ("Phase 17", "Continual Learning & Persistent Environmental Memory", "feature/memory, research/learning-mechanisms",
-     "Sequential multi-world learning with episodic/parametric memory to prevent catastrophic forgetting."),
     ("Phase 18", "Integrated Predictive World Model & Autonomous Planning", "feature/planning, research/architecture",
      "Combining discovered representations, causal structure, and uncertainty-aware multi-step rollouts for closed-loop planning."),
     ("Phase 19", "Real-World Transfer & Application Prototype", "feature/application-prototype",
@@ -706,11 +751,11 @@ def generate_curriculum_docx_and_md(
 
     # Title Header
     p = doc.add_paragraph(); r = p.add_run("PROJECT CASPIAN — LIVING STUDY & DEFENSE CURRICULUM"); r.font.size = Pt(20); r.font.bold = True; r.font.color.rgb = PRIMARY
-    p = doc.add_paragraph(); r = p.add_run("First-Principles Mathematical Theory, Codebase Architecture, Empirical Ledger & Viva Defense Guide (Phases 0–16, Extensible through Phase 20)"); r.font.size = Pt(12); r.font.bold = True; r.font.color.rgb = SECONDARY
+    p = doc.add_paragraph(); r = p.add_run("First-Principles Mathematical Theory, Codebase Architecture, Empirical Ledger & Viva Defense Guide (Phases 0–17, Extensible through Phase 20)"); r.font.size = Pt(12); r.font.bold = True; r.font.color.rgb = SECONDARY
 
     body("Purpose of this Living Document: This curriculum is designed so the researcher can master and defend every mathematical equation, algorithm, codebase module, positive finding, negative/refuted result, and forensic audit in Project Caspian from first principles. It is automatically updated after every phase completion.")
 
-    h1("Overview Matrix: Completed Study Modules (Module 0 & Phases 0–16)")
+    h1("Overview Matrix: Completed Study Modules (Module 0 & Phases 0–17)")
     summary_rows = [
         [m["module_id"], m["title"], ", ".join(m["code_files"][:3])]
         for m in CURRICULUM_MODULES
@@ -758,11 +803,11 @@ def generate_curriculum_docx_and_md(
         md_lines.append("---")
         md_lines.append("")
 
-    h1("Forward Curriculum Expansion Roadmap (Phases 17–20)")
+    h1("Forward Curriculum Expansion Roadmap (Phases 18–20)")
     body("As each subsequent phase is implemented, tested, and audited via experiments/investigation.py, a new module will be appended to this document:")
     table(["Phase", "Title", "Target Branches", "Planned First-Principles Topic"], FUTURE_PHASES_ROADMAP)
 
-    md_lines.append("## Forward Curriculum Expansion Roadmap (Phases 17–20)")
+    md_lines.append("## Forward Curriculum Expansion Roadmap (Phases 18–20)")
     md_lines.append("")
     for ph, title, br, desc in FUTURE_PHASES_ROADMAP:
         md_lines.append(f"- **{ph} — {title}** (`{br}`): {desc}")
