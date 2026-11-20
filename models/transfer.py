@@ -2,13 +2,14 @@
 
 Implements ModularTransferModel in pure NumPy with analytical forward and backward passes:
     Z = (X - x_mean) @ W_adapter + b_adapter
-    Phi(Z) = [Z_0..Z_{K-1}, Z_i * Z_j for i < j]
+    Phi(Z) = [Z_0..Z_{K-1}, Z_i * Z_j for 0 <= i <= j < K]   (O(K)-invariant full degree-2 basis)
     y_hat = core_gate * (Phi(Z) @ w_core + b_core) + (Phi(Z) @ w_world + b_world)
 
 Separates:
-1. Sensor Adapter (W_adapter, b_adapter): aligns world-specific observation distributions.
+1. Sensor Adapter (W_adapter, b_adapter): aligns world-specific observation distributions on O(K).
 2. Reusable Structural Core (w_core, b_core): preserves transferable structural rules across worlds.
-3. World-Specific Residual (w_world, b_world): few-shot adaptation to new rules without overwriting w_core,
+3. World-Specific Residual (w_world, b_world): few-shot adaptation via sufficient-statistic
+   unique-state Leave-One-Out Cross-Validation (LOOCV) ridge regression without overwriting w_core,
    plus an automatic negative-transfer gate that zeroes out w_core if source structure degrades target fit.
 """
 import itertools
@@ -25,7 +26,10 @@ class ModularTransferModel:
         self.l2_reg = float(l2_reg)
         self.seed = int(seed)
 
-        self.pair_indices: List[Tuple[int, int]] = list(itertools.combinations(range(self.n_latent), 2))
+        # Full degree-2 quadratic indices (i <= j) so span{1, Phi(Z)} is strictly O(K)-invariant
+        self.pair_indices: List[Tuple[int, int]] = list(
+            itertools.combinations_with_replacement(range(self.n_latent), 2)
+        )
         self.phi_dim = self.n_latent + len(self.pair_indices)
 
         rng = np.random.default_rng(seed)
@@ -75,6 +79,51 @@ class ModularTransferModel:
             cols.append(Z[:, i] * Z[:, j])
         return np.column_stack(cols)
 
+    @staticmethod
+    def _deduplicate_states(Phi: np.ndarray, y: np.ndarray, tol: float = 1e-6) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Aggregate identical feature rows into sufficient statistics (Phi_u, y_mean, count)."""
+        keys = np.round(Phi / tol).astype(np.int64)
+        _, inv, counts = np.unique(keys, axis=0, return_inverse=True, return_counts=True)
+        G = len(counts)
+        Phi_u = np.zeros((G, Phi.shape[1]), dtype=float)
+        y_u = np.zeros((G, 1), dtype=float)
+        for g in range(G):
+            mask = (inv == g)
+            Phi_u[g] = Phi[mask].mean(axis=0)
+            y_u[g, 0] = y[mask].mean()
+        return Phi_u, y_u, counts.astype(float)
+
+    @classmethod
+    def _loocv_ridge_unique(
+        cls,
+        Phi: np.ndarray,
+        y: np.ndarray,
+        lambdas: Tuple[float, ...] = (1e-3, 1e-2, 5e-2, 0.2, 0.5, 1.0, 2.0, 5.0, 15.0, 50.0, 1e4),
+    ) -> Tuple[np.ndarray, float]:
+        """Exact closed-form Leave-One-Group-Out (unique-state) weighted ridge CV."""
+        Phi_u, y_u, w = cls._deduplicate_states(Phi, y)
+        G = len(y_u)
+        D = np.hstack([np.ones((G, 1)), Phi_u])
+        sw = np.sqrt(w).reshape(-1, 1)
+        Dw = D * sw
+        yw = y_u * sw
+        p = D.shape[1]
+        best_loo = float("inf")
+        best_beta = np.zeros((p, 1), dtype=float)
+        for lam in lambdas:
+            reg = lam * np.eye(p)
+            reg[0, 0] = 0.0
+            A_inv = np.linalg.inv(Dw.T @ Dw + reg)
+            beta = A_inv @ (Dw.T @ yw)
+            yhat = D @ beta
+            H_diag = w * np.sum((D @ A_inv) * D, axis=1)
+            denom = np.maximum(1.0 - H_diag, 1e-4)
+            loo = float(np.mean(((y_u.reshape(-1) - yhat.reshape(-1)) / denom) ** 2))
+            if loo < best_loo:
+                best_loo = loo
+                best_beta = beta
+        return best_beta, best_loo
+
     def fit_source(self, X: np.ndarray, Y: np.ndarray, W_init: Optional[np.ndarray] = None) -> None:
         """Fit sensor adapter and reusable structural core on source world (X, Y)."""
         X = np.asarray(X, dtype=float)
@@ -90,10 +139,7 @@ class ModularTransferModel:
 
         Z = Xc @ self.W_adapter + self.b_adapter
         Phi = self._compute_phi(Z)
-        D = np.hstack([np.ones((len(X), 1)), Phi])
-        reg = self.l2_reg * np.eye(D.shape[1])
-        reg[0, 0] = 0.0
-        beta = np.linalg.solve(D.T @ D + reg, D.T @ y)
+        beta, _ = self._loocv_ridge_unique(Phi, y, lambdas=(1e-4, 1e-3, 1e-2, 0.1, 1.0))
         self.b_core = np.array([float(beta[0, 0])], dtype=float)
         self.w_core = beta[1:].copy()
         self.core_gate = 1.0
@@ -118,57 +164,65 @@ class ModularTransferModel:
         self,
         X_tgt: np.ndarray,
         Y_tgt: np.ndarray,
-        n_steps: int = 80,
-        lr: float = 0.04,
+        n_restarts: int = 20,
+        n_steps: int = 180,
+        lr: float = 0.08,
     ) -> None:
-        """Align target sensor adapter W_adapter to the frozen source structural core (w_core, b_core)
-        via analytical gradient descent on few-shot target samples (X_tgt, Y_tgt), keeping w_core frozen.
+        """Align target sensor adapter W_adapter = V_tgt @ R (R in O(K)) to the frozen source core
+        via Adam + polar SVD retraction across balanced det(R) = +/-1 restarts.
         """
         X_tgt = np.asarray(X_tgt, dtype=float)
         y_tgt = np.asarray(Y_tgt, dtype=float).reshape(-1, 1)
-        self.fit_normalizer(X_tgt)
-        Xc = X_tgt - self.x_mean
-        # Initialize W_adapter in the target active subspace
-        _, _, Vt = np.linalg.svd(Xc, full_matrices=False)
-        V_tgt = Vt[:self.n_latent].T.copy()
+        # Keep x_mean = 0 so 20-shot sample-mean noise does not corrupt the active subspace
+        self.x_mean = np.zeros((1, self.in_dim), dtype=float)
+        _, _, Vt = np.linalg.svd(X_tgt, full_matrices=False)
+        V_tgt = Vt[:self.n_latent].T.copy()  # (in_dim, K)
+        U_t = X_tgt @ V_tgt  # (N, K)
 
-        # Try starting from current W_adapter vs target subspace SVD and pick best
-        best_W = self.W_adapter.copy()
-        best_loss = float("inf")
+        K = self.n_latent
         rng = np.random.default_rng(self.seed + 71)
-        candidates = [self.W_adapter.copy(), V_tgt]
-        for _ in range(4):
-            Q, _ = np.linalg.qr(rng.standard_normal((self.n_latent, self.n_latent)))
-            candidates.append(V_tgt @ Q)
+        best_R = np.eye(K, dtype=float)
+        best_loss = float("inf")
 
-        orig_gate = self.core_gate
-        orig_w_world = self.w_world.copy()
-        orig_b_world = self.b_world.copy()
-        self.core_gate = 1.0
-        self.w_world.fill(0.0)
-        self.b_world.fill(0.0)
+        for r_idx in range(n_restarts):
+            if r_idx == 0:
+                R = np.eye(K, dtype=float)
+            else:
+                Q, _ = np.linalg.qr(rng.standard_normal((K, K)))
+                # Balance connected components det=+1 (SO(K)) and det=-1 (O(K)\SO(K))
+                if (r_idx % 2 == 0 and np.linalg.det(Q) < 0) or (r_idx % 2 == 1 and np.linalg.det(Q) > 0):
+                    Q[:, 0] *= -1.0
+                R = Q
 
-        for W0 in candidates:
-            self.W_adapter = W0.copy()
-            for st in range(n_steps):
-                self.zero_grad()
-                yp = self.forward(X_tgt)
-                grad_out = 2.0 * (yp - y_tgt) / len(X_tgt)
-                self.backward(grad_out)
-                step_lr = lr * (0.985 ** st)
-                self.W_adapter -= step_lr * self.grad_W_adapter
-                # Re-orthogonalize columns of W_adapter onto the Stiefel manifold (orthonormal columns)
-                U, _, Vt_w = np.linalg.svd(self.W_adapter, full_matrices=False)
-                self.W_adapter = U @ Vt_w
-            loss = float(np.mean((self.forward(X_tgt) - y_tgt) ** 2))
+            m_adam = np.zeros_like(R)
+            v_adam = np.zeros_like(R)
+            for st in range(1, n_steps + 1):
+                Z = U_t @ R + self.b_adapter
+                Phi = self._compute_phi(Z)
+                yp = Phi @ self.w_core + self.b_core
+                g = 2.0 * (yp - y_tgt) / len(y_tgt)
+                g_phi = g @ self.w_core.T
+                g_z = g_phi[:, :K].copy()
+                for idx, (i, j) in enumerate(self.pair_indices):
+                    gp = g_phi[:, K + idx]
+                    g_z[:, i] += gp * Z[:, j]
+                    g_z[:, j] += gp * Z[:, i]
+                g_R = U_t.T @ g_z
+                m_adam = 0.9 * m_adam + 0.1 * g_R
+                v_adam = 0.999 * v_adam + 0.001 * (g_R ** 2)
+                mh = m_adam / (1.0 - 0.9 ** st)
+                vh = v_adam / (1.0 - 0.999 ** st)
+                R = R - lr * mh / (np.sqrt(vh) + 1e-8)
+                Ur, _, Vtr = np.linalg.svd(R, full_matrices=False)
+                R = Ur @ Vtr
+
+            Z = U_t @ R + self.b_adapter
+            loss = float(np.mean((self._compute_phi(Z) @ self.w_core + self.b_core - y_tgt) ** 2))
             if loss < best_loss:
                 best_loss = loss
-                best_W = self.W_adapter.copy()
+                best_R = R.copy()
 
-        self.W_adapter = best_W
-        self.core_gate = orig_gate
-        self.w_world = orig_w_world
-        self.b_world = orig_b_world
+        self.W_adapter = V_tgt @ best_R
 
     def adapt_few_shot(
         self,
@@ -178,35 +232,37 @@ class ModularTransferModel:
         allow_negative_transfer_gate: bool = True,
     ) -> float:
         """Few-shot target adaptation:
-        1. Optionally align target sensor adapter to the frozen source core (for sensor-shift worlds).
-        2. Evaluate negative-transfer gate (core_gate = 1.0 if source core reduces target variance, else 0.0).
-        3. Fit regularized world-specific residual (w_world, b_world) on the remaining target residual.
+        1. Optionally align target sensor adapter to the frozen source core on O(K).
+           When sensors are unshifted, preserve _source_x_mean to avoid 20-shot mean-shift noise.
+        2. Evaluate negative-transfer gate via unique-state LOOCV comparing (core_gate=1 vs 0).
+        3. Fit LOOCV-optimal world-specific residual (w_world, b_world) without overwriting w_core.
         """
         X_tgt = np.asarray(X_tgt, dtype=float)
         y_tgt = np.asarray(Y_tgt, dtype=float).reshape(-1, 1)
 
         if align_sensors:
             self.align_sensor_adapter_few_shot(X_tgt, Y_tgt)
-        else:
-            self.fit_normalizer(X_tgt)
+        elif self._source_x_mean is not None:
+            self.x_mean = self._source_x_mean.copy()
 
         Xc = X_tgt - self.x_mean
         Z = Xc @ self.W_adapter + self.b_adapter
         Phi = self._compute_phi(Z)
         y_core = Phi @ self.w_core + self.b_core
 
+        beta_with, loo_with = self._loocv_ridge_unique(Phi, y_tgt - y_core)
         if allow_negative_transfer_gate:
-            var_with_core = float(np.var(y_tgt - y_core))
-            var_without_core = float(np.var(y_tgt))
-            self.core_gate = 1.0 if var_with_core <= 0.90 * var_without_core else 0.0
+            beta_without, loo_without = self._loocv_ridge_unique(Phi, y_tgt)
+            if loo_with < 0.90 * loo_without:
+                self.core_gate = 1.0
+                beta = beta_with
+            else:
+                self.core_gate = 0.0
+                beta = beta_without
         else:
             self.core_gate = 1.0
+            beta = beta_with
 
-        y_res = y_tgt - self.core_gate * y_core
-        D = np.hstack([np.ones((len(X_tgt), 1)), Phi])
-        reg = max(self.l2_reg, 0.05) * np.eye(D.shape[1])
-        reg[0, 0] = 0.0
-        beta = np.linalg.solve(D.T @ D + reg, D.T @ y_res)
         self.b_world = np.array([float(beta[0, 0])], dtype=float)
         self.w_world = beta[1:].copy()
         return self.core_gate

@@ -596,11 +596,64 @@ CURRICULUM_MODULES: List[Dict[str, Any]] = [
             ),
         ],
     },
+    {
+        "module_id": "Phase 16",
+        "title": "Cross-World Transfer & Structural Generalisation — Modularity, O(K) Sensor Alignment & Negative-Transfer Gating",
+        "code_files": [
+            "models/transfer.py",
+            "experiments/phase16_experiments.py",
+            "experiments/analyze_phase16.py",
+            "experiments/investigation.py",
+            "docs/phase16/EXPERIMENT_REGISTRY.md",
+            "docs/phase16/INVESTIGATION.md",
+            "tests/test_phase16.py",
+        ],
+        "first_principles": (
+            "Transfer across independent worlds fails when a monolithic network entangles world-specific sensor projections with reusable "
+            "structural rules (causing catastrophic forgetting on source worlds and negative transfer on inverted target worlds).\n"
+            "1. Modular Decomposition ('ModularTransferModel'): Factors prediction into three distinct components:\n"
+            "   Z = (X - x_mean) W_adapter + b_adapter,\n"
+            "   y_hat = core_gate * (Phi(Z) w_core + b_core) + (Phi(Z) w_world + b_world).\n"
+            "   Keeping (w_core, b_core) and the source sensor adapter frozen guarantees near-zero catastrophic forgetting on the source world.\n"
+            "2. O(K) Rotational Invariance of the Degree-2 Basis (Stage C Discovery #1): Because SVD of an isotropic latent grid P in {-1,+1}^K "
+            "recovers the active subspace up to an arbitrary orthogonal rotation Q in O(K) (Z = P Q), cross-terms p_0*p_1 project onto diagonal "
+            "quadratic terms z_k^2 (sum_k Q_{0k} Q_{1k} z_k^2). Omitting z_k^2 breaks rotational invariance (up to 75x source retention error!). "
+            "Completing Phi_full(Z) = [z_k, z_i*z_j for 0 <= i <= j < K] (14 features, 66 total params vs 833-param MLP) makes P_2(R^K) strictly "
+            "closed under all rotations Q in O(K), cutting source retention error 17x (0.0187 -> 0.0011).\n"
+            "3. Subspace-Restricted O(K) Sensor Alignment (Stage C Discovery #2): Under a rotated/shifted sensor matrix M_shift, the target's "
+            "top-K singular vectors V_tgt span the exact latent subspace, so W_adapter = V_tgt R reduces alignment from 32 to 6 DOF (R in O(4)). "
+            "Optimizing R via Adam + polar SVD retraction across restarts balanced between det(R) = +1 (SO(4)) and det(R) = -1 (O(4)\\SO(4)) "
+            "cuts W16_obs_shift 20-shot error 6x (0.0892 -> 0.0150, 10/10 gate ON).\n"
+            "4. Deduplicated Sufficient-Statistic Unique-State LOOCV (Stage C Discovery #3): With n=20 draws with replacement from 16 corners "
+            "(~11 unique states), ordinary LOOCV leaks across duplicate rows and fixed lambda=0.05 explodes on unseen corners. Grouping identical "
+            "inputs into sufficient statistics (Phi_u, y_mean, count) and running exact closed-form weighted Leave-One-Group-Out CV jointly selects "
+            "optimal ridge shrinkage and the negative-transfer gate (10/10 gate OFF on W16_negative_control)."
+        ),
+        "empirical_link": (
+            "Report CSP-P16-E001 & docs/phase16/INVESTIGATION.md (disjoint seeds 51-60, 4 target worlds x 6 models x 2 shot levels = 480 evals): "
+            "Locked Stage B v1 surfaced all three bugs (P16-H1..H5 NOT MET). Stage C v2 first-principles fixes cut 20-shot target error 3.41x-5.96x "
+            "across all 4 worlds (W16_obs_shift: 0.0150, W16_shared_plus_new: 0.0277, W16_rule_shift: 0.0301, W16_negative_control: 0.0339), "
+            "resolved P16-H5 to MET (source retention 0.0011, 10/10 < 0.02 vs finetune_mlp 0.14-0.29), and outperformed both 833-parameter MLP "
+            "baselines in mean target nRMSE on all 4 worlds using 66 parameters (12.6x fewer)."
+        ),
+        "defense_qa": [
+            (
+                "Why did omitting z_k^2 from Phi(Z) break source retention even though p_k^2 = 1 is constant on {-1,+1}^4?",
+                "Because SVD of isotropic P in {-1,+1}^4 returns a rotated basis Z = P Q (Q in O(4)). Under rotation, z_k^2 = (sum_m P_m Q_{mk})^2 "
+                "= 1 + 2 sum_{m<n} Q_{mk} Q_{nk} P_m P_n is NOT constant! Without z_k^2, the rotated cross-terms cannot span p_0*p_1, inflating "
+                "source error up to 75x on non-axis-aligned seeds."
+            ),
+            (
+                "Why did ordinary Leave-One-Out CV fail to prevent overfitting on 20-shot draws from a 16-state grid?",
+                "Because 20 draws with replacement contain ~8 duplicate states. Leaving out one duplicate row keeps its identical twin in the training "
+                "set (H_ii <= 0.5 even at lambda -> 0), leaking the state. Grouping duplicates into sufficient statistics (Phi_u, y_mean, n_g) and "
+                "running weighted Leave-One-Group-Out CV tests genuine out-of-state generalization."
+            ),
+        ],
+    },
 ]
 
 FUTURE_PHASES_ROADMAP = [
-    ("Phase 16", "Cross-World Transfer & Structural Generalisation", "feature/multiple-worlds, research/ontology",
-     "Separating reusable structural rules from world-specific sensor calibrations for zero-shot and few-shot transfer."),
     ("Phase 17", "Continual Learning & Persistent Environmental Memory", "feature/memory, research/learning-mechanisms",
      "Sequential multi-world learning with episodic/parametric memory to prevent catastrophic forgetting."),
     ("Phase 18", "Integrated Predictive World Model & Autonomous Planning", "feature/planning, research/architecture",
@@ -651,11 +704,11 @@ def generate_curriculum_docx_and_md(
 
     # Title Header
     p = doc.add_paragraph(); r = p.add_run("PROJECT CASPIAN — LIVING STUDY & DEFENSE CURRICULUM"); r.font.size = Pt(20); r.font.bold = True; r.font.color.rgb = PRIMARY
-    p = doc.add_paragraph(); r = p.add_run("First-Principles Mathematical Theory, Codebase Architecture, Empirical Ledger & Viva Defense Guide (Phases 0–13, Extensible through Phase 20)"); r.font.size = Pt(12); r.font.bold = True; r.font.color.rgb = SECONDARY
+    p = doc.add_paragraph(); r = p.add_run("First-Principles Mathematical Theory, Codebase Architecture, Empirical Ledger & Viva Defense Guide (Phases 0–16, Extensible through Phase 20)"); r.font.size = Pt(12); r.font.bold = True; r.font.color.rgb = SECONDARY
 
     body("Purpose of this Living Document: This curriculum is designed so the researcher can master and defend every mathematical equation, algorithm, codebase module, positive finding, negative/refuted result, and forensic audit in Project Caspian from first principles. It is automatically updated after every phase completion.")
 
-    h1("Overview Matrix: Completed Study Modules (Module 0 & Phases 0–13)")
+    h1("Overview Matrix: Completed Study Modules (Module 0 & Phases 0–16)")
     summary_rows = [
         [m["module_id"], m["title"], ", ".join(m["code_files"][:3])]
         for m in CURRICULUM_MODULES
@@ -703,11 +756,11 @@ def generate_curriculum_docx_and_md(
         md_lines.append("---")
         md_lines.append("")
 
-    h1("Forward Curriculum Expansion Roadmap (Phases 14–20)")
+    h1("Forward Curriculum Expansion Roadmap (Phases 17–20)")
     body("As each subsequent phase is implemented, tested, and audited via experiments/investigation.py, a new module will be appended to this document:")
     table(["Phase", "Title", "Target Branches", "Planned First-Principles Topic"], FUTURE_PHASES_ROADMAP)
 
-    md_lines.append("## Forward Curriculum Expansion Roadmap (Phases 14–20)")
+    md_lines.append("## Forward Curriculum Expansion Roadmap (Phases 17–20)")
     md_lines.append("")
     for ph, title, br, desc in FUTURE_PHASES_ROADMAP:
         md_lines.append(f"- **{ph} — {title}** (`{br}`): {desc}")
