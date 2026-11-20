@@ -3250,6 +3250,8 @@ def generate_p17_docx_report(an: Dict[str, Any], output_path: str, inv: Optional
             f"catastrophic forgetting control on naive_sequential_mlp ({pa['confirmatory_log_integrity']['naive_mlp_forgetting_alpha_beta']})."
         )
         body(f"First-Principles Analysis: {pb['root_cause_summary']}")
+        if pb.get("first_principles_solution"):
+            body(f"First-Principles Solution: {pb['first_principles_solution']}")
         if pb.get("summary_rows"):
             table(["Check / Criterion", "Observed / Before", "Resolution / Verification", "Status"], pb["summary_rows"])
 

@@ -69,6 +69,14 @@ def test_saved_phase16_independent_confirmation():
     assert ind["original_tests"]["P16-H5"]["met"] is True
 
 
+def test_saved_phase17_investigation_report():
+    import json
+    rep = json.load(open("logs/phase17/investigation_report.json"))
+    assert rep["forensic_verdict"] == "LEGIT"
+    assert rep["pillar_b_first_principles_investigation"]["after_fix"]["root_cause_verified"] is True
+
+
+
 
 
 
