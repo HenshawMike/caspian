@@ -56,5 +56,19 @@ def test_saved_phase16_investigation_report():
     assert rep["pillar_b_first_principles_investigation"]["after_fix"]["all_three_root_causes_resolved"] is True
 
 
+def test_saved_phase16_independent_confirmation():
+    import json
+    ind = json.load(open("logs/phase16/independent_v2_analysis.json"))
+    assert ind["leak_rows_total"] == 0
+    assert ind["autonomous_shift_detection"] is True
+    assert ind["independent_tests"]["P16-IND-1"]["shift_detected_seeds"] == 10
+    assert ind["independent_tests"]["P16-IND-2"]["false_shift_triggers"] == 0
+    assert ind["independent_tests"]["P16-IND-3"]["met"] is True
+    assert ind["independent_tests"]["P16-IND-4"]["met"] is True
+    assert ind["independent_tests"]["P16-IND-5"]["met"] is True
+    assert ind["original_tests"]["P16-H5"]["met"] is True
+
+
+
 
 
