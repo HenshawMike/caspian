@@ -1,0 +1,73 @@
+{
+  "experiment_id": "CSP-P16B-E001",
+  "parent_experiment_id": "CSP-P16-E001",
+  "title": "Independent Replication, Forensic Verification and Robustness Evaluation of ModularTransferModel v2",
+  "frozen_candidate": {
+    "file": "models/transfer.py",
+    "class": "ModularTransferModel",
+    "git_commit": "d6f7f8839461289cb9d0279a07cf655b9494bba1",
+    "sha256": "c6ec7df4a194bd84cfe93078550b138872d83c457828ebce9eacb798f2ae0cb0",
+    "expected_invariant_features": 14,
+    "expected_trainable_parameters": 66
+  },
+  "software_environment": {
+    "python": "3.14.7",
+    "numpy": "2.5.2",
+    "pytest": "9.2.0",
+    "os": "Linux-6.12.108-1-MANJARO-x86_64-with-glibc2.44"
+  },
+  "replication_design": {
+    "seeds": [101, 102, 103, 104, 105, 106, 107, 108, 109, 110],
+    "excluded_prior_seeds": {
+      "CSP-P16-E001_exploratory": [9001, 9002, 9003],
+      "CSP-P16-E001_confirmatory": [51, 52, 53, 54, 55, 56, 57, 58, 59, 60],
+      "CSP-P16-E002_independent": [61, 62, 63, 64, 65, 66, 67, 68, 69, 70]
+    },
+    "in_dim": 8,
+    "n_latent": 4,
+    "source_samples": 320,
+    "shots": [20, 48],
+    "noise_std": 0.25,
+    "step_offset": -1.0,
+    "worlds": [
+      "W16_obs_shift",
+      "W16_shared_plus_new",
+      "W16_rule_shift",
+      "W16_negative_control"
+    ],
+    "models": [
+      "modular_transfer",
+      "direct_transfer",
+      "scratch_mlp",
+      "finetune_mlp",
+      "scratch_structural",
+      "oracle_target"
+    ],
+    "mlp_training": {
+      "hidden_dims": [32, 16],
+      "epochs_scratch": 120,
+      "epochs_finetune": 80,
+      "lr_scratch": 0.01,
+      "lr_finetune": 0.005,
+      "batch_size_source": 32,
+      "batch_size_target_max": 16
+    },
+    "autonomous_shift_detection": true
+  },
+  "tolerances": {
+    "orthogonality_frobenius_max": 1e-10,
+    "loocv_bruteforce_max_abs_diff": 1e-9,
+    "reproducibility_max_abs_diff": 1e-10,
+    "bootstrap_resamples": 4000,
+    "bootstrap_seed": 202616
+  },
+  "robustness_design": {
+    "seeds": [101, 102, 103, 104, 105],
+    "shot_sweep": [8, 10, 12, 16, 20, 32, 48],
+    "ordering_permutations": 5,
+    "perturbation_stds": [0.0001, 0.01, 0.05],
+    "init_seeds": [0, 7, 19, 42, 99],
+    "additive_offset_stress": 0.5,
+    "in_subspace_rotation_stress": true
+  }
+}
