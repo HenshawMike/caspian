@@ -630,11 +630,13 @@ CURRICULUM_MODULES: List[Dict[str, Any]] = [
             "optimal ridge shrinkage and the negative-transfer gate (10/10 gate OFF on W16_negative_control)."
         ),
         "empirical_link": (
-            "Report CSP-P16-E001 & docs/phase16/INVESTIGATION.md (disjoint seeds 51-60, 4 target worlds x 6 models x 2 shot levels = 480 evals): "
-            "Locked Stage B v1 surfaced all three bugs (P16-H1..H5 NOT MET). Stage C v2 first-principles fixes cut 20-shot target error 3.41x-5.96x "
-            "across all 4 worlds (W16_obs_shift: 0.0150, W16_shared_plus_new: 0.0277, W16_rule_shift: 0.0301, W16_negative_control: 0.0339), "
-            "resolved P16-H5 to MET (source retention 0.0011, 10/10 < 0.02 vs finetune_mlp 0.14-0.29), and outperformed both 833-parameter MLP "
-            "baselines in mean target nRMSE on all 4 worlds using 66 parameters (12.6x fewer)."
+            "Report CSP-P16-E001 & CSP-P16B-E001 (Phase 16B Independent Replication on fresh seeds 101-110, frozen models/transfer.py, "
+            "standalone harness, 0 leaks, 0.0 subprocess reproducibility diff): Verdict PARTIAL PASS (Gates A, B, E, F PASS; Gates C, D FAIL "
+            "on strictest sub-checks). Confirmed: 0.0012 source retention (10/10 < 0.02, 154x less forgetting), 10/10 negative-transfer gate "
+            "rejection, 40/40 autonomous shift detection, 48-shot wins over both MLPs on 4/4 worlds, and 1.5x-3.2x transfer gains over fair "
+            "66-param v2 scratch_structural in underdetermined (8-16 shot) and duplicated regimes. Exposed honestly: low-coverage outlier tail "
+            "(seed 109 = 0.2013 on W16_negative_control), 20-shot tie with fair v2 scratch_structural, and boundary sensitivities (c=0.5 sensor "
+            "offset, in-subspace rotation, W16_obs_shift sample ordering)."
         ),
         "defense_qa": [
             (
