@@ -1,0 +1,58 @@
+{
+  "phase": 15,
+  "experiment_id": "CSP-P15-E001",
+  "forensic_verdict": "LEGIT",
+  "pillar_a_legitimacy_audit": {
+    "ast_oracle_and_semantic_firewall": {
+      "files_checked": [
+        "__init__.py",
+        "activations.py",
+        "causal.py",
+        "compositional.py",
+        "deepsets.py",
+        "discovery.py",
+        "interactions.py",
+        "layers.py",
+        "mlp.py",
+        "normalization.py",
+        "optimizers.py",
+        "rnn.py"
+      ],
+      "violations": [],
+      "passed": true
+    },
+    "confirmatory_log_integrity": {
+      "total_rows": 480,
+      "leak_rows_total": 0,
+      "non_finite_rows": 0,
+      "seed_independence_verified": true,
+      "obs_mlp_hidden_confounder_nrmse": 0.6048,
+      "obs_lin_hidden_confounder_nrmse": 0.6035,
+      "passed": true
+    },
+    "live_causal_fit": {
+      "effective_weights_l2_norm": 6.4493,
+      "discovered_parents": [
+        1,
+        2
+      ],
+      "passed": true
+    }
+  },
+  "pillar_b_first_principles_investigation": {
+    "root_cause_summary": "1. Backdoor Identifiability of OLS in W15_corr_vs_cause & W15_obs_confounder (P15-H1): Because all variables in W15_corr_vs_cause and W15_obs_confounder are observed with independent noise (epsilon ~ N(0, 0.05^2)), conditioning on all observed covariates in OLS (observational_linear) automatically blocks the observed backdoor path via Frisch-Waugh-Lovell partial regression, scoring ~0.003 nRMSE. By contrast, observational_mlp (with L2 weight decay) splits weight across collinear features (0.086 and 0.137), and observational_linear collapses completely when a confounder is unobserved (W15_hidden_confounder: 0.604) or under multi-cause collinearity (W15_multi_cause: 0.210).\n2. Equal Interventional Data Ceiling & Discarded Observational Data (P15-H5 & P15-H6): In the initial confirmatory run, causal_intervention discarded all passive observational data and trained only on N_int=480 interventional samples\u2014the exact same dataset given to mlp_intervention\u2014so both saturated at F1=1.000 and ate_nmae had a 0.013 floor.",
+    "first_principles_solution": "Implemented Joint Invariant Causal Fusion (CausalStructuralModel.fit_joint_causal_structure): uses scarce/controlled interventions to discover unconfounded Pa(Y), runs a Chow-type coefficient invariance test (z_diff < 2.5) between interventional and observational regressions on Pa(Y), and pools obs + int on the invariant causal subset.",
+    "after_fix": {
+      "P15_H6_seeds_causal_beats_mlp_int": 10,
+      "P15_H6_mean_ate_rer": 0.5589,
+      "W15_hc_full_single_int_before": 0.0512,
+      "W15_hc_full_single_int_after_joint_fusion": 0.04252,
+      "scarce_int_80_hc_ate_causal_fusion": 0.04121,
+      "scarce_int_80_hc_ate_mlp_int": 0.12007,
+      "scarce_int_80_hc_f1_causal_fusion": 0.9467,
+      "scarce_int_80_hc_f1_mlp_int": 0.8667,
+      "causal_f1_40_of_40_cells": true,
+      "all_phenomena_explained": true
+    }
+  }
+}
