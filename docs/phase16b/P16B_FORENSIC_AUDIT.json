@@ -1,0 +1,90 @@
+{
+  "experiment_id": "CSP-P16B-E001",
+  "frozen_model_sha256": "c6ec7df4a194bd84cfe93078550b138872d83c457828ebce9eacb798f2ae0cb0",
+  "experiment_a_implementation_audit": {
+    "frozen_model_sha256_match": true,
+    "frozen_model_sha256_actual": "c6ec7df4a194bd84cfe93078550b138872d83c457828ebce9eacb798f2ae0cb0",
+    "A.1_architecture": {
+      "verdict": "PASS",
+      "phi_dim": 14,
+      "has_diagonal_quadratic_terms": true,
+      "independent_param_count": 66,
+      "reported_param_count": 66,
+      "hidden_trainable_arrays": [],
+      "O4_rotation_invariance_max_err": 4.1744385725905886e-14
+    },
+    "A.2_observation_normalization": {
+      "verdict": "PASS",
+      "source_x_mean_exact": true,
+      "unshifted_preserves_source_mean": true,
+      "shifted_uses_zero_mean": true,
+      "source_x_mean_untouched_after_adapt": true,
+      "note": "Zero-mean assumption for shifted worlds is stress-tested with nonzero additive offset in Experiment F."
+    },
+    "A.3_OK_optimization": {
+      "verdict": "PASS",
+      "max_orthogonality_frobenius_err": 2.3486951520653855e-15,
+      "tolerance": 1e-10,
+      "has_adam_updates": true,
+      "has_polar_svd_retraction": true,
+      "has_balanced_det_pm1_restarts": true
+    },
+    "A.4_ridge_estimation": {
+      "verdict": "PASS",
+      "deduplication_verified": true,
+      "bruteforce_vs_hat_loocv_abs_diff": 4.75175454539567e-14,
+      "tolerance": 1e-09,
+      "rank_deficient_solution_finite": true
+    },
+    "A.5_transfer_gate": {
+      "verdict": "PASS",
+      "negative_control_gate_value": 0.0,
+      "negative_control_false_shift": false
+    },
+    "all_items_passed": true
+  },
+  "section_11_leakage_and_ast_audit": {
+    "files_scanned": [
+      "models/__init__.py",
+      "models/activations.py",
+      "models/causal.py",
+      "models/compositional.py",
+      "models/deepsets.py",
+      "models/discovery.py",
+      "models/interactions.py",
+      "models/layers.py",
+      "models/mlp.py",
+      "models/normalization.py",
+      "models/optimizers.py",
+      "models/rnn.py",
+      "models/transfer.py",
+      "experiments/phase16b_independent_harness.py"
+    ],
+    "ast_violations": [],
+    "harness_independent_of_phase16_and_phase11": true,
+    "leak_rows_total": 0,
+    "non_finite_rows": 0,
+    "cross_seed_independence_verified": true,
+    "passed": true
+  },
+  "gate_f_reproducibility": {
+    "rows_reproduced_in_separate_subprocess": 48,
+    "max_abs_diff": 0.0,
+    "tolerance": 1e-10,
+    "verdict": "PASS"
+  },
+  "acceptance_gates": {
+    "Gate_A_implementation_integrity": "PASS",
+    "Gate_B_experimental_integrity": "PASS",
+    "Gate_C_replication": "FAIL",
+    "Gate_C_detail": {
+      "beats_both_mlps_all_4_worlds_ci_gt_0": false,
+      "source_retention_max_lt_0.02_all_worlds": true,
+      "beats_fair_v2_scratch_structural_at_20_shot": false
+    },
+    "Gate_D_negative_transfer": "FAIL",
+    "Gate_E_statistical_reliability": "PASS",
+    "Gate_F_reproducibility": "PASS",
+    "overall_phase16b_verdict": "FAIL"
+  }
+}

@@ -32,3 +32,17 @@ def test_phase16b_harness_does_not_import_phase16_or_phase11():
     assert "from experiments.phase16_experiments" not in src
     assert "import experiments.phase11_experiments" not in src
     assert "from experiments.phase11_experiments" not in src
+
+
+def test_phase16b_saved_forensic_audit_and_reproducibility():
+    audit = json.load(open("docs/phase16b/P16B_FORENSIC_AUDIT.json"))
+    assert audit["experiment_a_implementation_audit"]["all_items_passed"] is True
+    assert audit["section_11_leakage_and_ast_audit"]["passed"] is True
+    assert audit["section_11_leakage_and_ast_audit"]["leak_rows_total"] == 0
+    assert audit["gate_f_reproducibility"]["verdict"] == "PASS"
+    assert audit["gate_f_reproducibility"]["max_abs_diff"] <= 1e-10
+    assert audit["acceptance_gates"]["Gate_A_implementation_integrity"] == "PASS"
+    assert audit["acceptance_gates"]["Gate_B_experimental_integrity"] == "PASS"
+    assert audit["acceptance_gates"]["Gate_E_statistical_reliability"] == "PASS"
+    assert audit["acceptance_gates"]["Gate_F_reproducibility"] == "PASS"
+
