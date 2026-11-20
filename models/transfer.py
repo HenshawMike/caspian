@@ -13,7 +13,7 @@ Separates:
    plus an automatic negative-transfer gate that zeroes out w_core if source structure degrades target fit.
 """
 import itertools
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 
 
@@ -48,6 +48,8 @@ class ModularTransferModel:
         self._source_x_mean: Optional[np.ndarray] = None
         self._source_W_adapter: Optional[np.ndarray] = None
         self._source_b_adapter: Optional[np.ndarray] = None
+        self.last_sensor_shift_detected: bool = False
+        self.last_subspace_residual: float = 0.0
 
         # Gradient buffers
         self.grad_W_adapter = np.zeros_like(self.W_adapter)
@@ -224,23 +226,53 @@ class ModularTransferModel:
 
         self.W_adapter = V_tgt @ best_R
 
+    def detect_sensor_shift(self, X_tgt: np.ndarray, threshold: float = 0.10) -> Tuple[bool, float]:
+        """Unsupervised sensor-shift detector using only raw target observations X_tgt.
+
+        Measures the normalized Frobenius residual of (X_tgt - _source_x_mean) orthogonal
+        to the learned source sensor subspace col(_source_W_adapter):
+            r = ||Xc (I - W_src W_src^T)||_F / max(||Xc||_F, 1e-8).
+        """
+        X_tgt = np.asarray(X_tgt, dtype=float)
+        xm = self._source_x_mean if self._source_x_mean is not None else self.x_mean
+        W_src = self._source_W_adapter if self._source_W_adapter is not None else self.W_adapter
+        Xc = X_tgt - xm
+        proj = (Xc @ W_src) @ W_src.T
+        denom = float(np.linalg.norm(Xc, ord="fro"))
+        if denom < 1e-8:
+            return False, 0.0
+        residual = float(np.linalg.norm(Xc - proj, ord="fro") / denom)
+        return bool(residual > threshold), residual
+
     def adapt_few_shot(
         self,
         X_tgt: np.ndarray,
         Y_tgt: np.ndarray,
-        align_sensors: bool = False,
+        align_sensors: Union[bool, str] = "auto",
         allow_negative_transfer_gate: bool = True,
     ) -> float:
         """Few-shot target adaptation:
-        1. Optionally align target sensor adapter to the frozen source core on O(K).
-           When sensors are unshifted, preserve _source_x_mean to avoid 20-shot mean-shift noise.
+        1. If align_sensors == 'auto', autonomously detect sensor shift from raw X_tgt alone
+           (zero ground-truth hints). Align target sensor adapter on O(K) if shifted;
+           otherwise preserve _source_x_mean to avoid 20-shot mean-shift noise.
         2. Evaluate negative-transfer gate via unique-state LOOCV comparing (core_gate=1 vs 0).
         3. Fit LOOCV-optimal world-specific residual (w_world, b_world) without overwriting w_core.
         """
         X_tgt = np.asarray(X_tgt, dtype=float)
         y_tgt = np.asarray(Y_tgt, dtype=float).reshape(-1, 1)
 
-        if align_sensors:
+        if align_sensors == "auto":
+            shifted, resid = self.detect_sensor_shift(X_tgt)
+            self.last_sensor_shift_detected = shifted
+            self.last_subspace_residual = resid
+            do_align = shifted
+        else:
+            do_align = bool(align_sensors)
+            _, resid = self.detect_sensor_shift(X_tgt)
+            self.last_sensor_shift_detected = do_align
+            self.last_subspace_residual = resid
+
+        if do_align:
             self.align_sensor_adapter_few_shot(X_tgt, Y_tgt)
         elif self._source_x_mean is not None:
             self.x_mean = self._source_x_mean.copy()

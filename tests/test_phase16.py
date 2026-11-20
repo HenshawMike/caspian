@@ -58,5 +58,22 @@ def test_negative_transfer_gate_fires_on_inverted_world():
 
 
 def test_run_cell_p16_smoke():
-    r = run_cell_p16(W16_SHARED_PLUS_NEW, "modular_transfer", seed=9001, n_shot=20, cache={})
+    r = run_cell_p16(W16_SHARED_PLUS_NEW, "modular_transfer", seed=9001, n_shot=20, cache={}, autonomous_shift_detection=True)
     assert r["finite"] and r["leak_rows"] == 0 and r["source_retention_nrmse"] < 0.02
+    assert r["sensor_shift_detected"] is False
+
+
+def test_autonomous_sensor_shift_detection():
+    X_src, Y_src = W16_SOURCE.sample(320, seed=51)
+    m = ModularTransferModel(IN_DIM16, N_LATENT16, seed=51)
+    m.fit_source(X_src, Y_src)
+
+    X_shift, _ = W16_OBS_SHIFT.sample(20, seed=1071)
+    shifted, resid_shift = m.detect_sensor_shift(X_shift)
+    assert shifted is True and resid_shift > 0.10
+
+    for spec in (W16_SHARED_PLUS_NEW, W16_NEGATIVE_CONTROL):
+        X_same, _ = spec.sample(20, seed=1071)
+        same_shifted, resid_same = m.detect_sensor_shift(X_same)
+        assert same_shifted is False and resid_same < 1e-3
+

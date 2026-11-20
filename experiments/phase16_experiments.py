@@ -16,6 +16,7 @@ from models.mlp import PredictiveMLP
 from models.transfer import ModularTransferModel
 
 SEEDS16 = [51, 52, 53, 54, 55, 56, 57, 58, 59, 60]
+SEEDS16_INDEPENDENT = [61, 62, 63, 64, 65, 66, 67, 68, 69, 70]
 EXPLORATORY16 = [9001, 9002, 9003]
 IN_DIM16 = 8
 N_LATENT16 = 4
@@ -137,6 +138,7 @@ def run_cell_p16(
     seed: int,
     n_shot: int,
     cache: Dict[Any, Any],
+    autonomous_shift_detection: bool = False,
 ) -> Dict[str, Any]:
     src_key = ("src", seed)
     if src_key not in cache:
@@ -162,6 +164,8 @@ def run_cell_p16(
     X_tgt_tr, Y_tgt_tr, X_tgt_ev, Y_tgt_ev = cache[tgt_key]
 
     core_gate = 1.0
+    sensor_shift_detected = False
+    subspace_residual = 0.0
     if arch == "oracle_target":
         y_tgt_pred = Y_tgt_ev
         y_src_pred = Y_src_ev
@@ -175,7 +179,10 @@ def run_cell_p16(
         final_loss = float(np.mean((np.asarray(m.forward(X_tgt_tr)).reshape(-1) - Y_tgt_tr) ** 2))
     elif arch == "modular_transfer":
         m = src_mod.clone_for_target()
-        core_gate = m.adapt_few_shot(X_tgt_tr, Y_tgt_tr, align_sensors=spec.obs_shifted, allow_negative_transfer_gate=True)
+        align_arg = "auto" if autonomous_shift_detection else spec.obs_shifted
+        core_gate = m.adapt_few_shot(X_tgt_tr, Y_tgt_tr, align_sensors=align_arg, allow_negative_transfer_gate=True)
+        sensor_shift_detected = bool(m.last_sensor_shift_detected)
+        subspace_residual = float(m.last_subspace_residual)
         y_tgt_pred = np.asarray(m.forward(X_tgt_ev)).reshape(-1)
         y_src_pred = m.predict_source(X_src_ev)
         n_params = m.num_parameters
@@ -220,17 +227,19 @@ def run_cell_p16(
         "target_nrmse": round(float(tgt_nrmse), 5),
         "source_retention_nrmse": round(float(src_ret_nrmse), 5),
         "core_gate": float(core_gate),
+        "sensor_shift_detected": bool(sensor_shift_detected),
+        "subspace_residual": round(float(subspace_residual), 5),
     }
 
 
-def _worker_p16_seed(args: Tuple[str, int, Tuple[int, ...], Tuple[str, ...]]):
-    wname, s, shots, archs = args
+def _worker_p16_seed(args: Tuple[str, int, Tuple[int, ...], Tuple[str, ...], bool]):
+    wname, s, shots, archs, auto_shift = args
     spec = WORLD_MAP_16[wname]
     cache: Dict[Any, Any] = {}
     out_rows = []
     for sh in shots:
         for a in archs:
-            out_rows.append(run_cell_p16(spec, a, s, sh, cache))
+            out_rows.append(run_cell_p16(spec, a, s, sh, cache, autonomous_shift_detection=auto_shift))
     return out_rows
 
 
@@ -241,6 +250,7 @@ def run_phase16_suite(
     shots=SHOTS16,
     verbose: bool = True,
     max_workers: Optional[int] = None,
+    autonomous_shift_detection: bool = False,
 ) -> List[Dict[str, Any]]:
     for spec in worlds:
         verify_gridworld_semantic_purity_p16(spec, seed=seeds[0])
@@ -248,7 +258,7 @@ def run_phase16_suite(
     rows: List[Dict[str, Any]] = []
     workers = max_workers or min(len(seeds), os.cpu_count() or 1)
     for spec in worlds:
-        tasks = [(spec.name, s, tuple(shots), tuple(archs)) for s in seeds]
+        tasks = [(spec.name, s, tuple(shots), tuple(archs), bool(autonomous_shift_detection)) for s in seeds]
         if workers > 1 and len(tasks) > 1:
             with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as ex:
                 for s, s_rows in zip(seeds, ex.map(_worker_p16_seed, tasks)):
