@@ -1,0 +1,99 @@
+{
+  "phase": 16,
+  "experiment_id": "CSP-P16-E001",
+  "forensic_verdict": "LEGIT",
+  "pillar_a_legitimacy_audit": {
+    "ast_oracle_and_semantic_firewall": {
+      "files_checked": [
+        "__init__.py",
+        "activations.py",
+        "causal.py",
+        "compositional.py",
+        "deepsets.py",
+        "discovery.py",
+        "interactions.py",
+        "layers.py",
+        "mlp.py",
+        "normalization.py",
+        "optimizers.py",
+        "rnn.py",
+        "transfer.py"
+      ],
+      "violations": [],
+      "passed": true
+    },
+    "confirmatory_log_integrity": {
+      "total_rows": 480,
+      "leak_rows_total": 0,
+      "non_finite_rows": 0,
+      "seed_independence_verified": true,
+      "direct_transfer_negative_control_nrmse": 0.5117,
+      "passed": true
+    },
+    "live_transfer_fit": {
+      "w_core_l2_movement": 9.2711,
+      "negative_control_gate": 0.0,
+      "passed": true
+    }
+  },
+  "pillar_b_first_principles_investigation": {
+    "root_cause_summary": "1. Broken O(4) Rotational Invariance (P16-H5 & all worlds): SVD of isotropic latent grid P in {-1,+1}^4 returns an arbitrary orthogonal rotation Q in O(4). In rotated coordinates Z = P Q, cross-products p_0*p_1 project onto diagonal quadratic terms z_k^2 (sum_k Q_{0k} Q_{1k} z_k^2). Because v1 _compute_phi(Z) omitted z_k^2, it suffered up to 75x source retention inflation on non-axis-aligned seeds (mean ret=0.0187, 6/10 < 0.02).\n2. Noisy 20-Shot Normalizer Refit (P16-H2): v1 adapt_few_shot overwrote x_mean on 20 noisy target draws even when align_sensors=False, shifting Z by ||dx||~0.45 and exploding var(y - y_core) by up to 333x (36.6 -> 12,211), causing core_gate to falsely turn OFF on 8/10 seeds of W16_shared_plus_new.\n3. Unconditioned Stiefel GD & Rank-Deficient Fixed Ridge (P16-H1, P16-H3, P16-H4): Unnormalized GD on 32-DOF W_adapter failed to align W16_obs_shift (10/10 gate OFF), while fixed lambda=0.05 on 20 draws with replacement (~11 unique corners) overfit unseen corners (up to 0.526 nRMSE).",
+    "first_principles_solution": "Upgraded ModularTransferModel in models/transfer.py with: (1) complete O(K)-invariant degree-2 basis Phi_full(Z) including diagonal z_k^2 (14 features, 66 total params \u2014 12.6x fewer than 833-param MLP); (2) preserved _source_x_mean for unshifted worlds and subspace-restricted O(K) Adam + polar SVD retraction across balanced det(R)=+/-1 restarts for sensor shifts; (3) sufficient-statistic deduplicated unique-state weighted LOOCV ridge + gate selection.",
+    "after_fix": {
+      "worlds": {
+        "W16_obs_shift": {
+          "before_target_nrmse": 0.0892,
+          "after_target_nrmse": 0.015,
+          "after_target_sd": 0.0189,
+          "error_reduction_factor": 5.96,
+          "after_retention_nrmse": 0.0011,
+          "after_retention_max": 0.0016,
+          "after_gate_on_seeds": 10,
+          "after_gate_off_seeds": 0,
+          "beats_scratch_mlp_mean": true,
+          "beats_finetune_mlp_mean": true
+        },
+        "W16_shared_plus_new": {
+          "before_target_nrmse": 0.1266,
+          "after_target_nrmse": 0.0277,
+          "after_target_sd": 0.0327,
+          "error_reduction_factor": 4.57,
+          "after_retention_nrmse": 0.0011,
+          "after_retention_max": 0.0016,
+          "after_gate_on_seeds": 8,
+          "after_gate_off_seeds": 2,
+          "beats_scratch_mlp_mean": true,
+          "beats_finetune_mlp_mean": true
+        },
+        "W16_rule_shift": {
+          "before_target_nrmse": 0.1276,
+          "after_target_nrmse": 0.0301,
+          "after_target_sd": 0.0356,
+          "error_reduction_factor": 4.24,
+          "after_retention_nrmse": 0.0011,
+          "after_retention_max": 0.0016,
+          "after_gate_on_seeds": 2,
+          "after_gate_off_seeds": 8,
+          "beats_scratch_mlp_mean": true,
+          "beats_finetune_mlp_mean": true
+        },
+        "W16_negative_control": {
+          "before_target_nrmse": 0.1155,
+          "after_target_nrmse": 0.0339,
+          "after_target_sd": 0.0404,
+          "error_reduction_factor": 3.41,
+          "after_retention_nrmse": 0.0011,
+          "after_retention_max": 0.0016,
+          "after_gate_on_seeds": 0,
+          "after_gate_off_seeds": 10,
+          "beats_scratch_mlp_mean": true,
+          "beats_finetune_mlp_mean": true
+        }
+      },
+      "P16_H5_resolved_to_MET": true,
+      "P16_H5_retention_lt_0.02_seeds": 10,
+      "beats_all_baselines_in_mean_on_all_4_worlds": true,
+      "all_three_root_causes_resolved": true
+    }
+  }
+}

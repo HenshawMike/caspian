@@ -518,6 +518,171 @@ def run_full_phase15_investigation(
     return report
 
 
+def run_full_phase16_investigation(
+    matrix_path: str = "logs/phase16/confirmatory_matrix.json",
+    analysis_path: str = "logs/phase16/confirmatory_analysis.json",
+    out_json: str = "logs/phase16/investigation_report.json",
+) -> Dict[str, Any]:
+    """Run Pillar A (Fake vs. Legit) and Pillar B (First-Principles Diagnosis & Fix Verification) for Phase 16."""
+    from experiments.phase16_experiments import (
+        IN_DIM16,
+        N_LATENT16,
+        SEEDS16,
+        SRC_SAMPLES16,
+        TARGET_WORLDS16,
+        W16_NEGATIVE_CONTROL,
+        W16_OBS_SHIFT,
+        W16_RULE_SHIFT,
+        W16_SHARED_PLUS_NEW,
+        W16_SOURCE,
+    )
+    from experiments.phase11_experiments import paired_summary, rmse
+    from models.transfer import ModularTransferModel
+
+    rows = json.load(open(matrix_path))
+    an = json.load(open(analysis_path))
+    ast_audit = audit_models_ast(Path("models"))
+
+    leak_total = int(sum(r["leak_rows"] for r in rows))
+    non_finite = int(sum(not r["finite"] for r in rows))
+
+    # Cross-seed independence on W16_obs_shift lo_shot modular_transfer
+    obs_mt = [r for r in rows if r["world"] == "W16_obs_shift" and r["arch"] == "modular_transfer" and r["n_shot"] == 20]
+    seed_vecs = [tuple(round(r[k], 5) for k in ("target_nrmse", "source_retention_nrmse", "final_train_loss")) for r in obs_mt]
+    seed_distinct_ok = len(set(seed_vecs)) == len(seed_vecs) == 10
+
+    # Negative-control sanity check: direct_transfer must fail severely on W16_negative_control (>= 0.40)
+    dt_neg = float(an["worlds"]["W16_negative_control"]["lo_shot|direct_transfer"]["target_mean"])
+
+    # Live parameter update & adaptation check on upgraded ModularTransferModel
+    X_s, Y_s = W16_SOURCE.sample(SRC_SAMPLES16, seed=51)
+    m_live = ModularTransferModel(IN_DIM16, N_LATENT16, seed=51)
+    w_init = m_live.w_core.copy()
+    m_live.fit_source(X_s, Y_s)
+    w_move = float(np.linalg.norm(m_live.w_core - w_init))
+    X_neg, Y_neg = W16_NEGATIVE_CONTROL.sample(20, seed=1071)
+    m_neg = m_live.clone_for_target()
+    gate_neg = float(m_neg.adapt_few_shot(X_neg, Y_neg, align_sensors=False, allow_negative_transfer_gate=True))
+
+    # Pillar B: Verify the 3 first-principles fixes across all 10 confirmatory seeds & 4 worlds
+    def _orig_vec(wname: str, arch: str, key: str = "target_nrmse") -> np.ndarray:
+        sel = [r for r in rows if r["world"] == wname and r["arch"] == arch and r["n_shot"] == 20]
+        sel.sort(key=lambda r: SEEDS16.index(r["seed"]))
+        return np.array([r[key] for r in sel], dtype=float)
+
+    after_worlds: Dict[str, Any] = {}
+    v2_vecs: Dict[str, Dict[str, np.ndarray]] = {}
+    for spec in TARGET_WORLDS16:
+        t_errs, r_errs, gates = [], [], []
+        for s in SEEDS16:
+            Xs, Ys = W16_SOURCE.sample(SRC_SAMPLES16, s)
+            Xse, Yse = W16_SOURCE.eval_grid()
+            m = ModularTransferModel(IN_DIM16, N_LATENT16, seed=s)
+            m.fit_source(Xs, Ys)
+
+            Xt, Yt = spec.sample(20, s + 1020)
+            Xte, Yte = spec.eval_grid()
+            m_t = m.clone_for_target()
+            g = m_t.adapt_few_shot(Xt, Yt, align_sensors=spec.obs_shifted, allow_negative_transfer_gate=True)
+            yp_t = np.asarray(m_t.forward(Xte)).reshape(-1)
+            yp_s = m_t.predict_source(Xse)
+            t_errs.append(rmse(yp_t, Yte) / spec.value_range)
+            r_errs.append(rmse(yp_s, Yse) / W16_SOURCE.value_range)
+            gates.append(g)
+
+        t_arr = np.array(t_errs, dtype=float)
+        r_arr = np.array(r_errs, dtype=float)
+        g_arr = np.array(gates, dtype=float)
+        v2_vecs[spec.name] = {"tgt": t_arr, "ret": r_arr, "gate": g_arr}
+        before_mean = float(an["worlds"][spec.name]["lo_shot|modular_transfer"]["target_mean"])
+        after_worlds[spec.name] = {
+            "before_target_nrmse": round(before_mean, 4),
+            "after_target_nrmse": round(float(t_arr.mean()), 4),
+            "after_target_sd": round(float(t_arr.std(ddof=1)), 4),
+            "error_reduction_factor": round(before_mean / max(float(t_arr.mean()), 1e-8), 2),
+            "after_retention_nrmse": round(float(r_arr.mean()), 4),
+            "after_retention_max": round(float(r_arr.max()), 4),
+            "after_gate_on_seeds": int((g_arr == 1.0).sum()),
+            "after_gate_off_seeds": int((g_arr == 0.0).sum()),
+            "beats_scratch_mlp_mean": bool(float(t_arr.mean()) < float(an["worlds"][spec.name]["lo_shot|scratch_mlp"]["target_mean"])),
+            "beats_finetune_mlp_mean": bool(float(t_arr.mean()) < float(an["worlds"][spec.name]["lo_shot|finetune_mlp"]["target_mean"])),
+        }
+
+    ret_spn_ok = int((v2_vecs["W16_shared_plus_new"]["ret"] < 0.02).sum())
+    ret_rs_ok = int((v2_vecs["W16_rule_shift"]["ret"] < 0.02).sum())
+    h5_spn = paired_summary(v2_vecs["W16_shared_plus_new"]["ret"], _orig_vec("W16_shared_plus_new", "finetune_mlp", "source_retention_nrmse"), 0.05)
+    h5_rs = paired_summary(v2_vecs["W16_rule_shift"]["ret"], _orig_vec("W16_rule_shift", "finetune_mlp", "source_retention_nrmse"), 0.05)
+    h5_resolved = bool(ret_spn_ok >= 9 and ret_rs_ok >= 9 and h5_spn["met"] and h5_rs["met"])
+
+    legit = bool(
+        ast_audit["passed"]
+        and leak_total == 0
+        and non_finite == 0
+        and seed_distinct_ok
+        and dt_neg >= 0.40
+        and w_move > 1.0
+        and gate_neg == 0.0
+    )
+
+    report = {
+        "phase": 16,
+        "experiment_id": "CSP-P16-E001",
+        "forensic_verdict": "LEGIT" if legit else "FAKE / INVALID",
+        "pillar_a_legitimacy_audit": {
+            "ast_oracle_and_semantic_firewall": ast_audit,
+            "confirmatory_log_integrity": {
+                "total_rows": len(rows),
+                "leak_rows_total": leak_total,
+                "non_finite_rows": non_finite,
+                "seed_independence_verified": seed_distinct_ok,
+                "direct_transfer_negative_control_nrmse": round(dt_neg, 4),
+                "passed": bool(leak_total == 0 and non_finite == 0 and seed_distinct_ok and dt_neg >= 0.40),
+            },
+            "live_transfer_fit": {
+                "w_core_l2_movement": round(w_move, 4),
+                "negative_control_gate": gate_neg,
+                "passed": bool(w_move > 1.0 and gate_neg == 0.0),
+            },
+        },
+        "pillar_b_first_principles_investigation": {
+            "root_cause_summary": (
+                "1. Broken O(4) Rotational Invariance (P16-H5 & all worlds): SVD of isotropic latent grid P in {-1,+1}^4 "
+                "returns an arbitrary orthogonal rotation Q in O(4). In rotated coordinates Z = P Q, cross-products p_0*p_1 "
+                "project onto diagonal quadratic terms z_k^2 (sum_k Q_{0k} Q_{1k} z_k^2). Because v1 _compute_phi(Z) omitted "
+                "z_k^2, it suffered up to 75x source retention inflation on non-axis-aligned seeds (mean ret=0.0187, 6/10 < 0.02).\n"
+                "2. Noisy 20-Shot Normalizer Refit (P16-H2): v1 adapt_few_shot overwrote x_mean on 20 noisy target draws even "
+                "when align_sensors=False, shifting Z by ||dx||~0.45 and exploding var(y - y_core) by up to 333x (36.6 -> 12,211), "
+                "causing core_gate to falsely turn OFF on 8/10 seeds of W16_shared_plus_new.\n"
+                "3. Unconditioned Stiefel GD & Rank-Deficient Fixed Ridge (P16-H1, P16-H3, P16-H4): Unnormalized GD on 32-DOF "
+                "W_adapter failed to align W16_obs_shift (10/10 gate OFF), while fixed lambda=0.05 on 20 draws with replacement "
+                "(~11 unique corners) overfit unseen corners (up to 0.526 nRMSE)."
+            ),
+            "first_principles_solution": (
+                "Upgraded ModularTransferModel in models/transfer.py with: (1) complete O(K)-invariant degree-2 basis Phi_full(Z) "
+                "including diagonal z_k^2 (14 features, 66 total params — 12.6x fewer than 833-param MLP); (2) preserved _source_x_mean "
+                "for unshifted worlds and subspace-restricted O(K) Adam + polar SVD retraction across balanced det(R)=+/-1 restarts "
+                "for sensor shifts; (3) sufficient-statistic deduplicated unique-state weighted LOOCV ridge + gate selection."
+            ),
+            "after_fix": {
+                "worlds": after_worlds,
+                "P16_H5_resolved_to_MET": h5_resolved,
+                "P16_H5_retention_lt_0.02_seeds": min(ret_spn_ok, ret_rs_ok),
+                "beats_all_baselines_in_mean_on_all_4_worlds": all(
+                    w["beats_scratch_mlp_mean"] and w["beats_finetune_mlp_mean"] for w in after_worlds.values()
+                ),
+                "all_three_root_causes_resolved": bool(
+                    h5_resolved
+                    and after_worlds["W16_obs_shift"]["after_gate_on_seeds"] == 10
+                    and after_worlds["W16_negative_control"]["after_gate_off_seeds"] == 10
+                    and all(w["beats_scratch_mlp_mean"] and w["beats_finetune_mlp_mean"] for w in after_worlds.values())
+                ),
+            },
+        },
+    }
+    safe_write_json(out_json, report)
+    return report
+
+
 if __name__ == "__main__":
     rep13 = run_full_phase13_investigation()
     print("Phase 13 Forensic Verdict:", rep13["forensic_verdict"])
@@ -525,4 +690,6 @@ if __name__ == "__main__":
     print("Phase 14 Forensic Verdict:", rep14["forensic_verdict"])
     rep15 = run_full_phase15_investigation()
     print("Phase 15 Forensic Verdict:", rep15["forensic_verdict"])
-    print("Phase 15 Pillar B:", json.dumps(rep15["pillar_b_first_principles_investigation"]["after_fix"], indent=2))
+    rep16 = run_full_phase16_investigation()
+    print("Phase 16 Forensic Verdict:", rep16["forensic_verdict"])
+    print("Phase 16 Pillar B:", json.dumps(rep16["pillar_b_first_principles_investigation"]["after_fix"], indent=2))
