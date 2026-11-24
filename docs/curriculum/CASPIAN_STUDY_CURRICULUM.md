@@ -242,11 +242,86 @@ As the number of environmental properties grows from K = 3 (Phase 12) to K = 5 (
 
 ---
 
-## Forward Curriculum Expansion Roadmap (Phases 14–20)
+## Phase 15: Causal Discovery & Intervention Learning — Confounding, Hidden Variables & Counterfactuals
 
-- **Phase 15 — Causal Discovery & Intervention Learning** (`research/ontology`): Separating observational confounding and hidden common causes from direct causal effects via active do(X) interventions.
-- **Phase 16 — Cross-World Transfer & Structural Generalisation** (`feature/multiple-worlds, research/ontology`): Separating reusable structural rules from world-specific sensor calibrations for zero-shot and few-shot transfer.
-- **Phase 17 — Continual Learning & Persistent Environmental Memory** (`feature/memory, research/learning-mechanisms`): Sequential multi-world learning with episodic/parametric memory to prevent catastrophic forgetting.
+**Linked Codebase Files:** `models/causal.py, experiments/phase15_experiments.py, experiments/analyze_phase15.py, experiments/investigation.py, docs/phase15/EXPERIMENT_REGISTRY.md, docs/phase15/INVESTIGATION.md, tests/test_phase15.py`
+
+Predictive correlation P(Y | X) is fundamentally different from causal intervention P(Y | do(X = x)).
+
+1. Observational Backdoor Adjustment vs. Unobserved Confounding: When a confounder C is observed (e.g., C -> X_1 and C -> Y) with independent noise, conditioning on all observed variables in OLS (Frisch-Waugh-Lovell) blocks the backdoor path. However, when an unobserved latent variable U drives both X_0 and Y (W15_hidden_confounder: X_0 = 0.5 + 0.28U, Y = 6X_1 - 4X_2 + 3.5U), the backdoor path X_0 <- U -> Y CANNOT be blocked by any observational estimator! Only active intervention do(X_0 = x_0) severs the arrow U -> X_0 and reveals the true causal effect (ATE_0 = 0).
+
+2. Sparse Causal Parent Discovery ('CausalStructuralModel'): Using standardized ISTA + Gauss-Lasso debiasing on interventional transitions identifies the exact direct causal parents Pa(Y) with zero false causal edges.
+
+3. Pearl's 3-Step Counterfactual Inference (Abduction-Action-Prediction): Given a factual episode (X_obs, Y_obs) containing unobserved latent noise U, an interventional predictor E[Y | do(X)] alone cannot predict individual counterfactuals Y_{X_k <- x'}. CausalStructuralModel computes: (i) Abduction u_hat = Y_obs - f_causal(X_obs) (recovering 3.5U!), (ii) Action X_cf = X_obs[k <- x'], and (iii) Prediction Y_cf = f_causal(X_cf) + u_hat.
+
+4. Joint Invariant Causal Fusion (Stage C First-Principles Solution): Rather than discarding passive observational data, fit_joint_causal_structure() uses scarce interventions to discover Pa(Y), runs a Chow-type coefficient invariance test (z_diff < 2.5) between obs and int restricted to Pa(Y), and pools obs + int on the invariant causal parent set—cutting W15_hidden_confounder error from 0.0512 to 0.0425 and achieving 3x lower ATE error than mlp_intervention (0.0412 vs 0.1201) under scarce interventions (N_int = 80, N_obs = 480).
+
+**Empirical Evidence:** Report CSP-P15-E001 & docs/phase15/INVESTIGATION.md (disjoint seeds 41-50, 4 worlds x 6 models x 2 levels = 480 trainings): causal_intervention achieved causal_f1 = 1.000 in 40/40 world-seed cells (0 false causal edges), beat observational_mlp and observational_linear on W15_hidden_confounder by 0.55 nRMSE (10/10 seeds, P15-H2 MET), beat all baselines on multi-variable interventions (P15-H3 MET), beat observational_mlp and mlp_intervention on counterfactuals by > 0.51 nRMSE (P15-H4 MET), and cut ATE error vs mlp_intervention by 65.3% RER across all 4 worlds (10/10 seeds).
+
+### Viva / Defense Q&A
+- **Q: Why did observational_linear succeed on W15_obs_confounder yet fail catastrophically (0.604 nRMSE) on W15_hidden_confounder?**
+  - **A:** Because in W15_obs_confounder the common cause X_0 was observed with independent noise on X_1, so OLS backdoor-adjusted for X_0 automatically. In W15_hidden_confounder, the common cause U was unobserved (not in Observation), making the backdoor path mathematically unidentifiable from passive observations.
+- **Q: Why can't an unstructured MLP trained on interventional data (mlp_intervention) answer counterfactual queries accurately?**
+  - **A:** Because mlp_intervention learns only the population interventional expectation E[Y | do(X)] (~0.12 nRMSE), whereas Pearl's Abduction-Action-Prediction in CausalStructuralModel abducts the individual latent U = Y_obs - f_causal(X_obs) from the factual outcome, reducing counterfactual error from ~0.58 down to 0.051 nRMSE.
+
+---
+
+## Phase 16: Cross-World Transfer & Structural Generalisation — Modularity, O(K) Sensor Alignment & Negative-Transfer Gating
+
+**Linked Codebase Files:** `models/transfer.py, experiments/phase16_experiments.py, experiments/analyze_phase16.py, experiments/investigation.py, docs/phase16/EXPERIMENT_REGISTRY.md, docs/phase16/INVESTIGATION.md, tests/test_phase16.py`
+
+Transfer across independent worlds fails when a monolithic network entangles world-specific sensor projections with reusable structural rules (causing catastrophic forgetting on source worlds and negative transfer on inverted target worlds).
+
+1. Modular Decomposition ('ModularTransferModel'): Factors prediction into three distinct components:
+
+   Z = (X - x_mean) W_adapter + b_adapter,
+
+   y_hat = core_gate * (Phi(Z) w_core + b_core) + (Phi(Z) w_world + b_world).
+
+   Keeping (w_core, b_core) and the source sensor adapter frozen guarantees near-zero catastrophic forgetting on the source world.
+
+2. O(K) Rotational Invariance of the Degree-2 Basis (Stage C Discovery #1): Because SVD of an isotropic latent grid P in {-1,+1}^K recovers the active subspace up to an arbitrary orthogonal rotation Q in O(K) (Z = P Q), cross-terms p_0*p_1 project onto diagonal quadratic terms z_k^2 (sum_k Q_{0k} Q_{1k} z_k^2). Omitting z_k^2 breaks rotational invariance (up to 75x source retention error!). Completing Phi_full(Z) = [z_k, z_i*z_j for 0 <= i <= j < K] (14 features, 66 total params vs 833-param MLP) makes P_2(R^K) strictly closed under all rotations Q in O(K), cutting source retention error 17x (0.0187 -> 0.0011).
+
+3. Subspace-Restricted O(K) Sensor Alignment (Stage C Discovery #2): Under a rotated/shifted sensor matrix M_shift, the target's top-K singular vectors V_tgt span the exact latent subspace, so W_adapter = V_tgt R reduces alignment from 32 to 6 DOF (R in O(4)). Optimizing R via Adam + polar SVD retraction across restarts balanced between det(R) = +1 (SO(4)) and det(R) = -1 (O(4)\SO(4)) cuts W16_obs_shift 20-shot error 6x (0.0892 -> 0.0150, 10/10 gate ON).
+
+4. Deduplicated Sufficient-Statistic Unique-State LOOCV (Stage C Discovery #3): With n=20 draws with replacement from 16 corners (~11 unique states), ordinary LOOCV leaks across duplicate rows and fixed lambda=0.05 explodes on unseen corners. Grouping identical inputs into sufficient statistics (Phi_u, y_mean, count) and running exact closed-form weighted Leave-One-Group-Out CV jointly selects optimal ridge shrinkage and the negative-transfer gate (10/10 gate OFF on W16_negative_control).
+
+**Empirical Evidence:** Report CSP-P16-E001 & CSP-P16B-E001 (Phase 16B Independent Replication on fresh seeds 101-110, frozen models/transfer.py, standalone harness, 0 leaks, 0.0 subprocess reproducibility diff): Verdict PARTIAL PASS (Gates A, B, E, F PASS; Gates C, D FAIL on strictest sub-checks). Confirmed: 0.0012 source retention (10/10 < 0.02, 154x less forgetting), 10/10 negative-transfer gate rejection, 40/40 autonomous shift detection, 48-shot wins over both MLPs on 4/4 worlds, and 1.5x-3.2x transfer gains over fair 66-param v2 scratch_structural in underdetermined (8-16 shot) and duplicated regimes. Exposed honestly: low-coverage outlier tail (seed 109 = 0.2013 on W16_negative_control), 20-shot tie with fair v2 scratch_structural, and boundary sensitivities (c=0.5 sensor offset, in-subspace rotation, W16_obs_shift sample ordering).
+
+### Viva / Defense Q&A
+- **Q: Why did omitting z_k^2 from Phi(Z) break source retention even though p_k^2 = 1 is constant on {-1,+1}^4?**
+  - **A:** Because SVD of isotropic P in {-1,+1}^4 returns a rotated basis Z = P Q (Q in O(4)). Under rotation, z_k^2 = (sum_m P_m Q_{mk})^2 = 1 + 2 sum_{m<n} Q_{mk} Q_{nk} P_m P_n is NOT constant! Without z_k^2, the rotated cross-terms cannot span p_0*p_1, inflating source error up to 75x on non-axis-aligned seeds.
+- **Q: Why did ordinary Leave-One-Out CV fail to prevent overfitting on 20-shot draws from a 16-state grid?**
+  - **A:** Because 20 draws with replacement contain ~8 duplicate states. Leaving out one duplicate row keeps its identical twin in the training set (H_ii <= 0.5 even at lambda -> 0), leaking the state. Grouping duplicates into sufficient statistics (Phi_u, y_mean, n_g) and running weighted Leave-One-Group-Out CV tests genuine out-of-state generalization.
+
+---
+
+## Phase 17: Continual Learning & Persistent Environmental Memory — Zero-Privilege Retrieval, Anti-Forgetting & Outdated-Memory Detection
+
+**Linked Codebase Files:** `models/memory.py, models/transfer_v3.py, experiments/phase17_experiments.py, experiments/analyze_phase17.py, experiments/investigation.py, docs/phase17/EXPERIMENT_REGISTRY.md, docs/phase17/INVESTIGATION.md, tests/test_phase17.py`
+
+Monolithic neural networks suffer catastrophic forgetting when trained sequentially across distinct worlds (naive MLP), while replay buffers store raw historical transitions and Fisher-information EWC trades plasticity for stability.
+
+1. Compact Parametric Engram Bank ('PersistentWorldMemory'): Stores each distinct world as a 66-parameter ModularTransferModelV3 engram (x_mean, W_adapter, b_adapter, w_core, b_core, w_world, b_world, sigma2_ref) with ZERO raw replay samples.
+
+2. Autonomous Zero-world_id Retrieval: Given an 8-sample interaction probe (X_probe, Y_probe) from an unknown environment, evaluates predictive MSE against every stored engram and selects the minimum-MSE match with a noise-floor confidence check.
+
+3. Outdated-Memory Detection (Exp 17.4): When a previously encountered sensor subspace (r_subspace < 0.12) suddenly yields high predictive surprise (MSE > max(10*sigma2_ref, 0.10*Var(Y))), flags the stored engram as outdated and updates it cleanly without corrupting other worlds in memory.
+
+4. Occam-Hierarchy Forward Transfer (Stage C Discovery): Fitting 10 DOF (6-DOF R in O(4) + 4-DOF b_adapter) on G ~ 7 unique corners (N=10 shots) overfits multiple stored cores to spurious low training loss. Attempting 6-DOF pure O(K) alignment first and unlocking b_adapter only when 6-DOF fails the noise floor eliminates ultra-few-shot overfitting while preserving additive-offset invariance.
+
+**Empirical Evidence:** Report CSP-P17-E001 & docs/phase17/INVESTIGATION.md (disjoint seeds 71-80, 5-stage multi-world stream, 0 world_id privilege, 0 leaks): P17-H2 (95.0% autonomous 8-probe retrieval, 38/40), P17-H4 (10/10 outdated-memory detection on W17_beta_mutated, 0.0040 nRMSE, W17_alpha retained at 0.0019), and P17-H5 (264 total params, 0 raw replay) all MET with exact 0.0000 forgetting on W17_alpha & W17_beta. P17-H1 and P17-H3 missed in Stage B due to 10-DOF alignment overfitting on 10-shot W17_gamma_shared (0.1764), resolved in Stage C via Occam-Hierarchy 6-DOF-first alignment.
+
+### Viva / Defense Q&A
+- **Q: How does PersistentWorldMemory distinguish two worlds that share the exact same sensor subspace (W17_alpha vs W17_delta_inverted) without world_id?**
+  - **A:** Because retrieve(X_probe, Y_probe) evaluates predictive MSE against actual interaction consequences Y_probe, not just observation geometry X_probe. Even though M_1 is identical, W17_alpha's engram predicts +y while W17_delta_inverted's engram predicts -y, giving 95%+ autonomous retrieval from 8 probes.
+- **Q: Why did 10-DOF alignment (R + b_adapter) fail on 10-shot W17_gamma_shared even though it worked on 20-shot W16_obs_shift?**
+  - **A:** Because 10 draws with replacement from 16 hypercube corners hit only ~7 unique states. With 10 DOF on 7 points, Adam overfits BOTH W17_alpha and W17_beta to near-zero training loss. Occam-Hierarchy Alignment tries 6-DOF pure O(4) first and unlocks b_adapter only if 6-DOF fails the noise-floor test.
+
+---
+
+## Forward Curriculum Expansion Roadmap (Phases 18–20)
+
 - **Phase 18 — Integrated Predictive World Model & Autonomous Planning** (`feature/planning, research/architecture`): Combining discovered representations, causal structure, and uncertainty-aware multi-step rollouts for closed-loop planning.
 - **Phase 19 — Real-World Transfer & Application Prototype** (`feature/application-prototype`): Transferring the validated Caspian world model to a bounded operational or cybersecurity anomaly/decision task.
 - **Phase 20 — Integrated System Validation & Research Consolidation** (`research/ontology, research/architecture, research/learning-mechanisms`): End-to-end integration benchmark, full component ablations, literature synthesis, and final technical research paper.
