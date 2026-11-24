@@ -1,0 +1,3109 @@
+{
+  "experiment_id": "CSP-P18D-E001",
+  "split": "dev_ablation",
+  "seeds": [
+    9401,
+    9402,
+    9403,
+    9404,
+    9405
+  ],
+  "n_seeds": 5,
+  "hypotheses_met_count": "1/7",
+  "verdicts": {
+    "P18D-H1": false,
+    "P18D-H2": false,
+    "P18D-H3": false,
+    "P18D-H4": false,
+    "P18D-H5": true,
+    "P18D-H6": false,
+    "P18D-H7": false
+  },
+  "regime_variant_means": {
+    "A_rep_shift": {
+      "full_reconstruction": {
+        "x_h1": 0.08965,
+        "x_h3": 0.12989,
+        "interior_nrmse": 0.06131,
+        "boundary_nrmse": 0.16826,
+        "plan_return": 428.14843,
+        "pi95_cov": 0.89,
+        "forgetting_src": 0.0
+      },
+      "unconditional": {
+        "x_h1": 0.33723,
+        "x_h3": 0.50663,
+        "interior_nrmse": 0.32645,
+        "boundary_nrmse": 0.36247,
+        "plan_return": 378.18877,
+        "pi95_cov": 0.68667,
+        "forgetting_src": 0.0
+      },
+      "consequence_only": {
+        "x_h1": 0.08578,
+        "x_h3": 0.13533,
+        "interior_nrmse": 0.05764,
+        "boundary_nrmse": 0.16327,
+        "plan_return": 449.94001,
+        "pi95_cov": 0.90833,
+        "forgetting_src": 0.0
+      },
+      "dynamics_and_boundary": {
+        "x_h1": 0.02466,
+        "x_h3": 0.04212,
+        "interior_nrmse": 0.01892,
+        "boundary_nrmse": 0.04003,
+        "plan_return": 464.52156,
+        "pi95_cov": 0.91667,
+        "forgetting_src": 0.0
+      },
+      "selective": {
+        "x_h1": 0.02259,
+        "x_h3": 0.04139,
+        "interior_nrmse": 0.01849,
+        "boundary_nrmse": 0.03389,
+        "plan_return": 464.52156,
+        "pi95_cov": 0.91667,
+        "forgetting_src": 0.0
+      },
+      "uncertainty_guided": {
+        "x_h1": 0.02259,
+        "x_h3": 0.04139,
+        "interior_nrmse": 0.01849,
+        "boundary_nrmse": 0.03389,
+        "plan_return": 464.52156,
+        "pi95_cov": 0.91667,
+        "forgetting_src": 0.0
+      },
+      "fair_mlp": {
+        "x_h1": 0.11825,
+        "x_h3": 0.23453,
+        "interior_nrmse": 0.10037,
+        "boundary_nrmse": 0.17883,
+        "plan_return": 435.30091,
+        "pi95_cov": 0.0,
+        "forgetting_src": 0.0
+      }
+    },
+    "B_boundary_shift": {
+      "full_reconstruction": {
+        "x_h1": 0.16268,
+        "x_h3": 0.20162,
+        "interior_nrmse": 0.13487,
+        "boundary_nrmse": 0.17541,
+        "plan_return": 199.08789,
+        "pi95_cov": 0.89833,
+        "forgetting_src": 0.0
+      },
+      "unconditional": {
+        "x_h1": 0.5491,
+        "x_h3": 0.84002,
+        "interior_nrmse": 0.42723,
+        "boundary_nrmse": 0.61986,
+        "plan_return": 168.44934,
+        "pi95_cov": 0.555,
+        "forgetting_src": 0.0
+      },
+      "consequence_only": {
+        "x_h1": 0.16841,
+        "x_h3": 0.21483,
+        "interior_nrmse": 0.13945,
+        "boundary_nrmse": 0.18397,
+        "plan_return": 201.86223,
+        "pi95_cov": 0.875,
+        "forgetting_src": 0.0
+      },
+      "dynamics_and_boundary": {
+        "x_h1": 0.26402,
+        "x_h3": 0.29485,
+        "interior_nrmse": 0.04652,
+        "boundary_nrmse": 0.34665,
+        "plan_return": 185.84862,
+        "pi95_cov": 0.67833,
+        "forgetting_src": 0.0
+      },
+      "selective": {
+        "x_h1": 0.12175,
+        "x_h3": 0.18648,
+        "interior_nrmse": 0.08059,
+        "boundary_nrmse": 0.13922,
+        "plan_return": 196.24536,
+        "pi95_cov": 0.84833,
+        "forgetting_src": 0.0
+      },
+      "uncertainty_guided": {
+        "x_h1": 0.15706,
+        "x_h3": 0.20736,
+        "interior_nrmse": 0.09663,
+        "boundary_nrmse": 0.18409,
+        "plan_return": 180.70504,
+        "pi95_cov": 0.84167,
+        "forgetting_src": 0.0
+      },
+      "fair_mlp": {
+        "x_h1": 0.20458,
+        "x_h3": 0.32951,
+        "interior_nrmse": 0.18774,
+        "boundary_nrmse": 0.21506,
+        "plan_return": 138.85614,
+        "pi95_cov": 0.0,
+        "forgetting_src": 0.0
+      }
+    },
+    "C_partial_mut": {
+      "full_reconstruction": {
+        "x_h1": 0.10622,
+        "x_h3": 0.21097,
+        "interior_nrmse": 0.09264,
+        "boundary_nrmse": 0.13219,
+        "plan_return": 132.43596,
+        "pi95_cov": 0.88,
+        "forgetting_src": 0.0
+      },
+      "unconditional": {
+        "x_h1": 0.4617,
+        "x_h3": 0.77223,
+        "interior_nrmse": 0.40933,
+        "boundary_nrmse": 0.56289,
+        "plan_return": 74.98217,
+        "pi95_cov": 0.61833,
+        "forgetting_src": 0.0
+      },
+      "consequence_only": {
+        "x_h1": 0.11656,
+        "x_h3": 0.21418,
+        "interior_nrmse": 0.10023,
+        "boundary_nrmse": 0.14792,
+        "plan_return": 132.42333,
+        "pi95_cov": 0.895,
+        "forgetting_src": 0.0
+      },
+      "dynamics_and_boundary": {
+        "x_h1": 0.34882,
+        "x_h3": 0.6388,
+        "interior_nrmse": 0.29539,
+        "boundary_nrmse": 0.4532,
+        "plan_return": 99.93747,
+        "pi95_cov": 0.615,
+        "forgetting_src": 0.0
+      },
+      "selective": {
+        "x_h1": 0.08887,
+        "x_h3": 0.16727,
+        "interior_nrmse": 0.08575,
+        "boundary_nrmse": 0.09597,
+        "plan_return": 135.33885,
+        "pi95_cov": 0.795,
+        "forgetting_src": 0.0
+      },
+      "uncertainty_guided": {
+        "x_h1": 0.08086,
+        "x_h3": 0.15014,
+        "interior_nrmse": 0.07908,
+        "boundary_nrmse": 0.08548,
+        "plan_return": 132.71415,
+        "pi95_cov": 0.85,
+        "forgetting_src": 0.0
+      },
+      "fair_mlp": {
+        "x_h1": 0.11829,
+        "x_h3": 0.26318,
+        "interior_nrmse": 0.1048,
+        "boundary_nrmse": 0.14552,
+        "plan_return": 163.25574,
+        "pi95_cov": 0.0,
+        "forgetting_src": 0.0
+      }
+    },
+    "D_full_mut": {
+      "full_reconstruction": {
+        "x_h1": 0.1209,
+        "x_h3": 0.12792,
+        "interior_nrmse": 0.10421,
+        "boundary_nrmse": 0.1599,
+        "plan_return": 48.03143,
+        "pi95_cov": 0.94333,
+        "forgetting_src": 0.0
+      },
+      "unconditional": {
+        "x_h1": 1.02002,
+        "x_h3": 1.58291,
+        "interior_nrmse": 0.99717,
+        "boundary_nrmse": 1.09788,
+        "plan_return": 4.89784,
+        "pi95_cov": 0.155,
+        "forgetting_src": 0.0
+      },
+      "consequence_only": {
+        "x_h1": 0.11952,
+        "x_h3": 0.12804,
+        "interior_nrmse": 0.10137,
+        "boundary_nrmse": 0.16129,
+        "plan_return": 46.9684,
+        "pi95_cov": 0.91833,
+        "forgetting_src": 0.0
+      },
+      "dynamics_and_boundary": {
+        "x_h1": 0.78917,
+        "x_h3": 1.15721,
+        "interior_nrmse": 0.75405,
+        "boundary_nrmse": 0.90143,
+        "plan_return": 23.55947,
+        "pi95_cov": 0.16667,
+        "forgetting_src": 0.0
+      },
+      "selective": {
+        "x_h1": 0.11939,
+        "x_h3": 0.12797,
+        "interior_nrmse": 0.10137,
+        "boundary_nrmse": 0.1607,
+        "plan_return": 46.59679,
+        "pi95_cov": 0.91833,
+        "forgetting_src": 0.0
+      },
+      "uncertainty_guided": {
+        "x_h1": 0.11939,
+        "x_h3": 0.12797,
+        "interior_nrmse": 0.10137,
+        "boundary_nrmse": 0.1607,
+        "plan_return": 46.59679,
+        "pi95_cov": 0.91833,
+        "forgetting_src": 0.0
+      },
+      "fair_mlp": {
+        "x_h1": 0.2306,
+        "x_h3": 0.3661,
+        "interior_nrmse": 0.22108,
+        "boundary_nrmse": 0.25332,
+        "plan_return": 32.00983,
+        "pi95_cov": 0.0,
+        "forgetting_src": 0.0
+      }
+    }
+  },
+  "decision_audit": {
+    "action_decision_accuracy": 0.89,
+    "boundary_decision_accuracy": 0.75,
+    "regimeA_unnecessary_reconstruction_rate": 0.0,
+    "regimeC_mutated_action_detected_rate": 1.0,
+    "regimeC_unchanged_actions_preserved_rate": 0.95,
+    "regimeD_harmful_transfer_rate": 0.0
+  },
+  "H1": {
+    "met": false,
+    "vs_p18c": {
+      "n": 5,
+      "mean_delta": 0.06319,
+      "sd_delta": 0.01395,
+      "ci95_low": 0.05295,
+      "ci95_high": 0.07541,
+      "cohens_dz": 4.5306,
+      "perm_p": 0.06119,
+      "wins": 5,
+      "ci_strictly_positive": true
+    },
+    "vs_rec": {
+      "n": 5,
+      "mean_delta": 0.06706,
+      "sd_delta": 0.02096,
+      "ci95_low": 0.05078,
+      "ci95_high": 0.08334,
+      "cohens_dz": 3.1989,
+      "perm_p": 0.06519,
+      "wins": 5,
+      "ci_strictly_positive": true
+    },
+    "holm_p": {
+      "consequence_only": 0.12238,
+      "full_reconstruction": 0.12238
+    }
+  },
+  "H2": {
+    "met": false,
+    "regimeA_bnd_vs_p18c": {
+      "n": 5,
+      "mean_delta": 0.12939,
+      "sd_delta": 0.0442,
+      "ci95_low": 0.09546,
+      "ci95_high": 0.1635,
+      "cohens_dz": 2.9271,
+      "perm_p": 0.06699,
+      "wins": 5,
+      "ci_strictly_positive": true
+    },
+    "regimeB_bnd_vs_db": {
+      "n": 5,
+      "mean_delta": 0.16256,
+      "sd_delta": 0.09116,
+      "ci95_low": 0.09911,
+      "ci95_high": 0.23969,
+      "cohens_dz": 1.7832,
+      "perm_p": 0.06299,
+      "wins": 5,
+      "ci_strictly_positive": true
+    },
+    "holm_p": {
+      "regimeB_vs_dyn_bnd": 0.12598,
+      "regimeA_vs_p18c": 0.12598
+    }
+  },
+  "H3": {
+    "met": false,
+    "vs_dyn_bnd": {
+      "n": 5,
+      "mean_delta": 0.26796,
+      "sd_delta": 0.12559,
+      "ci95_low": 0.16056,
+      "ci95_high": 0.34752,
+      "cohens_dz": 2.1336,
+      "perm_p": 0.06049,
+      "wins": 5,
+      "ci_strictly_positive": true
+    },
+    "vs_rec": {
+      "n": 5,
+      "mean_delta": 0.02536,
+      "sd_delta": 0.01274,
+      "ci95_low": 0.01553,
+      "ci95_high": 0.03519,
+      "cohens_dz": 1.9903,
+      "perm_p": 0.06299,
+      "wins": 5,
+      "ci_strictly_positive": true
+    },
+    "holm_p": {
+      "dynamics_and_boundary": 0.12098,
+      "full_reconstruction": 0.12098
+    }
+  },
+  "H4": {
+    "met": false,
+    "vs_uncond": {
+      "n": 5,
+      "mean_delta": 0.90063,
+      "sd_delta": 0.19292,
+      "ci95_low": 0.74947,
+      "ci95_high": 1.04983,
+      "cohens_dz": 4.6683,
+      "perm_p": 0.06239,
+      "wins": 5,
+      "ci_strictly_positive": true
+    },
+    "vs_dyn_bnd": {
+      "n": 5,
+      "mean_delta": 0.66978,
+      "sd_delta": 0.15703,
+      "ci95_low": 0.56233,
+      "ci95_high": 0.79937,
+      "cohens_dz": 4.2652,
+      "perm_p": 0.06109,
+      "wins": 5,
+      "ci_strictly_positive": true
+    },
+    "harmful_transfer_rate": 0.0
+  },
+  "H5": {
+    "met": true,
+    "action_acc": 0.89,
+    "boundary_acc": 0.75
+  },
+  "H6": {
+    "met": false,
+    "vs_mlp": {
+      "n": 5,
+      "mean_delta": 29.22065,
+      "sd_delta": 21.91156,
+      "ci95_low": 10.75147,
+      "ci95_high": 45.44339,
+      "cohens_dz": 1.3336,
+      "perm_p": 0.12789,
+      "wins": 4,
+      "ci_strictly_positive": true
+    },
+    "vs_rec": {
+      "n": 5,
+      "mean_delta": 36.37313,
+      "sd_delta": 21.17313,
+      "ci95_low": 17.84574,
+      "ci95_high": 51.4968,
+      "cohens_dz": 1.7179,
+      "perm_p": 0.06319,
+      "wins": 5,
+      "ci_strictly_positive": true
+    },
+    "vs_p18c": {
+      "n": 5,
+      "mean_delta": 14.58155,
+      "sd_delta": 15.13919,
+      "ci95_low": 3.76068,
+      "ci95_high": 27.95878,
+      "cohens_dz": 0.9632,
+      "perm_p": 0.12249,
+      "wins": 4,
+      "ci_strictly_positive": true
+    },
+    "holm_p": {
+      "full_reconstruction": 0.12638,
+      "fair_mlp": 0.12789
+    }
+  },
+  "H7": {
+    "met": false,
+    "mean_ug_x_h1": 0.09498,
+    "mean_sel_x_h1": 0.08815,
+    "max_forgetting": 0.0,
+    "ast_passed": true
+  },
+  "per_seed": [
+    {
+      "seed": 9401,
+      "regimes": {
+        "A_rep_shift": {
+          "oracle_return": 465.48594414798146,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.0809303781741164,
+              "x_h3": 0.09103429008186446,
+              "interior_nrmse": 0.04737688921430099,
+              "boundary_nrmse": 0.21282888532677516,
+              "plan_return": 462.17440151388547,
+              "pi95_cov": 0.925,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.5642557386312003,
+              "x_h3": 0.842882748164626,
+              "interior_nrmse": 0.5723701803072281,
+              "boundary_nrmse": 0.4851564449103546,
+              "plan_return": 347.020605952237,
+              "pi95_cov": 0.3333333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.07749190137735944,
+              "x_h3": 0.1099438229303773,
+              "interior_nrmse": 0.04305691275451469,
+              "boundary_nrmse": 0.20824233039234602,
+              "plan_return": 450.3133600634869,
+              "pi95_cov": 0.925,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.016762357114785995,
+              "x_h3": 0.04104126999275828,
+              "interior_nrmse": 0.015978964345850062,
+              "boundary_nrmse": 0.02262344903728517,
+              "plan_return": 464.21894731854354,
+              "pi95_cov": 0.8916666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.016762357114785995,
+              "x_h3": 0.04104126999275828,
+              "interior_nrmse": 0.015978964345850062,
+              "boundary_nrmse": 0.02262344903728517,
+              "plan_return": 464.21894731854354,
+              "pi95_cov": 0.8916666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.00086,
+                  0.00092,
+                  0.00077,
+                  0.00072,
+                  0.00123
+                ],
+                "boundary_decision": "TRANSFER",
+                "n_actions_transferred": 5
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.016762357114785995,
+              "x_h3": 0.04104126999275828,
+              "interior_nrmse": 0.015978964345850062,
+              "boundary_nrmse": 0.02262344903728517,
+              "plan_return": 464.21894731854354,
+              "pi95_cov": 0.8916666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.7668,
+                  0.4341,
+                  0.68,
+                  0.9372,
+                  1.2794
+                ],
+                "boundary_decision": "TRANSFER",
+                "n_actions_transferred": 5
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.10825911398073443,
+              "x_h3": 0.24300356151402167,
+              "interior_nrmse": 0.0885580700240498,
+              "boundary_nrmse": 0.2159110272808591,
+              "plan_return": 450.909843038447,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        },
+        "B_boundary_shift": {
+          "oracle_return": 204.7032722282739,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.1555592360763093,
+              "x_h3": 0.1907423792032422,
+              "interior_nrmse": 0.11802363178569468,
+              "boundary_nrmse": 0.1775774369693857,
+              "plan_return": 206.0501996158118,
+              "pi95_cov": 0.9166666666666666,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.542841597577607,
+              "x_h3": 0.7812393716372371,
+              "interior_nrmse": 0.3867974168086533,
+              "boundary_nrmse": 0.6311059218861157,
+              "plan_return": 200.51798449852262,
+              "pi95_cov": 0.7583333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.15808203301027268,
+              "x_h3": 0.19872474151985303,
+              "interior_nrmse": 0.12034072379802505,
+              "boundary_nrmse": 0.18026555843563072,
+              "plan_return": 205.2039257256349,
+              "pi95_cov": 0.85,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.25508146771257223,
+              "x_h3": 0.3304357159500659,
+              "interior_nrmse": 0.05448405933187911,
+              "boundary_nrmse": 0.33079041669449033,
+              "plan_return": 201.688590767056,
+              "pi95_cov": 0.7416666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.0918774326026199,
+              "x_h3": 0.25302995506140646,
+              "interior_nrmse": 0.05448405933187911,
+              "boundary_nrmse": 0.11113375972441554,
+              "plan_return": 203.5610349181877,
+              "pi95_cov": 0.85,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.00133,
+                  0.00255,
+                  0.01381,
+                  0.02032,
+                  0.01205
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 5
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.13789690084096326,
+              "x_h3": 0.1995637122910036,
+              "interior_nrmse": 0.09703428565370575,
+              "boundary_nrmse": 0.16084970810261923,
+              "plan_return": 186.62261038716056,
+              "pi95_cov": 0.9083333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  1.184,
+                  1.4044,
+                  14.1865,
+                  24.9764,
+                  15.2609
+                ],
+                "boundary_decision": "TRANSFER",
+                "n_actions_transferred": 2
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.23124179332573347,
+              "x_h3": 0.35378378131291655,
+              "interior_nrmse": 0.2159401780046336,
+              "boundary_nrmse": 0.2415788547341517,
+              "plan_return": 61.27888961114767,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        },
+        "C_partial_mut": {
+          "oracle_return": 139.67388191316596,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.11909442219752826,
+              "x_h3": 0.23712567193558218,
+              "interior_nrmse": 0.08685723639589213,
+              "boundary_nrmse": 0.17226487104195862,
+              "plan_return": 134.73437468846407,
+              "pi95_cov": 0.9333333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.5236659809382427,
+              "x_h3": 0.8095879001092118,
+              "interior_nrmse": 0.45328841850531437,
+              "boundary_nrmse": 0.6592844260921017,
+              "plan_return": 69.98183461070563,
+              "pi95_cov": 0.725,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.13054369149913014,
+              "x_h3": 0.23797143210555396,
+              "interior_nrmse": 0.09842023574332723,
+              "boundary_nrmse": 0.18494211191234583,
+              "plan_return": 139.33320930363462,
+              "pi95_cov": 0.8833333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.378387315566324,
+              "x_h3": 0.5914326605025274,
+              "interior_nrmse": 0.3385450169585395,
+              "boundary_nrmse": 0.4580685924846787,
+              "plan_return": 116.88782098716194,
+              "pi95_cov": 0.675,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.08000118785284774,
+              "x_h3": 0.09574843145905976,
+              "interior_nrmse": 0.0778527881975572,
+              "boundary_nrmse": 0.08480272041180917,
+              "plan_return": 134.83473557158857,
+              "pi95_cov": 0.875,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "RECONSTRUCT",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.00076,
+                  0.00082,
+                  0.79616,
+                  0.00088,
+                  0.00718
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 4
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.08259814938405348,
+              "x_h3": 0.12270387630639465,
+              "interior_nrmse": 0.080395385139055,
+              "boundary_nrmse": 0.08752260118602743,
+              "plan_return": 134.83473557158857,
+              "pi95_cov": 0.8833333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "RECONSTRUCT",
+                  "TRANSFER",
+                  "ADAPT"
+                ],
+                "action_stats": [
+                  0.684,
+                  0.3732,
+                  816.3381,
+                  1.0432,
+                  6.9313
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 4
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.12337500666746183,
+              "x_h3": 0.27049089390985365,
+              "interior_nrmse": 0.10148304209483668,
+              "boundary_nrmse": 0.16342405766614837,
+              "plan_return": 259.21394037870783,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        },
+        "D_full_mut": {
+          "oracle_return": 43.215537391324396,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.18013712622757408,
+              "x_h3": 0.1793083760504834,
+              "interior_nrmse": 0.17135379082971683,
+              "boundary_nrmse": 0.20423313170730345,
+              "plan_return": 49.699504766005965,
+              "pi95_cov": 0.9166666666666666,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.9433871119148791,
+              "x_h3": 1.5530887989168538,
+              "interior_nrmse": 0.9623761977456212,
+              "boundary_nrmse": 0.8839757540489619,
+              "plan_return": 43.215537391324396,
+              "pi95_cov": 0.075,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.17714628560167356,
+              "x_h3": 0.17790917729939887,
+              "interior_nrmse": 0.1674082039003109,
+              "boundary_nrmse": 0.2035846404090803,
+              "plan_return": 50.49954191380303,
+              "pi95_cov": 0.9083333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.7380117892367204,
+              "x_h3": 1.060731214070011,
+              "interior_nrmse": 0.7057898965094551,
+              "boundary_nrmse": 0.827180433862564,
+              "plan_return": 43.215537391324396,
+              "pi95_cov": 0.2,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.17714628560167356,
+              "x_h3": 0.17790917729939887,
+              "interior_nrmse": 0.1674082039003109,
+              "boundary_nrmse": 0.2035846404090803,
+              "plan_return": 50.49954191380303,
+              "pi95_cov": 0.9083333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  0.05298,
+                  0.44246,
+                  0.06743,
+                  0.1029,
+                  0.07826
+                ],
+                "boundary_decision": "RECONSTRUCT",
+                "n_actions_transferred": 0
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.17714628560167356,
+              "x_h3": 0.17790917729939887,
+              "interior_nrmse": 0.1674082039003109,
+              "boundary_nrmse": 0.2035846404090803,
+              "plan_return": 50.49954191380303,
+              "pi95_cov": 0.9083333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  48.3454,
+                  207.206,
+                  62.4218,
+                  127.5241,
+                  57.5166
+                ],
+                "boundary_decision": "RECONSTRUCT",
+                "n_actions_transferred": 0
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.23811378300381764,
+              "x_h3": 0.32439803354637076,
+              "interior_nrmse": 0.23570736427561828,
+              "boundary_nrmse": 0.24519137404133864,
+              "plan_return": 0.5254338367766456,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        }
+      },
+      "wall_time_s": 23.134
+    },
+    {
+      "seed": 9402,
+      "regimes": {
+        "A_rep_shift": {
+          "oracle_return": 467.0659007247984,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.06860072763724917,
+              "x_h3": 0.19327379817231213,
+              "interior_nrmse": 0.052237506910933935,
+              "boundary_nrmse": 0.11231772188181494,
+              "plan_return": 430.9443752632192,
+              "pi95_cov": 0.9083333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.10585058599699045,
+              "x_h3": 0.14094852670797295,
+              "interior_nrmse": 0.06935727950479963,
+              "boundary_nrmse": 0.1917811354077969,
+              "plan_return": 466.7054500141057,
+              "pi95_cov": 0.95,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.0685194532887452,
+              "x_h3": 0.17880455565806325,
+              "interior_nrmse": 0.05107413932032074,
+              "boundary_nrmse": 0.11419416169706988,
+              "plan_return": 426.7052134230228,
+              "pi95_cov": 0.8916666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.02115835692594826,
+              "x_h3": 0.03776487101318861,
+              "interior_nrmse": 0.020431103670020694,
+              "boundary_nrmse": 0.023846600393527387,
+              "plan_return": 466.0531335247268,
+              "pi95_cov": 0.8833333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.02115835692594826,
+              "x_h3": 0.03776487101318861,
+              "interior_nrmse": 0.020431103670020694,
+              "boundary_nrmse": 0.023846600393527387,
+              "plan_return": 466.0531335247268,
+              "pi95_cov": 0.8833333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.00083,
+                  0.00128,
+                  0.00066,
+                  0.00075,
+                  0.00135
+                ],
+                "boundary_decision": "TRANSFER",
+                "n_actions_transferred": 5
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.02115835692594826,
+              "x_h3": 0.03776487101318861,
+              "interior_nrmse": 0.020431103670020694,
+              "boundary_nrmse": 0.023846600393527387,
+              "plan_return": 466.0531335247268,
+              "pi95_cov": 0.8833333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.9025,
+                  1.1614,
+                  0.5915,
+                  0.7428,
+                  1.3536
+                ],
+                "boundary_decision": "TRANSFER",
+                "n_actions_transferred": 5
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.1065143516562621,
+              "x_h3": 0.2355279472142879,
+              "interior_nrmse": 0.09076170697215973,
+              "boundary_nrmse": 0.1541939873463572,
+              "plan_return": 466.4256693665323,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        },
+        "B_boundary_shift": {
+          "oracle_return": 203.8892999522467,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.1243233991654277,
+              "x_h3": 0.1790373724772986,
+              "interior_nrmse": 0.07410044783263388,
+              "boundary_nrmse": 0.14944516953562278,
+              "plan_return": 185.32364586434247,
+              "pi95_cov": 0.9416666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.7703609028143278,
+              "x_h3": 1.1161859146686028,
+              "interior_nrmse": 0.6977433096016648,
+              "boundary_nrmse": 0.8167202521696532,
+              "plan_return": 140.9443181995642,
+              "pi95_cov": 0.3416666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.11968584854482661,
+              "x_h3": 0.16189747672704466,
+              "interior_nrmse": 0.07700316004871603,
+              "boundary_nrmse": 0.1418399929106043,
+              "plan_return": 203.3321977481187,
+              "pi95_cov": 0.8416666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.28268374396664336,
+              "x_h3": 0.28237498300829933,
+              "interior_nrmse": 0.044133160285825056,
+              "boundary_nrmse": 0.3656707677285821,
+              "plan_return": 180.609469051945,
+              "pi95_cov": 0.5916666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.08057316754104993,
+              "x_h3": 0.1459337020678252,
+              "interior_nrmse": 0.06307887320822404,
+              "boundary_nrmse": 0.0906996258588205,
+              "plan_return": 199.49995686801628,
+              "pi95_cov": 0.8583333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  0.00192,
+                  0.00134,
+                  0.00547,
+                  0.03276,
+                  0.03297
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 3
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.17161259150567718,
+              "x_h3": 0.1833884128191007,
+              "interior_nrmse": 0.0641420439721635,
+              "boundary_nrmse": 0.21664893062974674,
+              "plan_return": 180.609469051945,
+              "pi95_cov": 0.725,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "ADAPT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  2.0901,
+                  1.1356,
+                  5.1829,
+                  28.5817,
+                  35.7884
+                ],
+                "boundary_decision": "TRANSFER",
+                "n_actions_transferred": 3
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.18076513244378598,
+              "x_h3": 0.34562441191938287,
+              "interior_nrmse": 0.14388234756282606,
+              "boundary_nrmse": 0.20233564381503016,
+              "plan_return": 140.9443181995642,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        },
+        "C_partial_mut": {
+          "oracle_return": 137.53313623984965,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.09816576426649559,
+              "x_h3": 0.24136714163451944,
+              "interior_nrmse": 0.09045775319436157,
+              "boundary_nrmse": 0.1191586898451211,
+              "plan_return": 134.174858140392,
+              "pi95_cov": 0.8833333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.41203536233204857,
+              "x_h3": 0.7353728639168551,
+              "interior_nrmse": 0.3647903024824526,
+              "boundary_nrmse": 0.5337966803295805,
+              "plan_return": 90.21446142914641,
+              "pi95_cov": 0.7333333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.11052839578490652,
+              "x_h3": 0.2142474763829307,
+              "interior_nrmse": 0.10100046277586594,
+              "boundary_nrmse": 0.13616466276721048,
+              "plan_return": 136.48702917540984,
+              "pi95_cov": 0.8916666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.39674008898123675,
+              "x_h3": 0.7645212973377375,
+              "interior_nrmse": 0.36083205409809005,
+              "boundary_nrmse": 0.49271046962616627,
+              "plan_return": 101.41483743835124,
+              "pi95_cov": 0.75,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.05393235385497496,
+              "x_h3": 0.10687182302914837,
+              "interior_nrmse": 0.050904639270231346,
+              "boundary_nrmse": 0.06248783767191636,
+              "plan_return": 134.174858140392,
+              "pi95_cov": 0.925,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "RECONSTRUCT",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.00076,
+                  0.00052,
+                  0.79083,
+                  0.0007,
+                  0.01204
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 4
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.05679088662088223,
+              "x_h3": 0.11466892001244199,
+              "interior_nrmse": 0.05374461963003424,
+              "boundary_nrmse": 0.06543554863169465,
+              "plan_return": 134.174858140392,
+              "pi95_cov": 0.9333333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "RECONSTRUCT",
+                  "TRANSFER",
+                  "ADAPT"
+                ],
+                "action_stats": [
+                  0.8337,
+                  0.4527,
+                  507.7665,
+                  0.5109,
+                  11.0406
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 4
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.12631730035134453,
+              "x_h3": 0.26770833899185553,
+              "interior_nrmse": 0.11029977124163012,
+              "boundary_nrmse": 0.16687985006711126,
+              "plan_return": 119.89442952503731,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        },
+        "D_full_mut": {
+          "oracle_return": 45.137545510788506,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.1120040080810572,
+              "x_h3": 0.12245277488947022,
+              "interior_nrmse": 0.09511871964616317,
+              "boundary_nrmse": 0.15681596340508125,
+              "plan_return": 50.694935620491826,
+              "pi95_cov": 0.9583333333333334,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 1.0387117817600466,
+              "x_h3": 1.7279089985555156,
+              "interior_nrmse": 0.982910827732339,
+              "boundary_nrmse": 1.211397818371984,
+              "plan_return": 8.569001809345112,
+              "pi95_cov": 0.21666666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.11028983781463765,
+              "x_h3": 0.12154438536155136,
+              "interior_nrmse": 0.08844841055695125,
+              "boundary_nrmse": 0.16466706200208345,
+              "plan_return": 45.137545510788506,
+              "pi95_cov": 0.95,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.6182474295671322,
+              "x_h3": 1.1468856100292515,
+              "interior_nrmse": 0.5856938711027139,
+              "boundary_nrmse": 0.7191846260089649,
+              "plan_return": 46.741227138061014,
+              "pi95_cov": 0.18333333333333332,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.11028983781463765,
+              "x_h3": 0.12154438536155136,
+              "interior_nrmse": 0.08844841055695125,
+              "boundary_nrmse": 0.16466706200208345,
+              "plan_return": 45.137545510788506,
+              "pi95_cov": 0.95,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  0.05309,
+                  0.14794,
+                  0.08015,
+                  0.11965,
+                  0.09939
+                ],
+                "boundary_decision": "RECONSTRUCT",
+                "n_actions_transferred": 0
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.11028983781463765,
+              "x_h3": 0.12154438536155136,
+              "interior_nrmse": 0.08844841055695125,
+              "boundary_nrmse": 0.16466706200208345,
+              "plan_return": 45.137545510788506,
+              "pi95_cov": 0.95,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  50.031,
+                  134.4285,
+                  78.1165,
+                  117.0323,
+                  68.8621
+                ],
+                "boundary_decision": "RECONSTRUCT",
+                "n_actions_transferred": 0
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.2135919091875461,
+              "x_h3": 0.29128587240320036,
+              "interior_nrmse": 0.1869519014455871,
+              "boundary_nrmse": 0.28701117472195725,
+              "plan_return": 48.80015652491517,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        }
+      },
+      "wall_time_s": 22.702
+    },
+    {
+      "seed": 9403,
+      "regimes": {
+        "A_rep_shift": {
+          "oracle_return": 461.7345429995109,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.12223087319900494,
+              "x_h3": 0.17339888152256566,
+              "interior_nrmse": 0.10662813678455517,
+              "boundary_nrmse": 0.16884764800435864,
+              "plan_return": 414.3760030115768,
+              "pi95_cov": 0.8666666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.03215758566791833,
+              "x_h3": 0.07207519523711227,
+              "interior_nrmse": 0.03068005323837151,
+              "boundary_nrmse": 0.03724137461553013,
+              "plan_return": 462.03032333609934,
+              "pi95_cov": 0.95,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.09255307632884217,
+              "x_h3": 0.18351445539417088,
+              "interior_nrmse": 0.08267991969610329,
+              "boundary_nrmse": 0.12304658728485889,
+              "plan_return": 451.59071068694965,
+              "pi95_cov": 0.9666666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.0376903639894703,
+              "x_h3": 0.05767591214075158,
+              "interior_nrmse": 0.02876898881659972,
+              "boundary_nrmse": 0.06061037084649307,
+              "plan_return": 462.3623008808624,
+              "pi95_cov": 0.9666666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.027350523483418012,
+              "x_h3": 0.05405400881877993,
+              "interior_nrmse": 0.026641497137426178,
+              "boundary_nrmse": 0.029891835710982154,
+              "plan_return": 462.3623008808624,
+              "pi95_cov": 0.9666666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.00076,
+                  0.00103,
+                  0.00126,
+                  0.00087,
+                  0.00202
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 5
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.027350523483418012,
+              "x_h3": 0.05405400881877993,
+              "interior_nrmse": 0.026641497137426178,
+              "boundary_nrmse": 0.029891835710982154,
+              "plan_return": 462.3623008808624,
+              "pi95_cov": 0.9666666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.717,
+                  1.2455,
+                  0.417,
+                  0.8596,
+                  0.6306
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 5
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.13198439764327968,
+              "x_h3": 0.24097550857315225,
+              "interior_nrmse": 0.13197110267660378,
+              "boundary_nrmse": 0.1320349063076351,
+              "plan_return": 409.8778953481749,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        },
+        "B_boundary_shift": {
+          "oracle_return": 202.17779045664653,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.16089200364857112,
+              "x_h3": 0.25942524701660225,
+              "interior_nrmse": 0.15389472098277054,
+              "boundary_nrmse": 0.1652403777766443,
+              "plan_return": 198.5825525408143,
+              "pi95_cov": 0.8916666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.49123029062190005,
+              "x_h3": 0.9010471128208526,
+              "interior_nrmse": 0.35283359699703903,
+              "boundary_nrmse": 0.5625986804638228,
+              "plan_return": 191.93007103637106,
+              "pi95_cov": 0.6166666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.16215320284163098,
+              "x_h3": 0.2724748904103397,
+              "interior_nrmse": 0.1552689943242596,
+              "boundary_nrmse": 0.1664348856545664,
+              "plan_return": 198.5825525408143,
+              "pi95_cov": 0.9166666666666666,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.2968570094659887,
+              "x_h3": 0.3353227324093283,
+              "interior_nrmse": 0.03634625861253341,
+              "boundary_nrmse": 0.3794877714578216,
+              "plan_return": 183.3404480133005,
+              "pi95_cov": 0.6,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.06025188675711755,
+              "x_h3": 0.08346404302582036,
+              "interior_nrmse": 0.03634625861253341,
+              "boundary_nrmse": 0.07153363120574745,
+              "plan_return": 200.44564557657782,
+              "pi95_cov": 0.8333333333333334,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.00133,
+                  0.00231,
+                  0.00607,
+                  0.00484,
+                  0.01708
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 5
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.06240624011210415,
+              "x_h3": 0.10892629625721878,
+              "interior_nrmse": 0.04554564022890787,
+              "boundary_nrmse": 0.07117868749728884,
+              "plan_return": 200.44564557657782,
+              "pi95_cov": 0.9,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "ADAPT",
+                  "ADAPT"
+                ],
+                "action_stats": [
+                  1.2112,
+                  2.4445,
+                  1.5179,
+                  5.4451,
+                  5.6725
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 5
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.18951730280835716,
+              "x_h3": 0.3456558446027657,
+              "interior_nrmse": 0.21332007459249133,
+              "boundary_nrmse": 0.17246244852798995,
+              "plan_return": 175.16588529493143,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        },
+        "C_partial_mut": {
+          "oracle_return": 137.55651541067732,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.08314883909769709,
+              "x_h3": 0.17240391366185737,
+              "interior_nrmse": 0.07494629483245496,
+              "boundary_nrmse": 0.09969731636166601,
+              "plan_return": 132.21311390213862,
+              "pi95_cov": 0.975,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.5451290959139194,
+              "x_h3": 0.9096243117287659,
+              "interior_nrmse": 0.5525284180802664,
+              "boundary_nrmse": 0.5274605017172067,
+              "plan_return": 14.034120885735724,
+              "pi95_cov": 0.225,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.09130109967774584,
+              "x_h3": 0.18565274677123034,
+              "interior_nrmse": 0.08710893013625953,
+              "boundary_nrmse": 0.10040442894824683,
+              "plan_return": 119.03746579578745,
+              "pi95_cov": 0.95,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.4468644607097777,
+              "x_h3": 0.8014034661846036,
+              "interior_nrmse": 0.3412107519130369,
+              "boundary_nrmse": 0.6276689737717339,
+              "plan_return": 91.72399160041148,
+              "pi95_cov": 0.6083333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.06905966147204681,
+              "x_h3": 0.14213545452233564,
+              "interior_nrmse": 0.06787459123064994,
+              "boundary_nrmse": 0.0717487455947078,
+              "plan_return": 137.55651541067732,
+              "pi95_cov": 0.875,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "RECONSTRUCT",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.00154,
+                  0.00147,
+                  0.76974,
+                  0.00427,
+                  0.0108
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 4
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.06905966147204681,
+              "x_h3": 0.14213545452233564,
+              "interior_nrmse": 0.06787459123064994,
+              "boundary_nrmse": 0.0717487455947078,
+              "plan_return": 137.55651541067732,
+              "pi95_cov": 0.875,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "RECONSTRUCT",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  1.282,
+                  1.604,
+                  99.5218,
+                  2.7407,
+                  3.2115
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 4
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.09654769164310607,
+              "x_h3": 0.24365393836766513,
+              "interior_nrmse": 0.09347639431163307,
+              "boundary_nrmse": 0.10335974967977235,
+              "plan_return": 115.38013469825732,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        },
+        "D_full_mut": {
+          "oracle_return": 43.51965938802156,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.09638209699483251,
+              "x_h3": 0.1270999303132424,
+              "interior_nrmse": 0.09022613068329896,
+              "boundary_nrmse": 0.12126443426791395,
+              "plan_return": 50.13454789399402,
+              "pi95_cov": 0.925,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 1.267333668465598,
+              "x_h3": 1.9730160381368547,
+              "interior_nrmse": 1.2237234401919443,
+              "boundary_nrmse": 1.4554290566494705,
+              "plan_return": -51.543076484126324,
+              "pi95_cov": 0.19166666666666668,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.09413476422549888,
+              "x_h3": 0.13128380694629346,
+              "interior_nrmse": 0.0879175603574053,
+              "boundary_nrmse": 0.11915220674059616,
+              "plan_return": 49.57675650802913,
+              "pi95_cov": 0.9166666666666666,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.7675143553552346,
+              "x_h3": 1.2352124367861568,
+              "interior_nrmse": 0.7053512732545708,
+              "boundary_nrmse": 1.0103010591299428,
+              "plan_return": -4.009811952854931,
+              "pi95_cov": 0.175,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.09348877820351234,
+              "x_h3": 0.1309719035887238,
+              "interior_nrmse": 0.08791756035740524,
+              "boundary_nrmse": 0.1162095712592969,
+              "plan_return": 47.71871681524458,
+              "pi95_cov": 0.9166666666666666,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  0.07497,
+                  0.49312,
+                  0.03591,
+                  0.08281,
+                  0.09907
+                ],
+                "boundary_decision": "RECONSTRUCT",
+                "n_actions_transferred": 0
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.09348877820351234,
+              "x_h3": 0.1309719035887238,
+              "interior_nrmse": 0.08791756035740524,
+              "boundary_nrmse": 0.1162095712592969,
+              "plan_return": 47.71871681524458,
+              "pi95_cov": 0.9166666666666666,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  57.4408,
+                  507.3786,
+                  14.8295,
+                  54.3755,
+                  32.9349
+                ],
+                "boundary_decision": "RECONSTRUCT",
+                "n_actions_transferred": 0
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.2677471417375605,
+              "x_h3": 0.40463620434767034,
+              "interior_nrmse": 0.27290779114217434,
+              "boundary_nrmse": 0.24194019773607867,
+              "plan_return": 43.51965938802156,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        }
+      },
+      "wall_time_s": 23.137
+    },
+    {
+      "seed": 9404,
+      "regimes": {
+        "A_rep_shift": {
+          "oracle_return": 463.85961574708045,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.06963223138326656,
+              "x_h3": 0.09542919731012213,
+              "interior_nrmse": 0.04963827995163832,
+              "boundary_nrmse": 0.13891384497216025,
+              "plan_return": 423.5809095296917,
+              "pi95_cov": 0.9416666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.36663907570165866,
+              "x_h3": 0.6231563613808419,
+              "interior_nrmse": 0.34978985630371473,
+              "boundary_nrmse": 0.4555896135615475,
+              "plan_return": 462.1773000012838,
+              "pi95_cov": 0.9,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.07965606134352476,
+              "x_h3": 0.09702832508690494,
+              "interior_nrmse": 0.05827823695586927,
+              "boundary_nrmse": 0.1555986965156176,
+              "plan_return": 451.3022409795281,
+              "pi95_cov": 0.9083333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.022205160922129222,
+              "x_h3": 0.04594485285615345,
+              "interior_nrmse": 0.015358730155637351,
+              "boundary_nrmse": 0.045290935084426234,
+              "plan_return": 462.1773000012838,
+              "pi95_cov": 0.925,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.022205160922129222,
+              "x_h3": 0.04594485285615345,
+              "interior_nrmse": 0.015358730155637351,
+              "boundary_nrmse": 0.045290935084426234,
+              "plan_return": 462.1773000012838,
+              "pi95_cov": 0.925,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.00056,
+                  0.00117,
+                  0.00065,
+                  0.0011,
+                  0.00125
+                ],
+                "boundary_decision": "TRANSFER",
+                "n_actions_transferred": 5
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.022205160922129222,
+              "x_h3": 0.04594485285615345,
+              "interior_nrmse": 0.015358730155637351,
+              "boundary_nrmse": 0.045290935084426234,
+              "plan_return": 462.1773000012838,
+              "pi95_cov": 0.925,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.506,
+                  0.8901,
+                  0.5937,
+                  1.0033,
+                  1.2468
+                ],
+                "boundary_decision": "TRANSFER",
+                "n_actions_transferred": 5
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.11960141447129949,
+              "x_h3": 0.24067599878357762,
+              "interior_nrmse": 0.10781913302198755,
+              "boundary_nrmse": 0.17475501513061487,
+              "plan_return": 423.06088196006493,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        },
+        "B_boundary_shift": {
+          "oracle_return": 202.55959641612958,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.19158324617924424,
+              "x_h3": 0.18590883978866737,
+              "interior_nrmse": 0.11311257220025193,
+              "boundary_nrmse": 0.24005231859960058,
+              "plan_return": 200.38616174876043,
+              "pi95_cov": 0.8416666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.3161655537584585,
+              "x_h3": 0.32957843049236707,
+              "interior_nrmse": 0.13704246483755492,
+              "boundary_nrmse": 0.41351321027411314,
+              "plan_return": 199.33643159477018,
+              "pi95_cov": 0.775,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.2002715127034999,
+              "x_h3": 0.20819486779196858,
+              "interior_nrmse": 0.12229590196916292,
+              "boundary_nrmse": 0.2492328651429884,
+              "plan_return": 200.38616174876043,
+              "pi95_cov": 0.8916666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.25694546345572006,
+              "x_h3": 0.26023187446363344,
+              "interior_nrmse": 0.031124644724530533,
+              "boundary_nrmse": 0.3506303900285392,
+              "plan_return": 174.31878395812865,
+              "pi95_cov": 0.825,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.21578097044282718,
+              "x_h3": 0.279289206632928,
+              "interior_nrmse": 0.06251620426270735,
+              "boundary_nrmse": 0.28962550766265566,
+              "plan_return": 170.4339466953128,
+              "pi95_cov": 0.8333333333333334,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "RECONSTRUCT",
+                  "TRANSFER",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  0.00114,
+                  0.00236,
+                  0.03014,
+                  0.00122,
+                  0.03884
+                ],
+                "boundary_decision": "TRANSFER",
+                "n_actions_transferred": 3
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.21578097044282718,
+              "x_h3": 0.279289206632928,
+              "interior_nrmse": 0.06251620426270735,
+              "boundary_nrmse": 0.28962550766265566,
+              "plan_return": 170.4339466953128,
+              "pi95_cov": 0.8333333333333334,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "RECONSTRUCT",
+                  "TRANSFER",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  0.9638,
+                  1.6961,
+                  32.6041,
+                  1.1469,
+                  44.4126
+                ],
+                "boundary_decision": "TRANSFER",
+                "n_actions_transferred": 3
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.20623677092543938,
+              "x_h3": 0.2578276242778924,
+              "interior_nrmse": 0.14745519539086915,
+              "boundary_nrmse": 0.24642515159069256,
+              "plan_return": 139.099992659528,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        },
+        "C_partial_mut": {
+          "oracle_return": 139.09637648341686,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.10864398718185203,
+              "x_h3": 0.1759592985070568,
+              "interior_nrmse": 0.09959693205006544,
+              "boundary_nrmse": 0.12950034071244823,
+              "plan_return": 134.26646999173715,
+              "pi95_cov": 0.8333333333333334,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.3758435408524306,
+              "x_h3": 0.6619167151761777,
+              "interior_nrmse": 0.30682508751411675,
+              "boundary_nrmse": 0.5152428635213415,
+              "plan_return": 114.48354843131624,
+              "pi95_cov": 0.725,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.1258816876384614,
+              "x_h3": 0.19167674552074207,
+              "interior_nrmse": 0.09730181024980095,
+              "boundary_nrmse": 0.18072740528952508,
+              "plan_return": 134.26646999173715,
+              "pi95_cov": 0.8833333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.3590099281419946,
+              "x_h3": 0.659413399028763,
+              "interior_nrmse": 0.2946995026129432,
+              "boundary_nrmse": 0.48961385822369685,
+              "plan_return": 114.48966826808949,
+              "pi95_cov": 0.7083333333333334,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.08844824894318841,
+              "x_h3": 0.12811652376618848,
+              "interior_nrmse": 0.08434701754242964,
+              "boundary_nrmse": 0.09844497677007383,
+              "plan_return": 134.26646999173715,
+              "pi95_cov": 0.8833333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "RECONSTRUCT",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.00089,
+                  0.00106,
+                  0.79146,
+                  0.00052,
+                  0.00084
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 4
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.08844824894318841,
+              "x_h3": 0.12811652376618848,
+              "interior_nrmse": 0.08434701754242964,
+              "boundary_nrmse": 0.09844497677007383,
+              "plan_return": 134.26646999173715,
+              "pi95_cov": 0.8833333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "RECONSTRUCT",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.7999,
+                  0.8535,
+                  815.8226,
+                  0.4087,
+                  0.8083
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 4
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.10827907796283799,
+              "x_h3": 0.2204122593245128,
+              "interior_nrmse": 0.0800649582974925,
+              "boundary_nrmse": 0.16041786913362371,
+              "plan_return": 312.746378943567,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        },
+        "D_full_mut": {
+          "oracle_return": 44.838260892589894,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.10915722828400655,
+              "x_h3": 0.11826379364084834,
+              "interior_nrmse": 0.08510336702960848,
+              "boundary_nrmse": 0.16103866836029826,
+              "plan_return": 44.838260892589894,
+              "pi95_cov": 0.9416666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.7841389277792953,
+              "x_h3": 1.0604452722747484,
+              "interior_nrmse": 0.7727901171813144,
+              "boundary_nrmse": 0.8172403175297475,
+              "plan_return": 35.82965471733714,
+              "pi95_cov": 0.18333333333333332,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.11089805158242154,
+              "x_h3": 0.11805680026655913,
+              "interior_nrmse": 0.08643790804675433,
+              "boundary_nrmse": 0.16364282916343215,
+              "plan_return": 44.838260892589894,
+              "pi95_cov": 0.8916666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.8019907610204318,
+              "x_h3": 1.1061386459872562,
+              "interior_nrmse": 0.7415271182891165,
+              "boundary_nrmse": 0.9608170073297205,
+              "plan_return": -11.67444984654753,
+              "pi95_cov": 0.18333333333333332,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.11089805158242154,
+              "x_h3": 0.11805680026655913,
+              "interior_nrmse": 0.08643790804675433,
+              "boundary_nrmse": 0.16364282916343215,
+              "plan_return": 44.838260892589894,
+              "pi95_cov": 0.8916666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  0.06258,
+                  0.12576,
+                  0.62635,
+                  0.056,
+                  0.07256
+                ],
+                "boundary_decision": "RECONSTRUCT",
+                "n_actions_transferred": 0
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.11089805158242154,
+              "x_h3": 0.11805680026655913,
+              "interior_nrmse": 0.08643790804675433,
+              "boundary_nrmse": 0.16364282916343215,
+              "plan_return": 44.838260892589894,
+              "pi95_cov": 0.8916666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  55.626,
+                  66.6424,
+                  456.3458,
+                  35.0405,
+                  35.2701
+                ],
+                "boundary_decision": "RECONSTRUCT",
+                "n_actions_transferred": 0
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.22625632897070047,
+              "x_h3": 0.47537138560957487,
+              "interior_nrmse": 0.21616125406377684,
+              "boundary_nrmse": 0.25414689123008627,
+              "plan_return": 24.975317330903493,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        }
+      },
+      "wall_time_s": 22.737
+    },
+    {
+      "seed": 9405,
+      "regimes": {
+        "A_rep_shift": {
+          "oracle_return": 468.9886286553763,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.10687045728389351,
+              "x_h3": 0.09630689756556861,
+              "interior_nrmse": 0.050683500899498544,
+              "boundary_nrmse": 0.2083900313249404,
+              "plan_return": 409.66646687877454,
+              "pi95_cov": 0.8083333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.6172612985236277,
+              "x_h3": 0.8540811470474691,
+              "interior_nrmse": 0.6100764577459853,
+              "boundary_nrmse": 0.6425673432170783,
+              "plan_return": 153.0101940748615,
+              "pi95_cov": 0.3,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.11068277612576702,
+              "x_h3": 0.10734023492156886,
+              "interior_nrmse": 0.05309743584079259,
+              "boundary_nrmse": 0.21528724001804708,
+              "plan_return": 469.7885311485022,
+              "pi95_cov": 0.85,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.025481079791902048,
+              "x_h3": 0.028150099805560793,
+              "interior_nrmse": 0.014046989191689133,
+              "boundary_nrmse": 0.04778411716343821,
+              "plan_return": 467.7961183090559,
+              "pi95_cov": 0.9166666666666666,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.025481079791902048,
+              "x_h3": 0.028150099805560793,
+              "interior_nrmse": 0.014046989191689133,
+              "boundary_nrmse": 0.04778411716343821,
+              "plan_return": 467.7961183090559,
+              "pi95_cov": 0.9166666666666666,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.00063,
+                  0.00093,
+                  0.00159,
+                  0.00148,
+                  0.00118
+                ],
+                "boundary_decision": "TRANSFER",
+                "n_actions_transferred": 5
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.025481079791902048,
+              "x_h3": 0.028150099805560793,
+              "interior_nrmse": 0.014046989191689133,
+              "boundary_nrmse": 0.04778411716343821,
+              "plan_return": 467.7961183090559,
+              "pi95_cov": 0.9166666666666666,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "action_stats": [
+                  0.5689,
+                  0.6095,
+                  1.4069,
+                  1.3739,
+                  1.2721
+                ],
+                "boundary_decision": "TRANSFER",
+                "n_actions_transferred": 5
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.12487161190644665,
+              "x_h3": 0.21245542210392726,
+              "interior_nrmse": 0.08275803152316581,
+              "boundary_nrmse": 0.2172692859231384,
+              "plan_return": 426.2302623908294,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        },
+        "B_boundary_shift": {
+          "oracle_return": 205.94629921733562,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.18106486029692628,
+              "x_h3": 0.19296948776629805,
+              "interior_nrmse": 0.2152007927447869,
+              "boundary_nrmse": 0.14473578778643878,
+              "plan_return": 205.09691360449472,
+              "pi95_cov": 0.9,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.6249230269384516,
+              "x_h3": 1.0720663142334452,
+              "interior_nrmse": 0.5617331720400245,
+              "boundary_nrmse": 0.6753816280424086,
+              "plan_return": 109.51789222307848,
+              "pi95_cov": 0.2833333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.20185920264130047,
+              "x_h3": 0.23287470538375607,
+              "interior_nrmse": 0.22232831507018166,
+              "boundary_nrmse": 0.1820706962937413,
+              "plan_return": 201.8063340107309,
+              "pi95_cov": 0.875,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.22851867195473954,
+              "x_h3": 0.265862706372941,
+              "interior_nrmse": 0.06652071357681778,
+              "boundary_nrmse": 0.3066628266793973,
+              "plan_return": 189.2858207545419,
+              "pi95_cov": 0.6333333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.16027122076454436,
+              "x_h3": 0.17070276631400727,
+              "interior_nrmse": 0.1865265915131164,
+              "boundary_nrmse": 0.13311544692946647,
+              "plan_return": 207.28619589685545,
+              "pi95_cov": 0.8666666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  0.00157,
+                  0.01972,
+                  0.00807,
+                  0.04197,
+                  0.03573
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 3
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.19762333105784932,
+              "x_h3": 0.2656137747386906,
+              "interior_nrmse": 0.21393392477840442,
+              "boundary_nrmse": 0.18215743378955215,
+              "plan_return": 165.4135080934045,
+              "pi95_cov": 0.8416666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "TRANSFER",
+                  "RECONSTRUCT",
+                  "ADAPT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  1.4886,
+                  14.1448,
+                  6.3534,
+                  40.0165,
+                  40.2233
+                ],
+                "boundary_decision": "TRANSFER",
+                "n_actions_transferred": 2
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.21513198689034477,
+              "x_h3": 0.3446787404703548,
+              "interior_nrmse": 0.2181128461032071,
+              "boundary_nrmse": 0.21248943541507034,
+              "plan_return": 177.79160925809256,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        },
+        "C_partial_mut": {
+          "oracle_return": 131.96819325890485,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.12203801457250944,
+              "x_h3": 0.2279946079930608,
+              "interior_nrmse": 0.11136515626065875,
+              "boundary_nrmse": 0.14033232298144296,
+              "plan_return": 126.79097586471603,
+              "pi95_cov": 0.775,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 0.4518415209615808,
+              "x_h3": 0.7446270899783405,
+              "interior_nrmse": 0.3692217687444645,
+              "boundary_nrmse": 0.5786788730168155,
+              "plan_return": 86.1969057440175,
+              "pi95_cov": 0.6833333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.12453793712921811,
+              "x_h3": 0.24133306179369496,
+              "interior_nrmse": 0.1173427641923432,
+              "boundary_nrmse": 0.13734300250072146,
+              "plan_return": 132.99246460908176,
+              "pi95_cov": 0.8666666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 0.16308841052339038,
+              "x_h3": 0.3772424892079047,
+              "interior_nrmse": 0.1416479894050301,
+              "boundary_nrmse": 0.19795734194018738,
+              "plan_return": 75.1710291347829,
+              "pi95_cov": 0.3333333333333333,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.15292837419936692,
+              "x_h3": 0.3635021348375609,
+              "interior_nrmse": 0.14779247781470503,
+              "boundary_nrmse": 0.16236692959280527,
+              "plan_return": 135.8616948199426,
+              "pi95_cov": 0.4166666666666667,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  0.00536,
+                  0.00962,
+                  0.02132,
+                  0.00791,
+                  0.0384
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 4
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.10740597553746671,
+              "x_h3": 0.24309562880217608,
+              "interior_nrmse": 0.10901783779035233,
+              "boundary_nrmse": 0.10422992901207917,
+              "plan_return": 122.73819371048744,
+              "pi95_cov": 0.675,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "ADAPT",
+                  "ADAPT",
+                  "RECONSTRUCT",
+                  "ADAPT",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  4.5069,
+                  7.2578,
+                  17.3851,
+                  7.1921,
+                  38.9035
+                ],
+                "boundary_decision": "ADAPT",
+                "n_actions_transferred": 3
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.13694120483164313,
+              "x_h3": 0.31364150780170724,
+              "interior_nrmse": 0.1386902878110982,
+              "boundary_nrmse": 0.13350642178508607,
+              "plan_return": 9.043806242640455,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        },
+        "D_full_mut": {
+          "oracle_return": 43.524848328472125,
+          "variants": {
+            "full_reconstruction": {
+              "x_h1": 0.10679487946567057,
+              "x_h3": 0.09245672174778406,
+              "interior_nrmse": 0.07922770984826323,
+              "boundary_nrmse": 0.15612899765894964,
+              "plan_return": 44.789905256004374,
+              "pi95_cov": 0.975,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "unconditional": {
+              "x_h1": 1.066515372118873,
+              "x_h3": 1.6000888269051456,
+              "interior_nrmse": 1.0440443530885244,
+              "boundary_nrmse": 1.1213456216859417,
+              "plan_return": -11.581929818946856,
+              "pi95_cov": 0.10833333333333334,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "unconditional",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "consequence_only": {
+              "x_h1": 0.10513703046590821,
+              "x_h3": 0.09138898326893709,
+              "interior_nrmse": 0.07665038939318565,
+              "boundary_nrmse": 0.1554103819993069,
+              "plan_return": 44.789905256004374,
+              "pi95_cov": 0.925,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            },
+            "dynamics_and_boundary": {
+              "x_h1": 1.0201032426743954,
+              "x_h3": 1.2370857785104643,
+              "interior_nrmse": 1.0318868280721416,
+              "boundary_nrmse": 0.9896716397547104,
+              "plan_return": 43.524848328472125,
+              "pi95_cov": 0.09166666666666666,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "dynamics_and_boundary",
+                "action_decisions": [
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER",
+                  "TRANSFER"
+                ],
+                "boundary_decision": "TRANSFER"
+              }
+            },
+            "selective": {
+              "x_h1": 0.10513703046590821,
+              "x_h3": 0.09138898326893709,
+              "interior_nrmse": 0.07665038939318565,
+              "boundary_nrmse": 0.1554103819993069,
+              "plan_return": 44.789905256004374,
+              "pi95_cov": 0.925,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "selective",
+                "action_decisions": [
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  0.07314,
+                  0.13406,
+                  0.09901,
+                  0.14963,
+                  0.1377
+                ],
+                "boundary_decision": "RECONSTRUCT",
+                "n_actions_transferred": 0
+              }
+            },
+            "uncertainty_guided": {
+              "x_h1": 0.10513703046590821,
+              "x_h3": 0.09138898326893709,
+              "interior_nrmse": 0.07665038939318565,
+              "boundary_nrmse": 0.1554103819993069,
+              "plan_return": 44.789905256004374,
+              "pi95_cov": 0.925,
+              "forgetting_src": 0.0,
+              "decisions": {
+                "mode": "uncertainty_guided",
+                "action_decisions": [
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT",
+                  "RECONSTRUCT"
+                ],
+                "action_stats": [
+                  63.0772,
+                  86.5397,
+                  77.602,
+                  129.2075,
+                  104.6101
+                ],
+                "boundary_decision": "RECONSTRUCT",
+                "n_actions_transferred": 0
+              }
+            },
+            "fair_mlp": {
+              "x_h1": 0.20728059046696487,
+              "x_h3": 0.3348297719255021,
+              "interior_nrmse": 0.1936479025080747,
+              "boundary_nrmse": 0.2383072232115528,
+              "plan_return": 42.22856771491413,
+              "pi95_cov": 0.0,
+              "forgetting_src": 0.0,
+              "decisions": {}
+            }
+          }
+        }
+      },
+      "wall_time_s": 22.456
+    }
+  ]
+}
