@@ -75,6 +75,7 @@ class CaspianWorldModel:
         alignment_mode: str = "occam_hierarchy",
         boundary_aware: bool = True,
         basis_sync: bool = True,
+        transfer_mode: str = "consequence_only",
     ):
         self.in_dim = int(in_dim)
         self.n_latent = int(n_latent)
@@ -82,6 +83,7 @@ class CaspianWorldModel:
         self.seed = int(seed)
         self.boundary_aware = bool(boundary_aware)
         self.basis_sync = bool(basis_sync)
+        self.transfer_mode = str(transfer_mode)
         self.memory = PersistentWorldMemory(
             in_dim=self.in_dim,
             n_latent=self.n_latent,
@@ -89,6 +91,7 @@ class CaspianWorldModel:
             alignment_mode=alignment_mode,
         )
         self.dynamics: Dict[int, BayesianDynamicsEngram] = {}
+        self.last_transfer_decisions: Dict[str, Any] = {}
         self.raw_replay_samples_stored: int = 0
         self._last_z_cache: Optional[np.ndarray] = None
         self._last_a_cache: Optional[int] = None
@@ -414,6 +417,379 @@ class CaspianWorldModel:
                     mask[a, k] = 1.0
         return mask
 
+    @staticmethod
+    def _transform_dynamics_candidate(
+        src_dyn: BayesianDynamicsEngram, Q: np.ndarray, c: np.ndarray
+    ) -> Dict[str, Any]:
+        """Apply exact affine-orthogonal map (z_tgt = z_src @ Q + c) to a source dynamics engram."""
+        K = src_dyn.n_latent
+        A = src_dyn.n_actions
+        c_row = c.reshape(1, K)
+        T_inv = np.eye(K + 1, dtype=float)
+        T_inv[0, 1:] = -(c_row @ Q.T)[0]
+        T_inv[1:, 1:] = Q.T
+
+        theta_new = np.zeros_like(src_dyn.theta_trans)
+        cov_new = np.zeros_like(src_dyn.cov_trans)
+        sig_cov_new = np.zeros_like(src_dyn.sigma_cov_trans)
+        sig2_new = np.zeros_like(src_dyn.sigma2_trans)
+        for a in range(A):
+            theta_new[a] = T_inv @ src_dyn.theta_trans[a] @ Q
+            for k in range(K):
+                cov_new[a, k] = T_inv @ src_dyn.cov_trans[a, k] @ T_inv.T
+            sig_cov_new[a] = Q.T @ src_dyn.sigma_cov_trans[a] @ Q
+            sig2_new[a] = np.maximum(np.diag(sig_cov_new[a]), 1e-8)
+
+        U_box_new = Q.T @ src_dyn.U_box
+        c_box = (c_row @ U_box_new).reshape(-1)
+        return {
+            "theta_trans": theta_new,
+            "cov_trans": cov_new,
+            "sigma_cov_trans": sig_cov_new,
+            "sigma2_trans": sig2_new,
+            "Q_epi": src_dyn.Q_epi @ Q,
+            "U_box": U_box_new,
+            "z_min": src_dyn.z_min + c_box,
+            "z_max": src_dyn.z_max + c_box,
+            "action_costs": src_dyn.action_costs.copy(),
+        }
+
+    def _align_source_dynamics_procrustes(
+        self,
+        src_dyn: BayesianDynamicsEngram,
+        Z_t: np.ndarray,
+        A_t: np.ndarray,
+        Z_next: np.ndarray,
+    ) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
+        """Align source dynamics into target latent frame via leave-one-action-out Orthogonal Procrustes
+        on interventional shift vectors + closed-form offset solve + trimmed residual refinement.
+        Breaks scalar consequence symmetries (e.g. s0 <-> s1) and tolerates single-action mutations (Regime C).
+        """
+        K = self.n_latent
+        A = self.n_actions
+        dZ = Z_next - Z_t
+
+        # Source pure interventional shifts relative to NOOP
+        delta_src = np.zeros((A - 1, K), dtype=float)
+        for a in range(1, A):
+            delta_src[a - 1] = src_dyn.theta_trans[a, 0, :] - src_dyn.theta_trans[0, 0, :]
+
+        # Target empirical interventional shifts relative to NOOP (estimated robustly)
+        idx0 = np.where(A_t == 0)[0]
+        if len(idx0) >= K + 2:
+            Psi0 = np.hstack([np.ones((len(idx0), 1)), Z_t[idx0]])
+            th0 = np.linalg.lstsq(Psi0, dZ[idx0], rcond=None)[0]
+            noop_pred = np.hstack([np.ones((len(Z_t), 1)), Z_t]) @ th0
+        else:
+            noop_pred = np.zeros_like(dZ)
+        dZ_rel = dZ - noop_pred
+
+        delta_tgt = np.zeros((A - 1, K), dtype=float)
+        valid_acts: List[int] = []
+        for a in range(1, A):
+            ia = np.where(A_t == a)[0]
+            if len(ia) >= 2:
+                # Median reduces sensitivity to clipped boundary samples
+                delta_tgt[a - 1] = np.median(dZ_rel[ia], axis=0)
+                valid_acts.append(a - 1)
+
+        # Candidate subsets: all valid actions + leave-one-out subsets (immune to 1 mutated action!)
+        subsets: List[List[int]] = []
+        if len(valid_acts) >= 2:
+            subsets.append(valid_acts)
+            if len(valid_acts) >= 3:
+                for drop in valid_acts:
+                    subsets.append([v for v in valid_acts if v != drop])
+        else:
+            subsets.append(list(range(A - 1)))
+
+        best_score = float("inf")
+        best_Q = np.eye(K, dtype=float)
+        best_c = np.zeros((1, K), dtype=float)
+
+        for sub in subsets:
+            # Closed-form Orthogonal Procrustes: min_Q ||delta_src[sub] @ Q - delta_tgt[sub]||_F
+            M_p = delta_src[sub].T @ delta_tgt[sub]
+            Up, _, Vtp = np.linalg.svd(M_p, full_matrices=False)
+            Q_cand = Up @ Vtp
+
+            # Closed-form offset c solving c @ D_a' ~ Z_t @ D_a' + b_a' - dZ across actions in sub U {0}
+            act_set = set([0] + [v + 1 for v in sub])
+            rows_L, rows_R = [], []
+            for a in act_set:
+                ia = np.where(A_t == a)[0]
+                if len(ia) == 0:
+                    continue
+                Da = Q_cand.T @ src_dyn.theta_trans[a, 1:, :] @ Q_cand
+                ba = src_dyn.theta_trans[a, 0:1, :] @ Q_cand
+                rhs = Z_t[ia] @ Da + ba - dZ[ia]  # (n_a, K)
+                rows_L.append(np.tile(Da.T, (len(ia), 1)))  # solve Da.T @ c.T = rhs.T
+                rows_R.append(rhs.reshape(-1))
+            if rows_L:
+                L_mat = np.vstack(rows_L)
+                R_vec = np.concatenate(rows_R)
+                c_vec = np.linalg.solve(L_mat.T @ L_mat + 1e-2 * np.eye(K), L_mat.T @ R_vec)
+                c_cand = c_vec.reshape(1, K)
+            else:
+                c_cand = np.zeros((1, K), dtype=float)
+
+            # Evaluate candidate via trimmed median squared residual across all target transitions
+            cand = self._transform_dynamics_candidate(src_dyn, Q_cand, c_cand)
+            Psi_all = np.hstack([np.ones((len(Z_t), 1)), Z_t])
+            sq_err = np.zeros(len(Z_t), dtype=float)
+            for a in range(A):
+                ia = np.where(A_t == a)[0]
+                if len(ia) == 0:
+                    continue
+                pred_zn = Z_t[ia] + Psi_all[ia] @ cand["theta_trans"][a]
+                sq_err[ia] = np.mean((pred_zn - Z_next[ia]) ** 2, axis=1)
+            # Trimmed 60th-percentile residual ignores both boundary clips and a single mutated action!
+            score = float(np.percentile(sq_err, 60.0))
+            if score < best_score:
+                best_score = score
+                best_Q = Q_cand.copy()
+                best_c = c_cand.copy()
+
+        # Refine (best_Q, best_c) with 40 steps of robust orthogonal Adam on interior/compatible transitions
+        Q_ref = best_Q.copy()
+        c_ref = best_c.copy()
+        cand0 = self._transform_dynamics_candidate(src_dyn, Q_ref, c_ref)
+        Psi_all = np.hstack([np.ones((len(Z_t), 1)), Z_t])
+        sq0 = np.zeros(len(Z_t), dtype=float)
+        for a in range(A):
+            ia = np.where(A_t == a)[0]
+            if len(ia) > 0:
+                sq0[ia] = np.mean((Z_t[ia] + Psi_all[ia] @ cand0["theta_trans"][a] - Z_next[ia]) ** 2, axis=1)
+        med0 = float(np.median(sq0)) + 1e-6
+        inlier = sq0 <= max(4.0 * med0, 0.04)
+        if int(np.sum(inlier)) >= K + 4:
+            mQ = np.zeros_like(Q_ref); vQ = np.zeros_like(Q_ref)
+            mc = np.zeros_like(c_ref); vc = np.zeros_like(c_ref)
+            for st in range(1, 41):
+                gQ = np.zeros_like(Q_ref)
+                gc = np.zeros_like(c_ref)
+                cnt = 0
+                for a in range(A):
+                    ia = np.where((A_t == a) & inlier)[0]
+                    if len(ia) == 0:
+                        continue
+                    # z_src_hat = (Z_t - c) @ Q^T; dz_pred = ([1, z_src_hat] @ theta_src_a) @ Q
+                    Z_s = (Z_t[ia] - c_ref) @ Q_ref.T
+                    Da_s = src_dyn.theta_trans[a, 1:, :]  # (K, K)
+                    ba_s = src_dyn.theta_trans[a, 0:1, :]  # (1, K)
+                    dz_s = Z_s @ Da_s + ba_s              # (n, K)
+                    err = (dz_s @ Q_ref) - dZ[ia]         # (n, K)
+                    # dL/dQ = dz_s^T @ err + (dL/dZ_s)^T @ (Z_t - c) -> Z_s = (Z_t - c) Q^T
+                    g_dz_s = err @ Q_ref.T                # (n, K)
+                    g_Z_s = g_dz_s @ Da_s.T               # (n, K)
+                    gQ += (dz_s.T @ err) + (g_Z_s.T @ (Z_t[ia] - c_ref))
+                    gc += -np.sum(g_Z_s @ Q_ref, axis=0, keepdims=True)
+                    cnt += len(ia)
+                if cnt == 0:
+                    break
+                gQ *= (2.0 / cnt); gc *= (2.0 / cnt)
+                mQ = 0.9 * mQ + 0.1 * gQ; vQ = 0.999 * vQ + 0.001 * (gQ ** 2)
+                mc = 0.9 * mc + 0.1 * gc; vc = 0.999 * vc + 0.001 * (gc ** 2)
+                Q_ref = Q_ref - 0.03 * (mQ / (1.0 - 0.9 ** st)) / (np.sqrt(vQ / (1.0 - 0.999 ** st)) + 1e-8)
+                Uq, _, Vtq = np.linalg.svd(Q_ref, full_matrices=False)
+                Q_ref = Uq @ Vtq
+                c_ref = c_ref - 0.03 * (mc / (1.0 - 0.9 ** st)) / (np.sqrt(vc / (1.0 - 0.999 ** st)) + 1e-8)
+
+        cand_final = self._transform_dynamics_candidate(src_dyn, Q_ref, c_ref)
+        return Q_ref, c_ref, cand_final
+
+    def _evaluate_selective_transfer(
+        self,
+        src_dyn: BayesianDynamicsEngram,
+        Z_t: np.ndarray,
+        A_t: np.ndarray,
+        Z_next: np.ndarray,
+        mode: str,
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """Evaluate component-level transfer (per-action dynamics + boundary box) in target frame.
+
+        Modes:
+            - 'unconditional': blindly copy src_dyn in raw target frame (no Procrustes, no compatibility tests)
+            - 'dynamics_and_boundary': Procrustes-align and transfer all actions + boundary unconditionally
+            - 'selective': Procrustes-align + fixed MSE compatibility gate per action and boundary
+            - 'uncertainty_guided': Procrustes-align + Bayesian Mahalanobis m_a^2 per action (PRESERVE/ADAPT/RECONSTRUCT)
+              + boundary violation/tightening test
+        """
+        K = self.n_latent
+        A = self.n_actions
+        dZ = Z_next - Z_t
+        Psi_all = np.hstack([np.ones((len(Z_t), 1), dtype=float), Z_t])
+
+        if mode == "unconditional":
+            cand = {
+                "theta_trans": src_dyn.theta_trans.copy(),
+                "cov_trans": src_dyn.cov_trans.copy(),
+                "sigma_cov_trans": src_dyn.sigma_cov_trans.copy(),
+                "sigma2_trans": src_dyn.sigma2_trans.copy(),
+                "Q_epi": src_dyn.Q_epi.copy(),
+                "U_box": src_dyn.U_box.copy(),
+                "z_min": src_dyn.z_min.copy(),
+                "z_max": src_dyn.z_max.copy(),
+            }
+            return cand, {"mode": mode, "action_decisions": ["TRANSFER"] * A, "boundary_decision": "TRANSFER"}
+
+        _, _, cand = self._align_source_dynamics_procrustes(src_dyn, Z_t, A_t, Z_next)
+
+        if mode == "dynamics_and_boundary":
+            return cand, {"mode": mode, "action_decisions": ["TRANSFER"] * A, "boundary_decision": "TRANSFER"}
+
+        # Component-level compatibility evaluation (selective vs uncertainty_guided)
+        theta_out = cand["theta_trans"].copy()
+        cov_out = cand["cov_trans"].copy()
+        sig_cov_out = cand["sigma_cov_trans"].copy()
+        sig2_out = cand["sigma2_trans"].copy()
+        Qe = cand["Q_epi"]
+
+        action_decisions: List[str] = []
+        action_stats: List[float] = []
+        n_transferred = 0
+
+        for a in range(A):
+            ia = np.where(A_t == a)[0]
+            if len(ia) < 3:
+                action_decisions.append("TRANSFER")
+                action_stats.append(0.0)
+                n_transferred += 1
+                continue
+
+            Psi_a = Psi_all[ia]
+            pred_zn = Z_t[ia] + Psi_a @ cand["theta_trans"][a]
+            res = Z_next[ia] - pred_zn  # (n_a, K)
+
+            if mode == "uncertainty_guided":
+                # Normalized Bayesian Mahalanobis squared residual per transition (median ignores boundary clips!)
+                m2_vals = np.zeros(len(ia), dtype=float)
+                epi_diag = np.zeros((len(ia), K), dtype=float)
+                for k in range(K):
+                    epi_diag[:, k] = np.maximum(np.einsum("ni,ij,nj->n", Psi_a, cand["cov_trans"][a, k], Psi_a), 0.0)
+                C_epi = np.einsum("ki,nk,kj->nij", Qe, epi_diag, Qe)
+                C_pred = C_epi + cand["sigma_cov_trans"][a].reshape(1, K, K) + 1e-4 * np.eye(K)
+                for i_loc in range(len(ia)):
+                    r_v = res[i_loc]
+                    m2_vals[i_loc] = float(r_v @ np.linalg.solve(C_pred[i_loc], r_v)) / K
+                # 35th percentile evaluates strictly interior transitions even when ~50% clip at tight boundaries (Regime B)
+                stat = float(np.percentile(m2_vals, 35.0))
+                action_stats.append(round(stat, 4))
+
+                if stat <= 4.5:
+                    # Compatible -> PRESERVE / TRANSFER low-variance source dynamics
+                    action_decisions.append("TRANSFER")
+                    n_transferred += 1
+                elif stat <= 14.0 and len(ia) >= K + 2:
+                    # Partially shifted -> Bayesian precision-weighted ADAPT toward target
+                    for k in range(K):
+                        th_t, cv_t, sg_t, _ = self._eb_linear_posterior(Psi_a, dZ[ia, k])
+                        # Precision-weighted fusion of source prior and target likelihood
+                        P_src = np.linalg.inv(cand["cov_trans"][a, k] + 1e-4 * np.eye(K + 1))
+                        P_tgt = np.linalg.inv(cv_t + 1e-4 * np.eye(K + 1))
+                        cv_f = np.linalg.inv(0.5 * P_src + P_tgt)
+                        theta_out[a, :, k] = cv_f @ (0.5 * P_src @ cand["theta_trans"][a, :, k] + P_tgt @ th_t)
+                        cov_out[a, k] = cv_f
+                        sig2_out[a, k] = sg_t
+                    sig_cov_out[a] = np.diag(sig2_out[a])
+                    action_decisions.append("ADAPT")
+                    n_transferred += 1
+                else:
+                    # Incompatible -> REJECT source & RECONSTRUCT action a from target
+                    for k in range(K):
+                        th_t, cv_t, sg_t, _ = self._eb_linear_posterior(Psi_a, dZ[ia, k])
+                        theta_out[a, :, k] = th_t
+                        cov_out[a, k] = cv_t
+                        sig2_out[a, k] = sg_t
+                    sig_cov_out[a] = np.diag(sig2_out[a])
+                    action_decisions.append("RECONSTRUCT")
+            else:
+                # Fixed-threshold selective mode (no Bayesian Mahalanobis covariance)
+                med_mse = float(np.median(np.mean(res ** 2, axis=1)))
+                action_stats.append(round(med_mse, 5))
+                if med_mse <= 0.025:
+                    action_decisions.append("TRANSFER")
+                    n_transferred += 1
+                else:
+                    for k in range(K):
+                        th_t, cv_t, sg_t, _ = self._eb_linear_posterior(Psi_a, dZ[ia, k])
+                        theta_out[a, :, k] = th_t
+                        cov_out[a, k] = cv_t
+                        sig2_out[a, k] = sg_t
+                    sig_cov_out[a] = np.diag(sig2_out[a])
+                    action_decisions.append("RECONSTRUCT")
+
+        # Boundary Compatibility Test (Distinguishes Regime A vs Regime B vs Regime D!)
+        U_box_out = cand["U_box"].copy()
+        z_min_out = cand["z_min"].copy()
+        z_max_out = cand["z_max"].copy()
+
+        if n_transferred == 0:
+            # Regime D: All dynamics incompatible -> reconstruct full boundary from target!
+            if self.boundary_aware and len(Z_t) >= 40:
+                U_box_out, z_min_out, z_max_out, _ = self._fit_orthogonal_box_boundary(Z_t, A_t, Z_next, Psi_all)
+            else:
+                U_box_out = np.eye(K, dtype=float)
+                Z_both = np.vstack([Z_t, Z_next])
+                z_min_out = np.min(Z_both, axis=0) - 0.25
+                z_max_out = np.max(Z_both, axis=0) + 0.25
+            bnd_decision = "RECONSTRUCT"
+        else:
+            # Compute unclamped predictions using the accepted/adapted/reconstructed theta_out
+            Z_unc = np.zeros_like(Z_next)
+            for a in range(A):
+                ia = np.where(A_t == a)[0]
+                if len(ia) > 0:
+                    Z_unc[ia] = Z_t[ia] + Psi_all[ia] @ theta_out[a]
+            V_unc = Z_unc @ U_box_out
+            V_tgt = Z_next @ U_box_out
+
+            # Check 1: Boundary expansion violation (target states exceed transferred bounds by > 0.15)
+            viol_hi = np.max(V_tgt - z_max_out.reshape(1, -1), axis=0)
+            viol_lo = np.max(z_min_out.reshape(1, -1) - V_tgt, axis=0)
+            # Check 2: Boundary tightening (target states clip strictly inside transferred bounds!)
+            mse_xfer_bnd = float(np.mean((np.clip(V_unc, z_min_out, z_max_out) - V_tgt) ** 2))
+            l_ad = z_min_out.copy()
+            u_ad = z_max_out.copy()
+            for k in range(K):
+                # Refine 1D box bounds along face k on target transitions
+                lo_c = float(np.min(V_tgt[:, k]))
+                hi_c = float(np.max(V_tgt[:, k]))
+                # Test if tightening or expanding improves post-clip MSE
+                if viol_lo[k] > 0.15:
+                    l_ad[k] = lo_c
+                elif int(np.sum(V_unc[:, k] < lo_c - 0.08)) >= 2:
+                    l_ad[k] = lo_c
+                if viol_hi[k] > 0.15:
+                    u_ad[k] = hi_c
+                elif int(np.sum(V_unc[:, k] > hi_c + 0.08)) >= 2:
+                    u_ad[k] = hi_c
+            mse_adapt_bnd = float(np.mean((np.clip(V_unc, l_ad, u_ad) - V_tgt) ** 2))
+
+            if np.any(viol_hi > 0.15) or np.any(viol_lo > 0.15) or (mse_adapt_bnd < 0.72 * mse_xfer_bnd and mse_xfer_bnd > 0.008):
+                z_min_out = l_ad
+                z_max_out = u_ad
+                bnd_decision = "ADAPT"
+            else:
+                bnd_decision = "TRANSFER"
+
+        return {
+            "theta_trans": theta_out,
+            "cov_trans": cov_out,
+            "sigma_cov_trans": sig_cov_out,
+            "sigma2_trans": sig2_out,
+            "Q_epi": Qe.copy() if n_transferred > 0 else np.eye(K, dtype=float),
+            "U_box": U_box_out,
+            "z_min": z_min_out,
+            "z_max": z_max_out,
+        }, {
+            "mode": mode,
+            "action_decisions": action_decisions,
+            "action_stats": action_stats,
+            "boundary_decision": bnd_decision,
+            "n_actions_transferred": n_transferred,
+        }
+
     def observe_transitions(
         self,
         X_t: np.ndarray,
@@ -428,6 +804,7 @@ class CaspianWorldModel:
         A_t = np.asarray(A_t, dtype=int).reshape(-1)
         X_next = np.asarray(X_next, dtype=float)
         dE_t = np.asarray(dE_t, dtype=float).reshape(-1)
+        self.last_transfer_decisions = {}
 
         dE_for_mem = dE_t
         if allow_update_outdated and self.basis_sync and self.memory.engrams:
@@ -438,7 +815,17 @@ class CaspianWorldModel:
                         dE_for_mem = dE_t + self.dynamics[e_cand.engram_id].action_costs[A_t]
                         break
 
-        eid = self.memory.observe_world(X_next, dE_for_mem, allow_update_outdated=allow_update_outdated)
+        if self.transfer_mode == "full_reconstruction":
+            # Scratch reconstruction: fit fresh engram without transferring from prior memory
+            from models.memory import WorldEngram
+            m_fresh = ModularTransferModelV3(self.in_dim, self.n_latent, seed=self.seed + 31 * len(self.memory.engrams))
+            m_fresh.fit_source(X_next, dE_t)
+            _, _, _, sig2_f = ModularTransferModelV3._deduplicate_canonical_with_noise(X_next, dE_t.reshape(-1, 1))
+            eid = len(self.memory.engrams)
+            self.memory.engrams.append(WorldEngram(engram_id=eid, model=m_fresh, sigma2_ref=sig2_f, source_engram_id=None))
+            self.memory.active_engram_id = eid
+        else:
+            eid = self.memory.observe_world(X_next, dE_for_mem, allow_update_outdated=allow_update_outdated)
         engram = self._get_engram(eid)
 
         Z_t = self.encode(X_t, eid=eid)
@@ -474,6 +861,22 @@ class CaspianWorldModel:
                 if trans_mse < 4.0 * float(np.mean(existing_dyn.sigma2_trans)) + 0.02:
                     reuse_trans = True
 
+        # Check Phase 18D cross-environment selective dynamics + boundary transfer
+        src_dyn_cand: Optional[BayesianDynamicsEngram] = None
+        if (
+            not reuse_trans
+            and not only_noop_obs
+            and self.transfer_mode in ("unconditional", "dynamics_and_boundary", "selective", "uncertainty_guided")
+            and len(self.dynamics) > 0
+        ):
+            if engram.source_engram_id is not None and engram.source_engram_id in self.dynamics:
+                src_dyn_cand = self.dynamics[engram.source_engram_id]
+            else:
+                # Even if consequence rule differed, pick most recent prior engram to test dynamics compatibility
+                prior_ids = [k_id for k_id in self.dynamics.keys() if k_id != eid]
+                if prior_ids:
+                    src_dyn_cand = self.dynamics[prior_ids[-1]]
+
         if reuse_trans and existing_dyn is not None:
             theta_trans = existing_dyn.theta_trans.copy()
             cov_trans = existing_dyn.cov_trans.copy()
@@ -487,6 +890,27 @@ class CaspianWorldModel:
             z_mean_use = existing_dyn.z_mean.copy()
             z_cov_inv_use = existing_dyn.z_cov_inv.copy()
             b_ver = existing_dyn.basis_version
+        elif src_dyn_cand is not None:
+            xfer_res, decisions = self._evaluate_selective_transfer(
+                src_dyn_cand, Z_t, A_t, Z_next, mode=self.transfer_mode
+            )
+            self.last_transfer_decisions = decisions
+            theta_trans = xfer_res["theta_trans"]
+            cov_trans = xfer_res["cov_trans"]
+            sigma_cov_trans = xfer_res["sigma_cov_trans"]
+            sigma2_trans = xfer_res["sigma2_trans"]
+            Q_epi = xfer_res["Q_epi"]
+            U_box_use = xfer_res["U_box"]
+            z_min_use = xfer_res["z_min"]
+            z_max_use = xfer_res["z_max"]
+            causal_mask = self._discover_causal_action_mask(
+                Z_t, A_t, Z_next, Psi_all, theta_trans[0], n_actions=A
+            )
+            Z_both = np.vstack([Z_t, Z_next])
+            z_mean_use = np.mean(Z_both, axis=0)
+            z_cov = np.cov(Z_both.T) + 0.05 * np.eye(K, dtype=float)
+            z_cov_inv_use = np.linalg.inv(z_cov)
+            b_ver = 0
         else:
             theta_trans = np.zeros((A, P, K), dtype=float)
             cov_trans = np.zeros((A, K, P, P), dtype=float)
