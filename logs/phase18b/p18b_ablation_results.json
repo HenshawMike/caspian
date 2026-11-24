@@ -1,0 +1,52 @@
+{
+  "seeds": [
+    9301,
+    9302,
+    9303,
+    9304,
+    9305
+  ],
+  "n": 5,
+  "variants": {
+    "p18_baseline": {
+      "x_nrmse_h1": 0.05296,
+      "x_nrmse_h3": 0.07871,
+      "interior_nrmse": 0.05106,
+      "boundary_nrmse": 0.10722,
+      "pre_mut_mae": 9.71194,
+      "post_rec_mae": 3.99079,
+      "recovery_reduction": 0.33721,
+      "post_rec_x_rmse": 0.35185
+    },
+    "boundary_only": {
+      "x_nrmse_h1": 0.05004,
+      "x_nrmse_h3": 0.06927,
+      "interior_nrmse": 0.05001,
+      "boundary_nrmse": 0.06663,
+      "pre_mut_mae": 9.83711,
+      "post_rec_mae": 4.00605,
+      "recovery_reduction": 0.3399,
+      "post_rec_x_rmse": 0.34732
+    },
+    "basis_sync_only": {
+      "x_nrmse_h1": 0.05296,
+      "x_nrmse_h3": 0.07871,
+      "interior_nrmse": 0.05106,
+      "boundary_nrmse": 0.10722,
+      "pre_mut_mae": 9.71194,
+      "post_rec_mae": 1.06375,
+      "recovery_reduction": 0.8198,
+      "post_rec_x_rmse": 0.04577
+    },
+    "combined_p18b": {
+      "x_nrmse_h1": 0.05004,
+      "x_nrmse_h3": 0.06927,
+      "interior_nrmse": 0.05001,
+      "boundary_nrmse": 0.06663,
+      "pre_mut_mae": 9.83711,
+      "post_rec_mae": 0.86296,
+      "recovery_reduction": 0.85941,
+      "post_rec_x_rmse": 0.03374
+    }
+  }
+}
