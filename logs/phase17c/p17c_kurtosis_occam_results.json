@@ -1,0 +1,214 @@
+{
+  "experiment_id": "CSP-P17C-E001",
+  "seeds": [
+    151,
+    152,
+    153,
+    154,
+    155,
+    156,
+    157,
+    158,
+    159,
+    160,
+    161,
+    162,
+    163,
+    164,
+    165
+  ],
+  "outcome_classification": "Outcome B \u2014 Partial Improvement",
+  "hypotheses": {
+    "P17B-H1": {
+      "met": false,
+      "holm_p": 0.061,
+      "n": 15,
+      "mean_delta": 0.059784,
+      "sd_delta": 0.114553,
+      "median_delta": 0.045339,
+      "min_delta": -0.102342,
+      "max_delta": 0.321559,
+      "ci95_low": 0.006881,
+      "ci95_high": 0.116557,
+      "t_stat": 2.0213,
+      "cohens_dz": 0.5219,
+      "exact_perm_p": 0.061,
+      "wins_modular": 9,
+      "wins_baseline": 6,
+      "ties": 0,
+      "ci_strictly_positive": true
+    },
+    "P17B-H2": {
+      "met": true,
+      "holm_p": {
+        "memoryless_structural": 0.0155,
+        "naive_sequential_mlp": 0.015,
+        "replay_mlp": 0.0005,
+        "ewc_mlp": 0.007
+      },
+      "cells": {
+        "memoryless_structural": {
+          "n": 15,
+          "mean_delta": 0.07922,
+          "sd_delta": 0.093214,
+          "median_delta": 0.107439,
+          "min_delta": -0.103385,
+          "max_delta": 0.202565,
+          "ci95_low": 0.031656,
+          "ci95_high": 0.121955,
+          "t_stat": 3.2916,
+          "cohens_dz": 0.8499,
+          "exact_perm_p": 0.00775,
+          "wins_modular": 12,
+          "wins_baseline": 3,
+          "ties": 0,
+          "ci_strictly_positive": true
+        },
+        "naive_sequential_mlp": {
+          "n": 15,
+          "mean_delta": 0.093575,
+          "sd_delta": 0.103715,
+          "median_delta": 0.094566,
+          "min_delta": -0.126557,
+          "max_delta": 0.236662,
+          "ci95_low": 0.041551,
+          "ci95_high": 0.141465,
+          "t_stat": 3.4943,
+          "cohens_dz": 0.9022,
+          "exact_perm_p": 0.005,
+          "wins_modular": 13,
+          "wins_baseline": 2,
+          "ties": 0,
+          "ci_strictly_positive": true
+        },
+        "replay_mlp": {
+          "n": 15,
+          "mean_delta": 0.21684,
+          "sd_delta": 0.118282,
+          "median_delta": 0.205323,
+          "min_delta": 0.096852,
+          "max_delta": 0.553516,
+          "ci95_low": 0.165319,
+          "ci95_high": 0.279186,
+          "t_stat": 7.1001,
+          "cohens_dz": 1.8332,
+          "exact_perm_p": 0.0001,
+          "wins_modular": 15,
+          "wins_baseline": 0,
+          "ties": 0,
+          "ci_strictly_positive": true
+        },
+        "ewc_mlp": {
+          "n": 15,
+          "mean_delta": 0.112748,
+          "sd_delta": 0.105691,
+          "median_delta": 0.134262,
+          "min_delta": -0.150364,
+          "max_delta": 0.222145,
+          "ci95_low": 0.058,
+          "ci95_high": 0.159702,
+          "t_stat": 4.1315,
+          "cohens_dz": 1.0668,
+          "exact_perm_p": 0.00175,
+          "wins_modular": 13,
+          "wins_baseline": 2,
+          "ties": 0,
+          "ci_strictly_positive": true
+        }
+      }
+    },
+    "P17B-H3": {
+      "met": true,
+      "mean_forgetting": 0.0,
+      "alpha_post5_lt_0.02": 15,
+      "retrieval_acc": 1.0
+    },
+    "P17B-H4": {
+      "met": true,
+      "W16_obs_shift": {
+        "mean_nrmse": 0.02039,
+        "median_nrmse": 0.0105,
+        "gate_on": 10,
+        "gate_off": 0,
+        "shift_detected": 10,
+        "n": 10
+      },
+      "W16_offset_0.5": {
+        "mean_nrmse": 0.0107,
+        "median_nrmse": 0.00675,
+        "gate_on": 10,
+        "gate_off": 0,
+        "shift_detected": 10,
+        "n": 10
+      },
+      "W16_in_subspace_rot": {
+        "mean_nrmse": 0.00656,
+        "median_nrmse": 0.00617,
+        "gate_on": 10,
+        "gate_off": 0,
+        "shift_detected": 10,
+        "n": 10
+      },
+      "W16_negative_control": {
+        "mean_nrmse": 0.04896,
+        "median_nrmse": 0.01331,
+        "gate_on": 0,
+        "gate_off": 10,
+        "shift_detected": 0,
+        "n": 10
+      }
+    },
+    "P17B-H5": {
+      "met": true,
+      "determinism_diff": 0.0,
+      "perm_diff": 0.0,
+      "ast_passed": true
+    }
+  },
+  "primary_10shot_means": {
+    "original_v3_memory": {
+      "forward_transfer_gamma": 0.12285,
+      "ret_gamma_post4": 0.12445,
+      "mean_ret_post4": 0.03248
+    },
+    "occam_hierarchy_memory": {
+      "forward_transfer_gamma": 0.06306,
+      "ret_gamma_post4": 0.06306,
+      "mean_ret_post4": 0.01717
+    },
+    "memoryless_structural": {
+      "forward_transfer_gamma": 0.14228,
+      "ret_gamma_post4": 0.32409,
+      "mean_ret_post4": 0.28562
+    },
+    "naive_sequential_mlp": {
+      "forward_transfer_gamma": 0.15664,
+      "ret_gamma_post4": 0.28581,
+      "mean_ret_post4": 0.28519
+    },
+    "replay_mlp": {
+      "forward_transfer_gamma": 0.2799,
+      "ret_gamma_post4": 0.21505,
+      "mean_ret_post4": 0.19678
+    },
+    "ewc_mlp": {
+      "forward_transfer_gamma": 0.17581,
+      "ret_gamma_post4": 0.23619,
+      "mean_ret_post4": 0.26769
+    }
+  },
+  "memory_accounting": {
+    "1_trainable_parameter_count": 264,
+    "2_trainable_parameter_raw_float64_bytes": 2112,
+    "3_persistent_memory_minimal_pickle_bytes": 3676,
+    "3b_persistent_memory_minimal_json_bytes": 6911,
+    "4_metadata_json_bytes": 489,
+    "5_stored_representations_and_normalizers_bytes": 1664,
+    "6_stored_raw_observations_bytes": 0,
+    "7_persistent_optimizer_state_bytes": 0,
+    "8_full_in_memory_object_with_caches_pickle_bytes": 34709,
+    "9_total_bytes_required_to_save_and_restore": 3676,
+    "comparison_replay_mlp_param_plus_buffer_raw_bytes": 18184,
+    "num_engrams_stored": 4
+  }
+}

@@ -1,3 +1,4 @@
+
 """Phase 16C: First-Principles Upgrade — ModularTransferModelV3 (models/transfer_v3.py).
 
 Resolves all four mathematical failure modes exposed by Phase 16B (CSP-P16B-E001) on frozen v2
@@ -61,6 +62,7 @@ class ModularTransferModelV3:
         self._source_x_mean: Optional[np.ndarray] = None
         self._source_W_adapter: Optional[np.ndarray] = None
         self._source_b_adapter: Optional[np.ndarray] = None
+        self._source_kurtosis: float = 3.0
         self.last_sensor_shift_detected: bool = False
         self.last_subspace_residual: float = 0.0
 
@@ -166,19 +168,71 @@ class ModularTransferModelV3:
                 V[:, k] *= -1.0
         return V
 
+    @staticmethod
+    def _kurtosis_unmix_ortho(U: np.ndarray, seed: int = 0, n_restarts: int = 8, n_steps: int = 120, lr: float = 0.12) -> np.ndarray:
+        """Phase 13 unsupervised sub-Gaussian kurtosis unmixing on O(K): min_Q E[(U Q)_k^4]."""
+        K = U.shape[1]
+        rng = np.random.default_rng(seed + 13)
+        best_Q = np.eye(K, dtype=float)
+        best_val = float("inf")
+        for r in range(n_restarts):
+            if r == 0:
+                Q = np.eye(K, dtype=float)
+            else:
+                Q, _ = np.linalg.qr(rng.standard_normal((K, K)))
+            m = np.zeros_like(Q); v = np.zeros_like(Q)
+            for st in range(1, n_steps + 1):
+                Z = U @ Q
+                g = 4.0 * (U.T @ (Z ** 3)) / max(len(U), 1)
+                m = 0.9 * m + 0.1 * g; v = 0.999 * v + 0.001 * (g ** 2)
+                Q = Q - lr * (m / (1.0 - 0.9 ** st)) / (np.sqrt(v / (1.0 - 0.999 ** st)) + 1e-8)
+                Uq, _, Vtq = np.linalg.svd(Q, full_matrices=False)
+                Q = Uq @ Vtq
+            val = float(np.mean((U @ Q) ** 4))
+            if val < best_val:
+                best_val = val
+                best_Q = Q.copy()
+        return best_Q
+
+    @staticmethod
+    def _orth_subspace_mean_norm(Xu: np.ndarray, V: np.ndarray) -> float:
+        """Norm of mean(Xu) orthogonal to the active subspace col(V).
+        Zero for any zero-offset finite-sample mean; large (>0.1) for genuine additive sensor offsets c != 0.
+        """
+        xm = np.mean(Xu, axis=0, keepdims=True)
+        proj = (xm @ V) @ V.T
+        return float(np.linalg.norm(xm - proj))
+
     def fit_source(self, X: np.ndarray, Y: np.ndarray, W_init: Optional[np.ndarray] = None) -> None:
         X = np.asarray(X, dtype=float)
         y = np.asarray(Y, dtype=float).reshape(-1, 1)
         Xu, yu, wu, sig2 = self._deduplicate_canonical_with_noise(X, y)
-        self.x_mean = np.sum(wu.reshape(-1, 1) * Xu, axis=0, keepdims=True) / float(np.sum(wu))
-        Xc_u = Xu - self.x_mean
-        if W_init is not None:
-            self.W_adapter = np.asarray(W_init, dtype=float).copy()
+        xm_emp = np.sum(wu.reshape(-1, 1) * Xu, axis=0, keepdims=True) / float(np.sum(wu))
+        V_emp = self._canonical_subspace((Xu - xm_emp) * np.sqrt(wu).reshape(-1, 1), self.n_latent)
+
+        if self.alignment_mode == "original_v3":
+            self.x_mean = xm_emp
+            Xc_u = Xu - self.x_mean
+            self.W_adapter = np.asarray(W_init, dtype=float).copy() if W_init is not None else V_emp
         else:
-            self.W_adapter = self._canonical_subspace(Xc_u * np.sqrt(wu).reshape(-1, 1), self.n_latent)
+            # Zero-offset canonical centering: if mean(Xu) lies strictly inside col(V_emp) (no additive offset),
+            # use x_mean = 0 so source core is not biased by finite-sample mean noise (eliminates 5-10x rotation mismatch).
+            if self._orth_subspace_mean_norm(Xu, V_emp) < 0.10:
+                self.x_mean = np.zeros((1, self.in_dim), dtype=float)
+            else:
+                self.x_mean = xm_emp
+            Xc_u = Xu - self.x_mean
+            if W_init is not None:
+                self.W_adapter = np.asarray(W_init, dtype=float).copy()
+            else:
+                V_c = self._canonical_subspace(Xc_u * np.sqrt(wu).reshape(-1, 1), self.n_latent)
+                Q_k = self._kurtosis_unmix_ortho(Xc_u @ V_c, seed=self.seed)
+                self.W_adapter = V_c @ Q_k
         self.b_adapter = np.zeros((1, self.n_latent), dtype=float)
 
-        Phi_u = self._compute_phi(Xc_u @ self.W_adapter + self.b_adapter)
+        Z_u = Xc_u @ self.W_adapter + self.b_adapter
+        self._source_kurtosis = float(np.mean(Z_u ** 4))
+        Phi_u = self._compute_phi(Z_u)
         beta, _, _ = self._empirical_bayes_ridge(Phi_u, yu, wu, sig2, lambdas=(1e-4, 1e-3, 1e-2, 0.1, 1.0))
         self.b_core = np.array([float(beta[0, 0])], dtype=float)
         self.w_core = beta[1:].copy()
@@ -220,6 +274,7 @@ class ModularTransferModelV3:
         n_restarts: int = 20,
         n_steps: int = 180,
         lr: float = 0.08,
+        lam_kurt: float = 0.0,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float]:
         xm = np.mean(Xu, axis=0, keepdims=True) if xm_fixed is None else xm_fixed.copy()
         Xc = Xu - xm
@@ -229,13 +284,14 @@ class ModularTransferModelV3:
         rng = np.random.default_rng(self.seed + 71)
         sw = (wu / float(np.sum(wu))).reshape(-1, 1)
 
-        best_loss = float("inf")
+        best_obj = float("inf")
+        best_mse = float("inf")
         best_R = np.eye(K, dtype=float)
         best_b = np.zeros((1, K), dtype=float)
 
         for r_idx in range(n_restarts):
             if r_idx == 0:
-                R = np.eye(K, dtype=float)
+                R = self._kurtosis_unmix_ortho(U_t, seed=self.seed) if lam_kurt > 0.0 else np.eye(K, dtype=float)
             else:
                 Q, _ = np.linalg.qr(rng.standard_normal((K, K)))
                 if (r_idx % 2 == 0 and np.linalg.det(Q) < 0) or (r_idx % 2 == 1 and np.linalg.det(Q) > 0):
@@ -255,6 +311,8 @@ class ModularTransferModelV3:
                     gp = g_phi[:, K + idx]
                     g_z[:, i] += gp * Z[:, j]
                     g_z[:, j] += gp * Z[:, i]
+                if lam_kurt > 0.0:
+                    g_z += lam_kurt * 4.0 * (Z ** 3) / max(len(Z), 1)
                 g_R = U_t.T @ g_z
                 mR = 0.9 * mR + 0.1 * g_R; vR = 0.999 * vR + 0.001 * (g_R ** 2)
                 R = R - lr * (mR / (1.0 - 0.9 ** st)) / (np.sqrt(vR / (1.0 - 0.999 ** st)) + 1e-8)
@@ -264,12 +322,15 @@ class ModularTransferModelV3:
                     b = b - (0.5 * lr) * (mb / (1.0 - 0.9 ** st)) / (np.sqrt(vb / (1.0 - 0.999 ** st)) + 1e-8)
                 Ur, _, Vtr = np.linalg.svd(R, full_matrices=False)
                 R = Ur @ Vtr
-            loss = float(np.sum(sw * (self._compute_phi(U_t @ R + b) @ self.w_core + self.b_core - yu) ** 2))
-            if loss < best_loss:
-                best_loss = loss
+            Z = U_t @ R + b
+            mse = float(np.sum(sw * (self._compute_phi(Z) @ self.w_core + self.b_core - yu) ** 2))
+            obj = mse + (lam_kurt * float(np.mean(Z ** 4)) if lam_kurt > 0.0 else 0.0)
+            if obj < best_obj:
+                best_obj = obj
+                best_mse = mse
                 best_R = R.copy()
                 best_b = b.copy()
-        return xm, V @ best_R, best_b, best_loss
+        return xm, V @ best_R, best_b, best_mse
 
     def adapt_few_shot(
         self,
@@ -308,16 +369,19 @@ class ModularTransferModelV3:
                 # try 6-DOF pure O(K) first and unlock 10-DOF only if 6-DOF fails the noise-floor adequacy test;
                 # when G > 10, run centered 10-DOF directly for exact additive-offset invariance.
                 if len(Xu) <= 10:
+                    # Apply Phase 13 sub-Gaussian kurtosis regularizer only when source world is sub-Gaussian
+                    lam_k = 3.0 if self._source_kurtosis < 2.0 else 0.0
                     xm_6, W_6, b_6, loss_6 = self._align_canonical(
                         Xu, yu, wu, opt_b=False, xm_fixed=np.zeros((1, self.in_dim), dtype=float),
-                        n_restarts=self.occam_restarts,
+                        n_restarts=self.occam_restarts, lam_kurt=lam_k,
                     )
                     var_y = max(float(np.var(yu)), 1e-8)
                     thresh = max(self.occam_noise_mult * sig2, self.occam_var_frac * var_y)
-                    # Identifiability guard: when G <= 10, 10-DOF (R + b) has <= 0 residual DOF;
-                    # only permit 10-DOF expansion if raw observation mean shows a genuine offset ||mean(Xu)|| > 0.35.
-                    mean_offset_norm = float(np.linalg.norm(np.mean(Xu, axis=0)))
-                    if loss_6 <= thresh or mean_offset_norm <= 0.35:
+                    # Geometric identifiability guard: finite-sample zero-offset means lie inside col(V_tgt)
+                    # (orth residual == 0), whereas genuine additive offsets c != 0 have orth residual > 0.10.
+                    V_tgt_c = self._canonical_subspace(Xu - np.mean(Xu, axis=0, keepdims=True), self.n_latent)
+                    orth_offset_norm = self._orth_subspace_mean_norm(Xu, V_tgt_c)
+                    if loss_6 <= thresh or orth_offset_norm <= 0.10:
                         xm_t, W_ad, b_ad = xm_6, W_6, b_6
                         self.last_alignment_branch = "occam_6dof_accepted" if loss_6 <= thresh else "occam_6dof_identifiability_guard"
                     else:
@@ -342,9 +406,10 @@ class ModularTransferModelV3:
         beta_with, nll_with, _ = self._empirical_bayes_ridge(Phi_u, yu - yc, wu, sig2)
         beta_without, nll_without, _ = self._empirical_bayes_ridge(Phi_u, yu, wu, sig2)
 
-        # Dual-trigger: check for pure in-subspace rotation (b=0 fixed, strict chi-squared noise-floor gate)
+        # Dual-trigger: check for pure in-subspace rotation (b=0 fixed, xm=0 so unrotated source mean does not inject bias)
         if align_sensors == "auto" and (not shifted) and (nll_with >= nll_without - 1.0):
-            xm_in, W_in, b_in, mse_in = self._align_canonical(Xu, yu, wu, opt_b=False, xm_fixed=xm_src)
+            xm_in_ref = np.zeros((1, self.in_dim), dtype=float) if self.alignment_mode != "original_v3" else xm_src
+            xm_in, W_in, b_in, mse_in = self._align_canonical(Xu, yu, wu, opt_b=False, xm_fixed=xm_in_ref)
             var_y = max(float(np.var(yu)), 1e-8)
             if mse_in <= max(4.0 * sig2, 0.015 * var_y):
                 Phi_in = self._compute_phi((Xu - xm_in) @ W_in + b_in)
@@ -395,6 +460,7 @@ class ModularTransferModelV3:
         m._source_x_mean = self._source_x_mean.copy() if self._source_x_mean is not None else None
         m._source_W_adapter = self._source_W_adapter.copy() if self._source_W_adapter is not None else None
         m._source_b_adapter = self._source_b_adapter.copy() if self._source_b_adapter is not None else None
+        m._source_kurtosis = self._source_kurtosis
         return m
 
     def forward(self, X: np.ndarray) -> np.ndarray:
