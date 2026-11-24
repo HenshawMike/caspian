@@ -33,10 +33,23 @@ class PersistentWorldMemory:
     and outdated-memory detection (zero world_id privilege).
     """
 
-    def __init__(self, in_dim: int = 8, n_latent: int = 4, seed: int = 0):
+    def __init__(
+        self,
+        in_dim: int = 8,
+        n_latent: int = 4,
+        seed: int = 0,
+        alignment_mode: str = "occam_hierarchy",
+        occam_restarts: int = 30,
+        occam_noise_mult: float = 4.0,
+        occam_var_frac: float = 0.015,
+    ):
         self.in_dim = int(in_dim)
         self.n_latent = int(n_latent)
         self.seed = int(seed)
+        self.alignment_mode = str(alignment_mode)
+        self.occam_restarts = int(occam_restarts)
+        self.occam_noise_mult = float(occam_noise_mult)
+        self.occam_var_frac = float(occam_var_frac)
         self.engrams: List[WorldEngram] = []
         self.active_engram_id: Optional[int] = None
         self.last_outdated_detected: bool = False
@@ -137,7 +150,13 @@ class PersistentWorldMemory:
                 self.last_outdated_detected = True
 
         # Candidate 0: fresh structural engram (no transfer)
-        cand_fresh = ModularTransferModelV3(self.in_dim, self.n_latent, seed=self.seed + 31 * len(self.engrams))
+        cand_fresh = ModularTransferModelV3(
+            self.in_dim, self.n_latent, seed=self.seed + 31 * len(self.engrams),
+            alignment_mode=self.alignment_mode,
+            occam_restarts=self.occam_restarts,
+            occam_noise_mult=self.occam_noise_mult,
+            occam_var_frac=self.occam_var_frac,
+        )
         cand_fresh.fit_source(X_tr, Y_tr)
         Phi_f = cand_fresh._compute_phi((Xu - cand_fresh.x_mean) @ cand_fresh.W_adapter + cand_fresh.b_adapter)
         _, best_nll, _ = ModularTransferModelV3._empirical_bayes_ridge(Phi_f, yu, wu, sig2)

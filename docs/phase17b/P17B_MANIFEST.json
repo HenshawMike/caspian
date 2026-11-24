@@ -1,0 +1,50 @@
+{
+  "experiment_id": "CSP-P17B-E001",
+  "parent_experiment_id": "CSP-P17-E001",
+  "title": "Occam-Hierarchy Few-Shot Adaptation: Independent Verification",
+  "software_environment": {
+    "python": "3.14.7",
+    "numpy": "2.5.2",
+    "pytest": "9.2.0",
+    "os": "Linux-6.12.108-1-MANJARO-x86_64-with-glibc2.44"
+  },
+  "seed_separation": {
+    "historical_p17_untouched": [71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
+    "stage1_development": [9101, 9102, 9103, 9104, 9105],
+    "stage2_confirmatory": [131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145],
+    "power_justification": "n=15 paired seeds provides ~84% power at alpha=0.05 (two-sided) to detect Cohen's d_z = 0.80 (vs ~63% at n=10), balancing statistical power and 4-core compute budget."
+  },
+  "primary_condition": {
+    "stream": ["W17_alpha", "W17_beta", "W17_gamma_shared", "W17_delta_inverted", "W17_beta_mutated"],
+    "gamma_shots": 10,
+    "probe_shots": 8,
+    "models": [
+      "original_v3_memory",
+      "occam_hierarchy_memory",
+      "memoryless_structural",
+      "naive_sequential_mlp",
+      "replay_mlp",
+      "ewc_mlp"
+    ]
+  },
+  "occam_hierarchy_parameters": {
+    "low_g_threshold": 10,
+    "occam_restarts": 30,
+    "occam_noise_mult": 4.0,
+    "occam_var_frac": 0.015,
+    "identifiability_offset_guard_norm": 0.35,
+    "expansion_improvement_ratio": 0.75
+  },
+  "preregistered_criteria": {
+    "P17B-H1_min_practical_improvement": 0.03,
+    "multiplicity_correction": "Holm-Bonferroni across primary paired comparisons",
+    "bootstrap_resamples": 4000,
+    "bootstrap_seed": 202617
+  },
+  "secondary_diagnostics": {
+    "gamma_12shot_seeds": [131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145],
+    "shot_sweep": [8, 10, 12, 16, 20],
+    "invariance_seeds": [131, 132, 133, 134, 135, 136, 137, 138, 139, 140],
+    "additive_offset": 0.5
+  }
+}
