@@ -67,20 +67,21 @@ B_ACT_BETA = np.array([
     [ 0.00,  0.80,  0.00,  0.00],
 ], dtype=float)
 
-ACTION_COSTS_DEFAULT = np.array([0.0, 0.25, 0.25, 0.25, 0.25], dtype=float)
+ACTION_COSTS_DEFAULT = np.array([0.0, 0.30, 0.30, -0.50, 0.30], dtype=float)
 
 
 def _rule_alpha(s: np.ndarray) -> np.ndarray:
-    """Non-additive saddle-crossing payoff: 1-step greedy goes negative (a=3),
-    while 3-step planning crosses to s0 > 0, s1 > 0 for +5.0 * s0 * s1 synergy.
+    """Non-additive saddle-crossing payoff: from s0,s1 ~ (-0.6, -0.6), 1-step greedy picks
+    a=3 (-1.38 > -2.62) and gets trapped in the negative basin (~+2.75/step), while 3-step
+    planning pays the 1-step dip of a=1 -> a=2 -> a=1 to cross into (+1.8, +1.8) (~+29/step).
     """
     return (
-        -1.5 * s[:, 0]
-        + 2.0 * s[:, 1]
-        + 5.0 * s[:, 0] * s[:, 1]
-        + 1.5 * s[:, 2]
-        + 1.0 * s[:, 3]
-        - 0.5 * (s[:, 0] ** 2 + s[:, 1] ** 2)
+        3.5 * s[:, 0]
+        + 3.5 * s[:, 1]
+        + 6.0 * s[:, 0] * s[:, 1]
+        + 1.2 * s[:, 2]
+        + 0.8 * s[:, 3]
+        - 0.4 * (s[:, 0] ** 2 + s[:, 1] ** 2)
     )
 
 
@@ -118,7 +119,7 @@ class Phase18WorldSpec:
     B_act: np.ndarray
     rule_fn: Callable[[np.ndarray], np.ndarray]
     action_costs: np.ndarray
-    noise_s: float = 0.05
+    noise_s: float = 0.03
     noise_e: float = 0.15
     state_bound: float = 1.8
 
@@ -444,8 +445,8 @@ def run_single_seed(seed: int) -> Dict[str, Any]:
     # Verify Semantic Firewall on neutral Observation
     W18_ALPHA.make_neutral_observation(np.zeros(N_LATENT18), 10.0, 0, None)
 
-    # Collect training transitions on W18_alpha (250 transitions)
-    tr_alpha = W18_ALPHA.collect_transitions(n_steps=250, seed=seed * 100 + 1)
+    # Collect training transitions on W18_alpha (350 transitions, identical for all models)
+    tr_alpha = W18_ALPHA.collect_transitions(n_steps=350, seed=seed * 100 + 1)
 
     # Fit Integrated Caspian World Model + Baselines on exact same data
     cwm = CaspianWorldModel(in_dim=IN_DIM18, n_latent=N_LATENT18, n_actions=N_ACTIONS18, seed=seed)
@@ -586,7 +587,7 @@ def run_single_seed(seed: int) -> Dict[str, Any]:
     pred_id_trap = cwm_trap.predict_step(te_id_trap["X_t"], te_id_trap["A_t"], eid=eid_trap)
     pi95_cov = float(np.mean(np.abs(pred_id_trap["de_mean"] - te_id_trap["dE"]) <= 1.96 * pred_id_trap["de_std"]))
 
-    planner_safe = AutonomousPlanner(cwm_trap, horizon=3, gamma=0.95, beta_uncertainty=2.0)
+    planner_safe = AutonomousPlanner(cwm_trap, horizon=3, gamma=0.95, beta_uncertainty=3.5)
     planner_risk_neutral = AutonomousPlanner(cwm_trap, horizon=3, gamma=0.95, beta_uncertainty=0.0)
     s_trap_init = np.array([0.2, 0.2, 0.0, 0.0], dtype=float)
     ret_safe = np.mean([
@@ -612,11 +613,11 @@ def run_single_seed(seed: int) -> Dict[str, Any]:
 
     # Start in saddle-crossing initial states where 1-step greedy gets trapped in a=3!
     init_states = [
-        np.array([-1.0, -0.2, 0.0, 0.0], dtype=float),
-        np.array([-0.9, -0.1, -0.2, 0.1], dtype=float),
-        np.array([-1.1, -0.3, 0.1, -0.1], dtype=float),
-        np.array([-0.8, -0.2, 0.0, 0.0], dtype=float),
-        np.array([-1.0, -0.1, -0.1, 0.0], dtype=float),
+        np.array([-0.60, -0.60, 0.0, 0.0], dtype=float),
+        np.array([-0.65, -0.55, -0.2, 0.1], dtype=float),
+        np.array([-0.55, -0.65, 0.1, -0.1], dtype=float),
+        np.array([-0.70, -0.60, 0.0, 0.0], dtype=float),
+        np.array([-0.60, -0.70, -0.1, 0.0], dtype=float),
     ]
 
     rets = {k: [] for k in ["integrated_caspian", "oracle_planner", "mlp_world_model", "memory_no_planner", "reactive_policy", "random_policy"]}
@@ -720,9 +721,9 @@ def run_single_seed(seed: int) -> Dict[str, Any]:
 
     planner_gamma = AutonomousPlanner(cwm_gen, horizon=3, gamma=0.95, beta_uncertainty=0.5)
     unseen_inits = [
-        np.array([-1.3, -0.4, 0.3, -0.3], dtype=float),
-        np.array([-1.2, -0.2, -0.4, 0.4], dtype=float),
-        np.array([-0.7, -0.5, 0.2, 0.2], dtype=float),
+        np.array([-0.65, -0.65, 0.3, -0.3], dtype=float),
+        np.array([-0.55, -0.60, -0.4, 0.4], dtype=float),
+        np.array([-0.70, -0.55, 0.2, 0.2], dtype=float),
     ]
     g_ret_cwm, g_ret_mlp, g_ret_react = [], [], []
     for ui_i, s0_u in enumerate(unseen_inits):

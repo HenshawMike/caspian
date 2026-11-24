@@ -185,11 +185,12 @@ class CaspianWorldModel:
         Z_next: np.ndarray,
         theta_noop: np.ndarray,
         n_actions: int,
-        l1_lambda: float = 0.08,
-        effect_threshold: float = 0.22,
+        l1_lambda: float = 0.15,
+        effect_threshold: float = 0.25,
     ) -> np.ndarray:
         """Discover which latent coordinates k are directly intervened on by each action a
-        via ISTA + Gauss-Lasso on action-vs-NOOP residuals (separating intervention from passive drift).
+        via column-normalized ISTA + Gauss-Lasso on action-vs-NOOP residuals (separating
+        direct causal intervention from passive drift without 1/A frequency shrinkage).
         """
         K = Z_t.shape[1]
         mask = np.zeros((n_actions, K), dtype=float)
@@ -197,31 +198,16 @@ class CaspianWorldModel:
         dZ_noop_pred = Psi_all @ theta_noop  # passive drift baseline (N, K)
         dZ_resid = (Z_next - Z_t) - dZ_noop_pred
 
-        # Build action indicator matrix for actions 1..A-1
-        act_cols = []
         for a in range(1, n_actions):
-            act_cols.append((A_t == a).astype(float))
-        if not act_cols:
-            return mask
-        D_act = np.column_stack(act_cols)  # (N, A-1)
-        N = float(len(Z_t))
-        L_lip = float(np.linalg.norm(D_act, ord=2) ** 2 / max(N, 1.0)) + 1e-6
-        lr = 0.5 / L_lip
-        thr = l1_lambda * lr
-
-        for k in range(K):
-            yk = dZ_resid[:, k]
-            w = np.zeros(n_actions - 1, dtype=float)
-            for _ in range(150):
-                grad = (D_act.T @ (D_act @ w - yk)) / max(N, 1.0)
-                w_c = w - lr * grad
-                w = np.sign(w_c) * np.maximum(0.0, np.abs(w_c) - thr)
-            active = np.where(np.abs(w) >= effect_threshold * 0.5)[0]
-            if len(active) > 0:
-                beta, *_ = np.linalg.lstsq(D_act[:, active], yk, rcond=None)
-                for idx_local, a_idx in enumerate(active):
-                    if abs(float(beta[idx_local])) >= effect_threshold:
-                        mask[a_idx + 1, k] = 1.0
+            idx_a = np.where(A_t == a)[0]
+            if len(idx_a) < 3:
+                continue
+            # Per-action unbiased mean interventional shift + soft-thresholding (exact 1D ISTA for orthogonal action indicators)
+            delta_mean = np.mean(dZ_resid[idx_a], axis=0)
+            delta_shrunk = np.sign(delta_mean) * np.maximum(0.0, np.abs(delta_mean) - l1_lambda)
+            for k in range(K):
+                if abs(float(delta_shrunk[k])) >= effect_threshold - l1_lambda and abs(float(delta_mean[k])) >= effect_threshold:
+                    mask[a, k] = 1.0
         return mask
 
     def observe_transitions(
@@ -283,37 +269,56 @@ class CaspianWorldModel:
             else None
         )
 
-        for a in range(A):
-            if only_noop_obs:
-                theta_trans[a] = theta_pool
-                cov_trans[a] = cov_pool
-                sigma2_trans[a] = sig_pool
-                continue
-            idx_a = np.where(A_t == a)[0]
-            if len(idx_a) >= K + 3:
-                Psi_a = Psi_all[idx_a]
-                dZ_a = dZ[idx_a]
-                for k in range(K):
-                    th, cv, sg, _ = self._eb_linear_posterior(Psi_a, dZ_a[:, k])
-                    theta_trans[a, :, k] = th
-                    cov_trans[a, k] = cv
-                    sigma2_trans[a, k] = sg
-            elif src_dyn is not None:
-                # Few-shot Bayesian prior inheritance from transferred source engram
-                theta_trans[a] = src_dyn.theta_trans[a].copy()
-                cov_trans[a] = src_dyn.cov_trans[a].copy() * 1.5
-                sigma2_trans[a] = src_dyn.sigma2_trans[a].copy()
-            elif len(idx_a) >= 2:
-                # Low-sample action: borrow linear drift from pooled, fit intercept shift
-                theta_trans[a] = theta_pool.copy()
-                cov_trans[a] = cov_pool.copy() * 2.0
-                sigma2_trans[a] = sig_pool.copy()
-                res_a = dZ[idx_a] - (Psi_all[idx_a] @ theta_pool)
-                theta_trans[a, 0, :] += np.mean(res_a, axis=0)
-            else:
-                theta_trans[a] = theta_pool.copy()
-                cov_trans[a] = cov_pool.copy() * 4.0
-                sigma2_trans[a] = sig_pool.copy() * 2.0
+        # Check if we are updating an existing engram whose sensor subspace & transition dynamics are unchanged
+        existing_dyn = self.dynamics.get(eid) if allow_update_outdated else None
+        reuse_trans = False
+        if existing_dyn is not None and not only_noop_obs and len(Z_t) < 80:
+            # Verify existing transition model still accurately predicts Z_next from (Z_t, A_t)
+            pred_dz = np.zeros_like(dZ)
+            for a in range(A):
+                idx_a = np.where(A_t == a)[0]
+                if len(idx_a) > 0:
+                    pred_dz[idx_a] = Psi_all[idx_a] @ existing_dyn.theta_trans[a]
+            trans_mse = float(np.mean((pred_dz - dZ) ** 2))
+            if trans_mse < 4.0 * float(np.mean(existing_dyn.sigma2_trans)) + 0.02:
+                reuse_trans = True
+
+        if reuse_trans and existing_dyn is not None:
+            theta_trans = existing_dyn.theta_trans.copy()
+            cov_trans = existing_dyn.cov_trans.copy()
+            sigma2_trans = existing_dyn.sigma2_trans.copy()
+        else:
+            for a in range(A):
+                if only_noop_obs:
+                    theta_trans[a] = theta_pool
+                    cov_trans[a] = cov_pool
+                    sigma2_trans[a] = sig_pool
+                    continue
+                idx_a = np.where(A_t == a)[0]
+                if len(idx_a) >= K + 3:
+                    Psi_a = Psi_all[idx_a]
+                    dZ_a = dZ[idx_a]
+                    for k in range(K):
+                        th, cv, sg, _ = self._eb_linear_posterior(Psi_a, dZ_a[:, k])
+                        theta_trans[a, :, k] = th
+                        cov_trans[a, k] = cv
+                        sigma2_trans[a, k] = sg
+                elif src_dyn is not None:
+                    # Few-shot Bayesian prior inheritance from transferred source engram
+                    theta_trans[a] = src_dyn.theta_trans[a].copy()
+                    cov_trans[a] = src_dyn.cov_trans[a].copy() * 1.5
+                    sigma2_trans[a] = src_dyn.sigma2_trans[a].copy()
+                elif len(idx_a) >= 2:
+                    # Low-sample action: borrow linear drift from pooled, fit intercept shift
+                    theta_trans[a] = theta_pool.copy()
+                    cov_trans[a] = cov_pool.copy() * 2.0
+                    sigma2_trans[a] = sig_pool.copy()
+                    res_a = dZ[idx_a] - (Psi_all[idx_a] @ theta_pool)
+                    theta_trans[a, 0, :] += np.mean(res_a, axis=0)
+                else:
+                    theta_trans[a] = theta_pool.copy()
+                    cov_trans[a] = cov_pool.copy() * 4.0
+                    sigma2_trans[a] = sig_pool.copy() * 2.0
 
         # Step 4: Causal action-effect sparsity discovery (separating intervention from passive drift)
         causal_mask = self._discover_causal_action_mask(
