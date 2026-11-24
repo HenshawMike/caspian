@@ -50,6 +50,8 @@ class AutonomousPlanner:
         self, x_t: np.ndarray, eid: Optional[int] = None
     ) -> Tuple[int, Dict[str, Any]]:
         """Select optimal first action via purely internal multi-step counterfactual rollout."""
+        if self.world_model.basis_sync:
+            self.world_model.assert_basis_synchronized(eid=eid)
         roll = self.world_model.rollout_latent(x_t, self._sequences, eid=eid)
         de_traj = roll["de_traj"]         # (N_seq, H)
         std_traj = roll["de_std_traj"]    # (N_seq, H)
