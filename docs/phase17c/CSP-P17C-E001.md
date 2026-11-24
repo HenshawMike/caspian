@@ -1,6 +1,7 @@
 # Phase 17C (`CSP-P17C-E001`) — First-Principles Root-Cause Resolution of Phase 17B (`Seeds 151–165`)
 
-- **Historical Records Preserved Intact:** `CSP-P17-E001` (`seeds 71–80`) and `CSP-P17B-E001` (`seeds 131–145`, `Outcome C`).
+- **Permanent DOCX Report:** [docs/CSP-P17C-E001.docx](file:///home/henshawmike/Projects/Project_Caspian/docs/CSP-P17C-E001.docx)
+- **Historical Records Preserved Intact:** [docs/CSP-P17-E001.docx](file:///home/henshawmike/Projects/Project_Caspian/docs/CSP-P17-E001.docx) (`seeds 71–80`) and [docs/CSP-P17B-E001.docx](file:///home/henshawmike/Projects/Project_Caspian/docs/CSP-P17B-E001.docx) (`seeds 131–145`, `Outcome C`).
 - **Fresh Unseen Independent Confirmation Seeds:** `151–165` ($n = 15$, never touched during diagnosis or development).
 - **Machine-Readable Results:** [logs/phase17c/p17c_kurtosis_occam_results.json](file:///home/henshawmike/Projects/Project_Caspian/logs/phase17c/p17c_kurtosis_occam_results.json)
 - **Official Outcome Classification:** **`Outcome B — Partial Improvement` (`4/5` hypotheses `MET`; `P17B-H1` 95% CI strictly `> 0` with `delta = +0.0598`, `exact_perm_p = 0.061`)**.
