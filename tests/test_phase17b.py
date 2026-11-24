@@ -42,3 +42,14 @@ def test_p17b_memory_accounting_reports_all_nine_categories():
     assert acct["1_trainable_parameter_count"] == 264
     assert acct["6_stored_raw_observations_bytes"] == 0
     assert acct["9_total_bytes_required_to_save_and_restore"] > 0
+
+
+def test_p17b_saved_confirmatory_results_integrity():
+    res = json.load(open("logs/phase17b/p17b_full_results.json"))
+    assert res["ast_leakage_audit"]["passed"] is True
+    assert res["hypotheses"]["P17B-H3"]["met"] is True
+    assert res["hypotheses"]["P17B-H5"]["met"] is True
+    assert res["hypotheses"]["P17B-H5"]["determinism_diff"] == 0.0
+    assert res["hypotheses"]["P17B-H5"]["perm_diff"] == 0.0
+    assert res["memory_accounting"]["9_total_bytes_required_to_save_and_restore"] > 0
+
