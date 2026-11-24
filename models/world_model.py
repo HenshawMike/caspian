@@ -1,29 +1,28 @@
-"""Phase 18 / 18B: Integrated Predictive World Model (models/world_model.py).
+"""Phase 18 / 18B / 18C: Integrated Predictive World Model (models/world_model.py).
 
 Composes Phase 17C's verified PersistentWorldMemory (models/memory.py) and
 ModularTransferModelV3 (models/transfer_v3.py) WITHOUT modifying them, adding:
 1. Action-conditioned Bayesian causal latent transition dynamics with exact
    Type-II ML (Empirical Bayes) posterior covariances Sigma_{a,k} and full KxK
    aleatoric noise covariance Sigma_{eps,a}.
-2. Phase 18B Boundary-Aware O(K)-Invariant Degree-2 Transition Dynamics (boundary_aware=True):
-   Uses the exact O(K)-invariant degree-2 basis psi(z) = [1, Phi(z)] (15 features,
-   matching ModularTransferModelV3's basis) with Type-II ML Empirical Bayes shrinkage
-   to capture asymmetric boundary saturation without any oracle boundary knowledge,
-   paired with exact analytical Jacobians J_a(z) = I + d(Delta z)/dz.
-   (When boundary_aware=False, uses linear psi(z) = [1, z] matching Phase 18 f059132.)
-3. Phase 18B Atomic Affine-Orthogonal Basis Synchronization (basis_sync=True):
-   Tracks (basis_version, W_basis, x_mean_basis, b_basis) and transforms
-   (Theta_a, Sigma_{a,k}, Q_epi, Sigma_{eps,a}, mu_z, Lambda_z, z_min, z_max)
-   via the exact invertible polynomial basis map M(Q, c):
-       psi(z Q + c) = psi(z) @ M(Q, c)
-       Theta'_a = M(Q, c)^{-1} Theta_a Q
-       Sigma'_{a,k} = M(Q, c)^{-1} Sigma_{a,k} M(Q, c)^{-T}
-       Q'_epi = Q_epi @ Q,   Sigma'_{eps,a} = Q^T Sigma_{eps,a} Q
-   guaranteeing machine-precision (< 1e-12) predictive mean & full covariance
-   equivalence across arbitrary orthogonal representation updates.
+2. First-Principles Orthogonal Box-Projection Boundary Dynamics (boundary_aware=True):
+   - Step 1: Robust IRLS per action recovers unattenuated interior linear drift Theta_a
+     without bias from clipped boundary transitions.
+   - Step 2: Unit clipping-impulse L4 alignment on O(K) + exact analytical post-clip MSE
+     refinement discovers the intrinsic orthogonal boundary-face frame U_box in O(K) and
+     empirical face bounds (l_box, u_box) strictly from observed neutral transitions
+     (zero oracle boundary knowledge).
+   - Step 3: Empirical Bayes refit on strictly interior points + exact orthogonal box
+     projection z_{t+1} = clip((z_t + [1, z_t] Theta_a) U_box, l_box, u_box) U_box^T.
+3. Exact Affine-Orthogonal Basis Synchronization (basis_sync=True):
+   Under any co-subspace orthogonal rotation Q = W_old^T W_new in O(K) and shift c:
+       Theta'_a = T^{-1} Theta_a Q,   Sigma'_{a,k} = T^{-1} Sigma_{a,k} T^{-T}
+       Q'_epi = Q_epi @ Q,            Sigma'_{eps,a} = Q^T Sigma_{eps,a} Q
+       U'_box = Q^T U_box,            l'_box = l_box + c U'_box,  u'_box = u_box + c U'_box
+   guaranteeing machine-precision (< 1e-12) predictive mean & full Bayesian covariance
+   equivalence everywhere (interior AND boundary) across arbitrary representation updates.
 """
 from dataclasses import dataclass
-import itertools
 import pickle
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
@@ -43,20 +42,19 @@ class BayesianDynamicsEngram:
     engram_id: int
     n_actions: int
     n_latent: int
-    psi_dim: int                   # K+1 (linear) or 1+phi_dim (degree-2 boundary-aware)
-    use_quad: bool
-    theta_trans: np.ndarray        # (A, psi_dim, K)
-    cov_trans: np.ndarray          # (A, K, psi_dim, psi_dim)
+    psi_dim: int                   # K+1
+    theta_trans: np.ndarray        # (A, K+1, K)
+    cov_trans: np.ndarray          # (A, K, K+1, K+1)
     sigma2_trans: np.ndarray       # (A, K): diagonal aleatoric transition noise variance
     causal_action_mask: np.ndarray # (A, K): binary mask of direct causal action effects vs NOOP
     cov_outcome: np.ndarray        # (phi_dim+1, phi_dim+1): exact EB posterior covariance for [1, Phi(z)]
     sigma2_outcome: float          # aleatoric consequence noise variance
     action_costs: np.ndarray       # (A,): learned direct per-action consequence offset
-    z_min: np.ndarray              # (K,): empirical latent lower bound
-    z_max: np.ndarray              # (K,): empirical latent upper bound
+    z_min: np.ndarray              # (K,): box lower bounds in U_box frame
+    z_max: np.ndarray              # (K,): box upper bounds in U_box frame
+    U_box: np.ndarray              # (K, K): orthogonal boundary-face normal frame in current latent basis
     z_mean: np.ndarray             # (K,): empirical latent mean
     z_cov_inv: np.ndarray          # (K, K): regularized inverse latent covariance
-    # Phase 18B basis-synchronization metadata & full rotated covariance state
     basis_version: int
     W_basis: np.ndarray            # (D, K): snapshot of W_adapter
     x_mean_basis: np.ndarray       # (1, D): snapshot of x_mean
@@ -84,9 +82,6 @@ class CaspianWorldModel:
         self.seed = int(seed)
         self.boundary_aware = bool(boundary_aware)
         self.basis_sync = bool(basis_sync)
-        self.pair_indices: List[Tuple[int, int]] = list(
-            itertools.combinations_with_replacement(range(self.n_latent), 2)
-        )
         self.memory = PersistentWorldMemory(
             in_dim=self.in_dim,
             n_latent=self.n_latent,
@@ -111,7 +106,7 @@ class CaspianWorldModel:
     def num_parameters(self) -> int:
         mem_p = self.memory.num_parameters
         dyn_p = sum(
-            int(d.theta_trans.size + d.action_costs.size)
+            int(d.theta_trans.size + d.action_costs.size + d.U_box.size + d.z_min.size + d.z_max.size)
             for d in self.dynamics.values()
         )
         return int(mem_p + dyn_p)
@@ -120,51 +115,6 @@ class CaspianWorldModel:
         use_id = self.memory.active_engram_id if eid is None else eid
         assert use_id is not None and len(self.memory.engrams) > 0, "No active engram in world model."
         return next(e for e in self.memory.engrams if e.engram_id == use_id)
-
-    def _compute_psi(self, Z: np.ndarray, use_quad: bool) -> np.ndarray:
-        """Compute transition design matrix [1, Z] (linear) or [1, Z, Z_i*Z_j] (degree-2 O(K)-invariant)."""
-        Z_arr = np.asarray(Z, dtype=float)
-        if not use_quad:
-            return np.hstack([np.ones((len(Z_arr), 1), dtype=float), Z_arr])
-        cols = [np.ones(len(Z_arr), dtype=float)]
-        for k in range(self.n_latent):
-            cols.append(Z_arr[:, k])
-        for i, j in self.pair_indices:
-            cols.append(Z_arr[:, i] * Z_arr[:, j])
-        return np.column_stack(cols)
-
-    def _basis_transform_matrix(self, Q: np.ndarray, c: np.ndarray, use_quad: bool) -> np.ndarray:
-        """Exact invertible matrix M(Q, c) satisfying psi(z Q + c) = psi(z) @ M(Q, c)."""
-        K = self.n_latent
-        c_vec = c.reshape(-1)
-        if not use_quad:
-            M = np.eye(K + 1, dtype=float)
-            M[0, 1:] = c_vec
-            M[1:, 1:] = Q
-            return M
-
-        P = 1 + K + len(self.pair_indices)
-        M = np.zeros((P, P), dtype=float)
-        # Constant row 0: 1 -> [1, c_0..c_{K-1}, c_i * c_j]
-        M[0, 0] = 1.0
-        M[0, 1:1 + K] = c_vec
-        for p_idx, (i, j) in enumerate(self.pair_indices):
-            M[0, 1 + K + p_idx] = c_vec[i] * c_vec[j]
-        # Linear rows 1..K: z_r -> [0, Q_{r,:}, c_i Q_{r,j} + c_j Q_{r,i}]
-        for r in range(K):
-            M[1 + r, 1:1 + K] = Q[r, :]
-            for p_idx, (i, j) in enumerate(self.pair_indices):
-                M[1 + r, 1 + K + p_idx] = c_vec[i] * Q[r, j] + c_vec[j] * Q[r, i]
-        # Quadratic rows 1+K..P-1: z_r * z_s -> Q_{r,i} Q_{s,j} (+ Q_{s,i} Q_{r,j} if r != s)
-        for q_idx, (r, s) in enumerate(self.pair_indices):
-            row = 1 + K + q_idx
-            for p_idx, (i, j) in enumerate(self.pair_indices):
-                col = 1 + K + p_idx
-                if r == s:
-                    M[row, col] = Q[r, i] * Q[r, j]
-                else:
-                    M[row, col] = Q[r, i] * Q[s, j] + Q[s, i] * Q[r, j]
-        return M
 
     def assert_basis_synchronized(self, eid: Optional[int] = None, tol: float = 1e-8) -> None:
         """Verify that BayesianDynamicsEngram's coordinate basis matches PersistentWorldMemory's adapter."""
@@ -186,7 +136,15 @@ class CaspianWorldModel:
         new_W_adapter: Optional[np.ndarray] = None,
         new_b_adapter: Optional[np.ndarray] = None,
     ) -> Tuple[bool, float]:
-        """Atomically transform BayesianDynamicsEngram(eid) into the current (or supplied) memory basis."""
+        """Atomically transform BayesianDynamicsEngram(eid) into the current (or supplied) memory basis.
+
+        Exact affine-orthogonal laws (interior AND boundary):
+            Q = W_old^T W_new,  c = -b_old Q + (mu_old - mu_new) W_new + b_new
+            T^{-1} = [[1, -c Q^T], [0, Q^T]]
+            Theta'_a = T^{-1} Theta_a Q,   Sigma'_{a,k} = T^{-1} Sigma_{a,k} T^{-T}
+            Q'_epi = Q_epi @ Q,            Sigma'_{eps,a} = Q^T Sigma_{eps,a} Q
+            U'_box = Q^T U_box,            z'_min = z_min + c U'_box,  z'_max = z_max + c U'_box
+        """
         e = self._get_engram(eid)
         dyn = self.dynamics[eid]
         W_old, xm_old, b_old = dyn.W_basis, dyn.x_mean_basis, dyn.b_basis
@@ -208,9 +166,9 @@ class CaspianWorldModel:
             return False, orth_err
 
         c = (-b_old @ Q) + (xm_old - xm_new) @ W_new + b_new  # (1, K)
-        # Exact inverse map: z_old = (z_new - c) @ Q^T = z_new @ Q^T + (-c @ Q^T)
-        # So M(Q, c)^{-1} = M(Q^T, -c @ Q^T) — closed-form, no numerical inversion loss!
-        M_inv = self._basis_transform_matrix(Q.T, -(c @ Q.T), use_quad=dyn.use_quad)
+        T_inv = np.eye(K + 1, dtype=float)
+        T_inv[0, 1:] = -(c @ Q.T)[0]
+        T_inv[1:, 1:] = Q.T
 
         theta_new = np.zeros_like(dyn.theta_trans)
         cov_new = np.zeros_like(dyn.cov_trans)
@@ -218,27 +176,25 @@ class CaspianWorldModel:
         sig2_new = np.zeros_like(dyn.sigma2_trans)
 
         for a in range(dyn.n_actions):
-            theta_new[a] = M_inv @ dyn.theta_trans[a] @ Q
+            theta_new[a] = T_inv @ dyn.theta_trans[a] @ Q
             for k in range(K):
-                cov_new[a, k] = M_inv @ dyn.cov_trans[a, k] @ M_inv.T
+                cov_new[a, k] = T_inv @ dyn.cov_trans[a, k] @ T_inv.T
             sig_cov_new[a] = Q.T @ dyn.sigma_cov_trans[a] @ Q
             sig2_new[a] = np.maximum(np.diag(sig_cov_new[a]), 1e-8)
 
-        corners_old = np.array(
-            [[dyn.z_min[k] if ((mask >> k) & 1) == 0 else dyn.z_max[k] for k in range(K)] for mask in range(1 << K)],
-            dtype=float,
-        )
-        corners_new = corners_old @ Q + c
-
+        # Exact orthogonal box-projector transformation: invariant even on boundaries!
+        U_box_new = Q.T @ dyn.U_box
+        c_box = (c @ U_box_new).reshape(-1)
         dyn.theta_trans = theta_new
         dyn.cov_trans = cov_new
         dyn.sigma_cov_trans = sig_cov_new
         dyn.sigma2_trans = sig2_new
         dyn.Q_epi = dyn.Q_epi @ Q
+        dyn.U_box = U_box_new
+        dyn.z_min = dyn.z_min + c_box
+        dyn.z_max = dyn.z_max + c_box
         dyn.z_mean = (dyn.z_mean.reshape(1, -1) @ Q + c).reshape(-1)
         dyn.z_cov_inv = Q.T @ dyn.z_cov_inv @ Q
-        dyn.z_min = np.min(corners_new, axis=0)
-        dyn.z_max = np.max(corners_new, axis=0)
         dyn.W_basis = W_new.copy()
         dyn.x_mean_basis = xm_new.copy()
         dyn.b_basis = b_new.copy()
@@ -321,6 +277,116 @@ class CaspianWorldModel:
         cov = sigma2 * A_inv
         return theta, cov, float(sigma2), float(best_lam)
 
+    def _fit_orthogonal_box_boundary(
+        self,
+        Z_t: np.ndarray,
+        A_t: np.ndarray,
+        Z_next: np.ndarray,
+        Psi_all: np.ndarray,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """First-principles unsupervised discovery of orthogonal boundary-face frame U_box in O(K),
+        empirical box bounds (l_box, u_box), and interior mask (zero oracle boundary knowledge).
+
+        1. Robust IRLS per action recovers unattenuated interior linear drift.
+        2. Unit clipping-impulse L4 maximization on O(K) initializes U_box along face normals.
+        3. Analytical post-clip MSE refinement optimizes (U_box, l_box, u_box).
+        """
+        N, K = Z_next.shape
+        dZ = Z_next - Z_t
+        Z_unc = np.zeros_like(Z_next)
+        res_all = np.zeros_like(dZ)
+
+        # Step 1: Robust IRLS per action to separate interior linear physics from boundary impulses
+        for a in range(self.n_actions):
+            ia = np.where(A_t == a)[0]
+            if len(ia) < K + 3:
+                Z_unc[ia] = Z_next[ia]
+                continue
+            Xa, Ya = Psi_all[ia], dZ[ia]
+            w = np.ones(len(ia), dtype=float)
+            th = np.zeros((K + 1, K), dtype=float)
+            for _ in range(8):
+                sw = np.sqrt(w).reshape(-1, 1)
+                th = np.linalg.solve(
+                    (Xa * sw).T @ (Xa * sw) + 1e-3 * np.eye(K + 1, dtype=float),
+                    (Xa * sw).T @ (Ya * sw),
+                )
+                rn = np.linalg.norm(Ya - Xa @ th, axis=1)
+                mad = float(np.median(rn)) + 1e-6
+                w = 1.0 / (1.0 + (rn / (2.5 * mad)) ** 4)
+            Z_unc[ia] = Z_t[ia] + Xa @ th
+            res_all[ia] = Ya - Xa @ th
+
+        rn_all = np.linalg.norm(res_all, axis=1)
+        mad_all = float(np.median(rn_all)) + 1e-6
+        clip_idx = np.where(rn_all > 2.5 * mad_all)[0]
+
+        if len(clip_idx) < 8:
+            # No statistically significant boundary clipping observed
+            U = np.eye(K, dtype=float)
+            Z_both = np.vstack([Z_t, Z_next])
+            return U, np.min(Z_both, axis=0) - 0.25, np.max(Z_both, axis=0) + 0.25, np.ones(N, dtype=bool)
+
+        # Step 2: Unit clipping-impulse L4 alignment on O(K)
+        R_hat = res_all[clip_idx] / rn_all[clip_idx].reshape(-1, 1)
+        rng = np.random.default_rng(self.seed + 19)
+        best_U = np.eye(K, dtype=float)
+        best_obj = -1.0
+        for r_i in range(10):
+            U = np.eye(K, dtype=float) if r_i == 0 else np.linalg.qr(rng.standard_normal((K, K)))[0]
+            m = np.zeros_like(U); v = np.zeros_like(U)
+            for st in range(1, 91):
+                V = R_hat @ U
+                gU = 4.0 * (R_hat.T @ (V ** 3)) / max(len(R_hat), 1)
+                m = 0.9 * m + 0.1 * gU; v = 0.999 * v + 0.001 * (gU ** 2)
+                U = U + 0.1 * (m / (1.0 - 0.9 ** st)) / (np.sqrt(v / (1.0 - 0.999 ** st)) + 1e-8)
+                Uq, _, Vtq = np.linalg.svd(U, full_matrices=False)
+                U = Uq @ Vtq
+            obj = float(np.mean((R_hat @ U) ** 4))
+            if obj > best_obj:
+                best_obj = obj
+                best_U = U.copy()
+
+        # Step 3: Exact analytical post-clip MSE refinement of (U, l_box, u_box)
+        U = best_U.copy()
+        Vn_init = Z_next @ U
+        l_box = np.percentile(Vn_init, 1.0, axis=0)
+        u_box = np.percentile(Vn_init, 99.0, axis=0)
+        mU = np.zeros_like(U); vU = np.zeros_like(U)
+        ml = np.zeros_like(l_box); vl = np.zeros_like(l_box)
+        mu = np.zeros_like(u_box); vu = np.zeros_like(u_box)
+        for st in range(1, 181):
+            V = Z_unc @ U
+            Tgt = Z_next @ U
+            C = np.clip(V, l_box, u_box)
+            diff = C - Tgt
+            in_mask = ((V > l_box) & (V < u_box)).astype(float)
+            lo_mask = (V <= l_box).astype(float)
+            hi_mask = (V >= u_box).astype(float)
+            gU = (2.0 / N) * (Z_unc.T @ (diff * in_mask) - Z_next.T @ diff)
+            gl = (2.0 / N) * np.sum(diff * lo_mask, axis=0)
+            gu = (2.0 / N) * np.sum(diff * hi_mask, axis=0)
+            mU = 0.9 * mU + 0.1 * gU; vU = 0.999 * vU + 0.001 * (gU ** 2)
+            ml = 0.9 * ml + 0.1 * gl; vl = 0.999 * vl + 0.001 * (gl ** 2)
+            mu = 0.9 * mu + 0.1 * gu; vu = 0.999 * vu + 0.001 * (gu ** 2)
+            U = U - 0.04 * (mU / (1.0 - 0.9 ** st)) / (np.sqrt(vU / (1.0 - 0.999 ** st)) + 1e-8)
+            Uq, _, Vtq = np.linalg.svd(U, full_matrices=False)
+            U = Uq @ Vtq
+            l_box = l_box - 0.04 * (ml / (1.0 - 0.9 ** st)) / (np.sqrt(vl / (1.0 - 0.999 ** st)) + 1e-8)
+            u_box = u_box - 0.04 * (mu / (1.0 - 0.9 ** st)) / (np.sqrt(vu / (1.0 - 0.999 ** st)) + 1e-8)
+
+        # Keep faces with < 3 active clipping events open (min/max with safe margin) so unvisited walls aren't over-tightened
+        V_final = Z_unc @ U
+        Vn_final = Z_next @ U
+        for k in range(K):
+            if int(np.sum(V_final[:, k] <= l_box[k])) < 3:
+                l_box[k] = float(np.min(Vn_final[:, k])) - 0.25
+            if int(np.sum(V_final[:, k] >= u_box[k])) < 3:
+                u_box[k] = float(np.max(Vn_final[:, k])) + 0.25
+
+        interior_mask = np.all((Vn_final > l_box + 0.04) & (Vn_final < u_box - 0.04), axis=1)
+        return U, l_box, u_box, interior_mask
+
     @staticmethod
     def _discover_causal_action_mask(
         Z_t: np.ndarray,
@@ -380,33 +446,30 @@ class CaspianWorldModel:
         dZ = Z_next - Z_t
         K = self.n_latent
         A = self.n_actions
+        Psi_all = np.hstack([np.ones((len(Z_t), 1), dtype=float), Z_t])
+        P = K + 1
 
         existing_dyn = self.dynamics.get(eid) if allow_update_outdated else None
-        use_quad = bool(self.boundary_aware and (len(Z_t) >= 100 or (existing_dyn is not None and existing_dyn.use_quad)))
-        Psi_all = self._compute_psi(Z_t, use_quad=use_quad)
-        P = Psi_all.shape[1]
-
         reuse_trans = False
         if existing_dyn is not None and not only_noop_obs and len(Z_t) < 80:
             if self.basis_sync:
                 synced, _ = self.sync_dynamics_to_basis(eid)
                 if synced:
-                    Psi_chk = self._compute_psi(Z_t, use_quad=existing_dyn.use_quad)
-                    pred_dz = np.zeros_like(dZ)
+                    pred_zn = np.zeros_like(Z_next)
                     for a in range(A):
                         idx_a = np.where(A_t == a)[0]
                         if len(idx_a) > 0:
-                            pred_dz[idx_a] = Psi_chk[idx_a] @ existing_dyn.theta_trans[a]
-                    trans_mse = float(np.mean((pred_dz - dZ) ** 2))
+                            z_u = Z_t[idx_a] + Psi_all[idx_a] @ existing_dyn.theta_trans[a]
+                            pred_zn[idx_a] = np.clip(z_u @ existing_dyn.U_box, existing_dyn.z_min, existing_dyn.z_max) @ existing_dyn.U_box.T
+                    trans_mse = float(np.mean((pred_zn - Z_next) ** 2))
                     if trans_mse < 4.0 * float(np.mean(existing_dyn.sigma2_trans)) + 0.04:
                         reuse_trans = True
             else:
-                Psi_chk = self._compute_psi(Z_t, use_quad=existing_dyn.use_quad)
                 pred_dz = np.zeros_like(dZ)
                 for a in range(A):
                     idx_a = np.where(A_t == a)[0]
                     if len(idx_a) > 0:
-                        pred_dz[idx_a] = Psi_chk[idx_a] @ existing_dyn.theta_trans[a]
+                        pred_dz[idx_a] = Psi_all[idx_a] @ existing_dyn.theta_trans[a]
                 trans_mse = float(np.mean((pred_dz - dZ) ** 2))
                 if trans_mse < 4.0 * float(np.mean(existing_dyn.sigma2_trans)) + 0.02:
                     reuse_trans = True
@@ -418,19 +481,29 @@ class CaspianWorldModel:
             sigma2_trans = existing_dyn.sigma2_trans.copy()
             Q_epi = existing_dyn.Q_epi.copy()
             causal_mask = existing_dyn.causal_action_mask.copy()
+            U_box_use = existing_dyn.U_box.copy()
             z_min_use = existing_dyn.z_min.copy()
             z_max_use = existing_dyn.z_max.copy()
             z_mean_use = existing_dyn.z_mean.copy()
             z_cov_inv_use = existing_dyn.z_cov_inv.copy()
             b_ver = existing_dyn.basis_version
-            use_quad = existing_dyn.use_quad
-            P = existing_dyn.psi_dim
         else:
             theta_trans = np.zeros((A, P, K), dtype=float)
             cov_trans = np.zeros((A, K, P, P), dtype=float)
             sigma2_trans = np.ones((A, K), dtype=float) * 0.05
             sigma_cov_trans = np.zeros((A, K, K), dtype=float)
             Q_epi = np.eye(K, dtype=float)
+
+            if self.boundary_aware and not only_noop_obs and len(Z_t) >= 80:
+                U_box_use, z_min_use, z_max_use, interior_mask = self._fit_orthogonal_box_boundary(
+                    Z_t, A_t, Z_next, Psi_all
+                )
+            else:
+                U_box_use = np.eye(K, dtype=float)
+                Z_both = np.vstack([Z_t, Z_next])
+                z_min_use = np.min(Z_both, axis=0) - 0.25
+                z_max_use = np.max(Z_both, axis=0) + 0.25
+                interior_mask = np.ones(len(Z_t), dtype=bool)
 
             theta_pool = np.zeros((P, K), dtype=float)
             cov_pool = np.zeros((K, P, P), dtype=float)
@@ -454,7 +527,9 @@ class CaspianWorldModel:
                     sigma2_trans[a] = sig_pool
                     sigma_cov_trans[a] = np.diag(sig_pool)
                     continue
-                idx_a = np.where(A_t == a)[0]
+                idx_a_all = np.where(A_t == a)[0]
+                idx_a_int = np.where((A_t == a) & interior_mask)[0]
+                idx_a = idx_a_int if (self.boundary_aware and len(idx_a_int) >= K + 4) else idx_a_all
                 if len(idx_a) >= K + 3:
                     Psi_a = Psi_all[idx_a]
                     dZ_a = dZ[idx_a]
@@ -464,7 +539,7 @@ class CaspianWorldModel:
                         cov_trans[a, k] = cv
                         sigma2_trans[a, k] = sg
                     sigma_cov_trans[a] = np.diag(sigma2_trans[a])
-                elif src_dyn is not None and src_dyn.psi_dim == P:
+                elif src_dyn is not None:
                     theta_trans[a] = src_dyn.theta_trans[a].copy()
                     cov_trans[a] = src_dyn.cov_trans[a].copy() * 1.5
                     sigma2_trans[a] = src_dyn.sigma2_trans[a].copy()
@@ -486,9 +561,6 @@ class CaspianWorldModel:
                 Z_t, A_t, Z_next, Psi_all, theta_trans[0], n_actions=A
             )
             Z_both = np.vstack([Z_t, Z_next])
-            margin = 0.05 if self.boundary_aware else 0.25
-            z_min_use = np.min(Z_both, axis=0) - margin
-            z_max_use = np.max(Z_both, axis=0) + margin
             z_mean_use = np.mean(Z_both, axis=0)
             z_cov = np.cov(Z_both.T) + 0.05 * np.eye(K, dtype=float)
             z_cov_inv_use = np.linalg.inv(z_cov)
@@ -516,7 +588,6 @@ class CaspianWorldModel:
             n_actions=A,
             n_latent=K,
             psi_dim=P,
-            use_quad=use_quad,
             theta_trans=theta_trans,
             cov_trans=cov_trans,
             sigma2_trans=sigma2_trans,
@@ -526,6 +597,7 @@ class CaspianWorldModel:
             action_costs=action_costs,
             z_min=z_min_use,
             z_max=z_max_use,
+            U_box=U_box_use,
             z_mean=z_mean_use,
             z_cov_inv=z_cov_inv_use,
             basis_version=b_ver,
@@ -564,18 +636,6 @@ class CaspianWorldModel:
 
         return de_mean, de_var, grad_z
 
-    def _transition_jacobians(self, Z_a: np.ndarray, th_a: np.ndarray, use_quad: bool) -> np.ndarray:
-        """Exact analytical Jacobians J_n = d(z_next)/d(z_t) of shape (n_a, K, K)."""
-        n_a, K = Z_a.shape
-        J = np.broadcast_to(np.eye(K, dtype=float) + th_a[1:1 + K, :].T, (n_a, K, K)).copy()
-        if use_quad:
-            for p_idx, (i, j) in enumerate(self.pair_indices):
-                w_p = th_a[1 + K + p_idx, :]  # (K,)
-                # d(z_i z_j)/dz_i = z_j, d(z_i z_j)/dz_j = z_i
-                J[:, :, i] += Z_a[:, j:j + 1] * w_p.reshape(1, K)
-                J[:, :, j] += Z_a[:, i:i + 1] * w_p.reshape(1, K)
-        return J
-
     def predict_step_latent(
         self,
         Z_t: np.ndarray,
@@ -593,11 +653,12 @@ class CaspianWorldModel:
         A_arr = np.asarray(A_t, dtype=int).reshape(-1)
         N, K = Z_arr.shape
 
-        Psi = self._compute_psi(Z_arr, use_quad=dyn.use_quad)
+        Psi = np.hstack([np.ones((N, 1), dtype=float), Z_arr])
         z_next = np.zeros((N, K), dtype=float)
         z_var = np.zeros((N, K), dtype=float)
         P_next = np.zeros((N, K, K), dtype=float)
         Qe = dyn.Q_epi
+        Ub = dyn.U_box
 
         for a in range(self.n_actions):
             idx = np.where(A_arr == a)[0]
@@ -605,10 +666,11 @@ class CaspianWorldModel:
                 continue
             Psi_a = Psi[idx]
             th_a = dyn.theta_trans[a]
-            dz_a = Psi_a @ th_a
-            z_unclamped = Z_arr[idx] + dz_a
-            z_clamped = np.clip(z_unclamped, dyn.z_min, dyn.z_max)
-            z_next[idx] = z_clamped
+            z_unclamped = Z_arr[idx] + Psi_a @ th_a
+            # Exact orthogonal box projection in intrinsic frame U_box
+            v_unc = z_unclamped @ Ub
+            v_clamped = np.clip(v_unc, dyn.z_min, dyn.z_max)
+            z_next[idx] = v_clamped @ Ub.T
 
             epi_diag = np.zeros((len(idx), K), dtype=float)
             for k in range(K):
@@ -616,9 +678,9 @@ class CaspianWorldModel:
             C_epi = np.einsum("ki,nk,kj->nij", Qe, epi_diag, Qe)
             C_step = C_epi + dyn.sigma_cov_trans[a].reshape(1, K, K)
 
+            J_a = np.eye(K, dtype=float) + th_a[1:, :].T
             if P_t is not None:
-                J_a = self._transition_jacobians(Z_arr[idx], th_a, use_quad=dyn.use_quad)
-                P_prop = np.einsum("nij,njk,nlk->nil", J_a, P_t[idx], J_a)
+                P_prop = np.einsum("ij,njk,lk->nil", J_a, P_t[idx], J_a)
                 P_next[idx] = P_prop + C_step
             else:
                 P_next[idx] = C_step
@@ -774,14 +836,14 @@ class CaspianWorldModel:
         self.memory.last_retrieved_id = best_eid
         return best_eid, best_de_mse, confident
 
-    # Pure-NumPy analytical forward/backward pass for transition parameters (gradient-checked in tests)
+    # Pure-NumPy analytical forward/backward pass for transition parameters
     def forward_transition(self, Z: np.ndarray, action: int, eid: Optional[int] = None) -> np.ndarray:
         e = self._get_engram(eid)
         dyn = self.dynamics[e.engram_id]
         Z_arr = np.asarray(Z, dtype=float)
         self._last_z_cache = Z_arr
         self._last_a_cache = int(action)
-        Psi = self._compute_psi(Z_arr, use_quad=dyn.use_quad)
+        Psi = np.hstack([np.ones((len(Z_arr), 1), dtype=float), Z_arr])
         return Z_arr + Psi @ dyn.theta_trans[int(action)]
 
     def backward_transition(self, grad_z_next: np.ndarray, eid: Optional[int] = None) -> np.ndarray:
@@ -790,16 +852,14 @@ class CaspianWorldModel:
         dyn = self.dynamics[e.engram_id]
         Z_arr = self._last_z_cache
         a = self._last_a_cache
-        Psi = self._compute_psi(Z_arr, use_quad=dyn.use_quad)
+        Psi = np.hstack([np.ones((len(Z_arr), 1), dtype=float), Z_arr])
         g_out = np.asarray(grad_z_next, dtype=float)
         self.grad_theta_trans = np.zeros_like(dyn.theta_trans)
         self.grad_theta_trans[a] = Psi.T @ g_out
-        J = self._transition_jacobians(Z_arr, dyn.theta_trans[a], use_quad=dyn.use_quad)
-        grad_z = np.einsum("nj,nji->ni", g_out, J)
+        grad_z = g_out + g_out @ dyn.theta_trans[a, 1:, :].T
         return grad_z
 
     def to_bytes(self) -> bytes:
-        """Lossless minimal persistent serialization preserving synchronized basis metadata."""
         payload = {
             "cfg": (self.in_dim, self.n_latent, self.n_actions, self.seed, self.boundary_aware, self.basis_sync),
             "active_eid": self.memory.active_engram_id,
