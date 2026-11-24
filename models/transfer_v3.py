@@ -20,11 +20,26 @@ import numpy as np
 class ModularTransferModelV3:
     """Pure-NumPy 66-parameter modular transfer architecture (v3) with analytical gradients."""
 
-    def __init__(self, in_dim: int, n_latent: int = 4, l2_reg: float = 1e-2, seed: int = 0):
+    def __init__(
+        self,
+        in_dim: int,
+        n_latent: int = 4,
+        l2_reg: float = 1e-2,
+        seed: int = 0,
+        alignment_mode: str = "occam_hierarchy",
+        occam_restarts: int = 30,
+        occam_noise_mult: float = 4.0,
+        occam_var_frac: float = 0.015,
+    ):
         self.in_dim = int(in_dim)
         self.n_latent = int(n_latent)
         self.l2_reg = float(l2_reg)
         self.seed = int(seed)
+        self.alignment_mode = str(alignment_mode)
+        self.occam_restarts = int(occam_restarts)
+        self.occam_noise_mult = float(occam_noise_mult)
+        self.occam_var_frac = float(occam_var_frac)
+        self.last_alignment_branch: str = "none"
 
         self.pair_indices: List[Tuple[int, int]] = list(
             itertools.combinations_with_replacement(range(self.n_latent), 2)
@@ -277,23 +292,50 @@ class ModularTransferModelV3:
             shifted = bool(align_sensors)
 
         if shifted:
-            # Occam-Hierarchy Alignment: when G <= 10 unique states (ultra-few-shot where 10-DOF overfits),
-            # try 6-DOF pure O(K) first and unlock 10-DOF only if 6-DOF fails the replicate noise floor;
-            # when G > 10, run centered 10-DOF (R, b_adapter) directly for exact additive-offset invariance.
-            if len(Xu) <= 10:
-                xm_6, W_6, b_6, loss_6 = self._align_canonical(
-                    Xu, yu, wu, opt_b=False, xm_fixed=np.zeros((1, self.in_dim), dtype=float), n_restarts=30,
+            if self.alignment_mode == "original_v3":
+                # Exact historical V3 (commit 115d579): always 10-DOF centered + b_adapter, 20 restarts
+                xm_t, W_ad, b_ad, _ = self._align_canonical(Xu, yu, wu, opt_b=True, n_restarts=20)
+                self.last_alignment_branch = "original_10dof"
+            elif self.alignment_mode == "six_dof_only":
+                # Ablation: strictly 6-DOF pure O(K), never unlocks b_adapter
+                xm_t, W_ad, b_ad, _ = self._align_canonical(
+                    Xu, yu, wu, opt_b=False, xm_fixed=np.zeros((1, self.in_dim), dtype=float),
+                    n_restarts=self.occam_restarts,
                 )
-                var_y = max(float(np.var(yu)), 1e-8)
-                if loss_6 <= max(4.0 * sig2, 0.015 * var_y):
-                    xm_t, W_ad, b_ad = xm_6, W_6, b_6
+                self.last_alignment_branch = "six_dof_only"
+            elif self.alignment_mode == "occam_hierarchy":
+                # Occam-Hierarchy Alignment: when G <= 10 unique states (10-DOF underdetermined),
+                # try 6-DOF pure O(K) first and unlock 10-DOF only if 6-DOF fails the noise-floor adequacy test;
+                # when G > 10, run centered 10-DOF directly for exact additive-offset invariance.
+                if len(Xu) <= 10:
+                    xm_6, W_6, b_6, loss_6 = self._align_canonical(
+                        Xu, yu, wu, opt_b=False, xm_fixed=np.zeros((1, self.in_dim), dtype=float),
+                        n_restarts=self.occam_restarts,
+                    )
+                    var_y = max(float(np.var(yu)), 1e-8)
+                    thresh = max(self.occam_noise_mult * sig2, self.occam_var_frac * var_y)
+                    # Identifiability guard: when G <= 10, 10-DOF (R + b) has <= 0 residual DOF;
+                    # only permit 10-DOF expansion if raw observation mean shows a genuine offset ||mean(Xu)|| > 0.35.
+                    mean_offset_norm = float(np.linalg.norm(np.mean(Xu, axis=0)))
+                    if loss_6 <= thresh or mean_offset_norm <= 0.35:
+                        xm_t, W_ad, b_ad = xm_6, W_6, b_6
+                        self.last_alignment_branch = "occam_6dof_accepted" if loss_6 <= thresh else "occam_6dof_identifiability_guard"
+                    else:
+                        xm_10, W_10, b_10, loss_10 = self._align_canonical(Xu, yu, wu, opt_b=True, n_restarts=20)
+                        if loss_10 < 0.75 * loss_6:
+                            xm_t, W_ad, b_ad = xm_10, W_10, b_10
+                            self.last_alignment_branch = "occam_expanded_10dof"
+                        else:
+                            xm_t, W_ad, b_ad = xm_6, W_6, b_6
+                            self.last_alignment_branch = "occam_6dof_retained"
                 else:
-                    xm_10, W_10, b_10, loss_10 = self._align_canonical(Xu, yu, wu, opt_b=True)
-                    xm_t, W_ad, b_ad = (xm_10, W_10, b_10) if loss_10 < 0.75 * loss_6 else (xm_6, W_6, b_6)
+                    xm_t, W_ad, b_ad, _ = self._align_canonical(Xu, yu, wu, opt_b=True, n_restarts=20)
+                    self.last_alignment_branch = "full_10dof_gt10"
             else:
-                xm_t, W_ad, b_ad, _ = self._align_canonical(Xu, yu, wu, opt_b=True)
+                raise ValueError(f"Unknown alignment_mode: {self.alignment_mode}")
         else:
             xm_t, W_ad, b_ad = xm_src.copy(), W_src.copy(), np.zeros((1, self.n_latent), dtype=float)
+            self.last_alignment_branch = "unshifted"
 
         Phi_u = self._compute_phi((Xu - xm_t) @ W_ad + b_ad)
         yc = Phi_u @ self.w_core + self.b_core
@@ -335,7 +377,13 @@ class ModularTransferModelV3:
         return self.core_gate
 
     def clone_for_target(self) -> "ModularTransferModelV3":
-        m = ModularTransferModelV3(self.in_dim, self.n_latent, self.l2_reg, self.seed)
+        m = ModularTransferModelV3(
+            self.in_dim, self.n_latent, self.l2_reg, self.seed,
+            alignment_mode=self.alignment_mode,
+            occam_restarts=self.occam_restarts,
+            occam_noise_mult=self.occam_noise_mult,
+            occam_var_frac=self.occam_var_frac,
+        )
         m.x_mean = self.x_mean.copy()
         m.W_adapter = self.W_adapter.copy()
         m.b_adapter = self.b_adapter.copy()
